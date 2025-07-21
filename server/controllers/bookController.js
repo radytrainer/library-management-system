@@ -1,6 +1,9 @@
-const db = require('../models');
-const Book = db.Book;
-const Category = db.categories;
+// const db = require('../models');
+// const Book = db.Book;
+// const Category = db.categories;
+// const Author = db.Author;
+
+const { Book, Category, Author } = require('../models');
 
 // GET all books
 exports.index = async (req, res) => {
@@ -11,13 +14,17 @@ exports.index = async (req, res) => {
           model: Category,
           attributes: ['name', 'description'],
         },
+        {
+          model: Author,
+          attributes: ['name', 'biography', 'birth_date', 'nationality'],
+        }
       ],
     });
 
     const booksWithImageUrl = books.map(book => {
       const bookData = book.toJSON();
       bookData.cover_image_url = bookData.cover_image
-        ? `${req.protocol}://${req.get('host')}/uploads/${bookData.cover_image}`
+        ? `${req.protocol}://${req.get('host')}/uploads/books/${bookData.cover_image}`
         : null;
       return bookData;
     });
@@ -38,6 +45,10 @@ exports.show = async (req, res) => {
           model: Category,
           attributes: ['name', 'description'],
         },
+        {
+          model: Author,
+          attributes: ['name', 'biography', 'birth_date', 'nationality'],
+        }
       ]
     });
 
@@ -47,7 +58,7 @@ exports.show = async (req, res) => {
 
     const bookData = book.toJSON();
     bookData.cover_image_url = bookData.cover_image
-      ? `${req.protocol}://${req.get('host')}/uploads/${bookData.cover_image}`
+      ? `${req.protocol}://${req.get('host')}/uploads/books/${bookData.cover_image}`
       : null;
 
     res.json({ book: bookData });
@@ -63,7 +74,7 @@ exports.show = async (req, res) => {
 // POST create a new book
 exports.store = async (req, res) => {
   try {
-    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId } = req.body;
+    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId, AuthorId } = req.body;
     const cover_image = req.file ? req.file.filename : null;
 
     const newBook = await Book.create({
@@ -75,10 +86,11 @@ exports.store = async (req, res) => {
       public_year,
       description,
       available,
-      CategoryId
+      CategoryId,
+      AuthorId
     });
 
-    const imageUrl = cover_image ? `${req.protocol}://${req.get('host')}/uploads/${cover_image}` : null;
+    const imageUrl = cover_image ? `${req.protocol}://${req.get('host')}/uploads/books/${cover_image}` : null;
 
     res.status(201).json({
       message: 'Book is created successfully.',
@@ -97,7 +109,7 @@ exports.store = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const bookId = req.params.id;
-    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId } = req.body;
+    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId, AuthorId } = req.body;
     const cover_image = req.file ? req.file.filename : null;
 
     const book = await Book.findByPk(bookId);
@@ -114,6 +126,7 @@ exports.update = async (req, res) => {
     book.description = description;
     book.available = available;
     book.CategoryId = CategoryId;
+    book.AuthorId = AuthorId;
 
     await book.save();
 
