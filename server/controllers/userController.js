@@ -13,8 +13,8 @@ const adminBoard = (req, res) => {
   res.status(200).json({ message: "Admin Content." });
 };
 
-const moderatorBoard = (req, res) => {
-  res.status(200).json({ message: "Moderator Content." });
+const librarianBoard = (req, res) => {
+  res.status(200).json({ message: "librarian Content." });
 };
 
 const getUserProfile = async (req, res) => {
@@ -57,7 +57,7 @@ const getAllUsers = async (req, res) => {
           model: Role,
           as: "roles",
           attributes: ["name"],
-          through: { attributes: [] }, // Exclude junction table attributes
+          through: { attributes: [] }, 
         },
       ],
       attributes: ["id", "username", "email", "createdAt"], // Remove 'role'
@@ -83,53 +83,13 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const requesterId = req.userId;
 
-    if (Number.parseInt(id) === requesterId) {
-      return res.status(400).json({
-        message: "Use logout endpoint to delete your own account!",
-      });
-    }
-
-    await db.sequelize.transaction(async (t) => {
-      await db.sequelize.query("DELETE FROM user_roles WHERE userId = ?", {
-        replacements: [id],
-        type: db.Sequelize.QueryTypes.DELETE,
-        transaction: t,
-      });
-
-      const result = await User.destroy({
-        where: { id: id },
-        transaction: t,
-      });
-
-      if (result === 0) {
-        throw new Error("User not found");
-      }
-    });
-
-    res.status(200).json({
-      message: "User deleted successfully!",
-    });
-  } catch (error) {
-    console.error("Delete user error:", error);
-    if (error.message === "User not found") {
-      res.status(404).json({ message: "User not found!" });
-    } else {
-      res.status(500).json({ message: error.message });
-    }
-  }
-};
 
 module.exports = {
   allAccess,
   userBoard,
   adminBoard,
-  moderatorBoard,
+  librarianBoard,
   getUserProfile,
-  getAllUsers,
-  deleteUser,
+  getAllUsers
 };

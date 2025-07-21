@@ -21,7 +21,7 @@ router.get("/public", allAccess);
 
 // Protected route
 router.get("/profile", verifyToken, getUserProfile);
-router.get("/all", verifyToken, getAllUsers);
+router.get("/", verifyToken, getAllUsers);
 router.delete("/delete/:id", verifyToken, deleteUser);
 
 // Role-based routes
