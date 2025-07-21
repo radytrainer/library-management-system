@@ -3,41 +3,45 @@ const Book = db.Book;
 
 // GET all books
 exports.index = async (req, res) => {
-  const books = await Book.findAll();
-  res.json(books);
-};
+  try {
+    const books = await Book.findAll({
+    });
 
-// GET a single book by ID
-exports.show = async (req, res) => {
-  const book = await Book.findByPk(req.params.id);
-  if (!book) return res.status(404).json({ message: 'Book not found' });
-  res.json(book);
+    res.json({ books });
+  } catch (error) {
+    console.error('Error fetching books:', error);
+    res.status(500).json({ error: 'Failed to fetch books' });
+  }
 };
 
 // POST create a new book
 exports.store = async (req, res) => {
-  const { title, author, isbn, available } = req.body;
-  const newBook = await Book.create({ title, author, isbn, available });
-  res.status(201).json(newBook);
-};
+  try {
+    const { title, isbn, quantilty, donated_by, public_year, description, available } = req.body;
+    const cover_image = req.file ? req.file.filename : null;
 
-// PUT update a book
-exports.update = async (req, res) => {
-  const { id } = req.params;
-  const book = await Book.findByPk(id);
-  if (!book) return res.status(404).json({ message: 'Book not found' });
+    const newBook = await Book.create({
+      title,
+      isbn,
+      quantilty,
+      cover_image,
+      donated_by,
+      public_year,
+      description,
+      available
+    });
 
-  const { title, author, isbn, available } = req.body;
-  await book.update({ title, author, isbn, available });
-  res.json(book);
-};
+    const imageUrl = cover_image ? `${req.protocol}://${req.get('host')}/uploads/${cover_image}` : null;
 
-// DELETE a book
-exports.destroy = async (req, res) => {
-  const { id } = req.params;
-  const book = await Book.findByPk(id);
-  if (!book) return res.status(404).json({ message: 'Book not found' });
-
-  await book.destroy();
-  res.json({ message: 'Book deleted successfully' });
+    res.status(201).json({
+      message: 'Book is created successfully.',
+      book: {
+        ...newBook.toJSON(),
+        cover_image_url: imageUrl
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to create book.' });
+  }
 };
