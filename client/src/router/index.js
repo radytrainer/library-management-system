@@ -8,12 +8,15 @@ const routes = [
     component: AppLayout,
     children: [
       { path: '', redirect: '/dashboard' },
-      { path: 'dashboard', component: Dashboard },
-      { path: 'books', component: () => import('@/views/books/BookListView.vue') },
-      // Add more routes like books, members, etc.
+      { path: 'dashboard', name: 'dashboard', component: Dashboard },
+      { path: 'books', name: 'books', component: () => import('@/views/books/BookListView.vue') },
+      { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
+      { path: 'borrows/add', name: 'borrow-add', component: () => import('@/views/borrows/BorrowFormView.vue') },
+      // Add more routes here as needed
     ],
   },
 ]
+
 
 const router = createRouter({
   history: createWebHistory(),
