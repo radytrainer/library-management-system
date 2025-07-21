@@ -1,8 +1,8 @@
 module.exports = (sequelize, DataTypes) => {
-  const Book = sequelize.define('Book', {
+  return sequelize.define('Book', {
     title: DataTypes.STRING,
     isbn: DataTypes.STRING,
-    quantilty: DataTypes.INTEGER,
+    quantity: DataTypes.INTEGER,
     cover_image: DataTypes.STRING,
     donated_by: DataTypes.STRING,
     public_year: DataTypes.INTEGER,
@@ -11,18 +11,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-    category_id: {
+    categoryId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-    },
+      references: {
+        model: 'categories', // name of the target table (lowercase plural!)
+        key: 'id',
+      }
+    }
   });
-
-  Book.associate = (models) => {
-    Book.belongsTo(models.Category, {
-      foreignKey: 'category_id',
-      as: 'category',
-    });
-  };
-
-  return Book;
 };
