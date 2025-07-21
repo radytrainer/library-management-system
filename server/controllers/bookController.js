@@ -97,7 +97,7 @@ exports.store = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const bookId = req.params.id;
-    const { title, isbn, quantity, donated_by, public_year, description, available, categoryId } = req.body;
+    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId } = req.body;
     const cover_image = req.file ? req.file.filename : null;
 
     const book = await Book.findByPk(bookId);
@@ -113,7 +113,7 @@ exports.update = async (req, res) => {
     book.public_year = public_year;
     book.description = description;
     book.available = available;
-    book.categoryId = categoryId;
+    book.CategoryId = CategoryId;
 
     await book.save();
 
