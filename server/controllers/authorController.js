@@ -109,3 +109,20 @@ exports.update = async (req, res) => {
         res.status(500).json({ error: 'Failed to update author' });
     }
 };
+
+// Delete an author
+exports.destroy = async (req, res) => {
+    try {
+        const author = await Author.findByPk(req.params.id);
+
+        if (!author) {
+            return res.status(404).json({ error: 'Author not found' });
+        }
+
+        await author.destroy();
+        res.status(200).json({ message: 'Author deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting author:', error);
+        res.status(500).json({ error: 'Failed to delete author' });
+    }
+};
