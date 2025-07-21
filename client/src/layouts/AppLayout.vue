@@ -147,9 +147,10 @@
               isSidebarOpen ? 'menu_open' : 'menu'
             }}</span>
           </button>
-          <h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
-            {{ language === 'en' ? 'Library Dashboard' : 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' }}
-          </h1>
+<h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
+  {{ pageTitle }}
+</h1>
+
         </div>
         <div class="flex items-center space-x-3">
           <!-- Search Bar -->
@@ -258,10 +259,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
 const language = ref('en')
 const searchQuery = ref('')
@@ -313,8 +315,23 @@ function logout() {
 onMounted(() => {
   language.value = localStorage.getItem('language') || 'en'
 })
-</script>
 
+// ✅ Computed Page Title
+const pageTitle = computed(() => {
+  const map = {
+    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
+    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
+    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
+    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
+    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
+    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
+    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីសៀវភៅ' }
+  }
+  const key = route.name
+  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
+})
+</script>
 
 <style scoped>
 /* Fonts */
