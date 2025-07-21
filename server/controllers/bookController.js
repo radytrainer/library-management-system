@@ -40,13 +40,24 @@ exports.show = async (req, res) => {
         },
       ]
     });
-    res.json({ book: book });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    const bookData = book.toJSON();
+    bookData.cover_image_url = bookData.cover_image
+      ? `${req.protocol}://${req.get('host')}/uploads/${bookData.cover_image}`
+      : null;
+
+    res.json({ book: bookData });
 
   } catch (error) {
-    console.error('Error fetching books:', error);
+    console.error('Error fetching book:', error);
     res.status(500).json({ error: 'Failed to fetch book' });
   }
 };
+
 
 
 // POST create a new book
@@ -82,6 +93,36 @@ exports.store = async (req, res) => {
   }
 };
 
+// PUT update a book by ID
+exports.update = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const { title, isbn, quantity, donated_by, public_year, description, available, categoryId } = req.body;
+    const cover_image = req.file ? req.file.filename : null;
+
+    const book = await Book.findByPk(bookId);
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found.' });
+    }
+
+    book.title = title;
+    book.isbn = isbn;
+    book.quantity = quantity;
+    book.cover_image = cover_image || book.cover_image; // Keep existing if no new image
+    book.donated_by = donated_by;
+    book.public_year = public_year;
+    book.description = description;
+    book.available = available;
+    book.categoryId = categoryId;
+
+    await book.save();
+
+    res.json({ message: 'Book updated successfully.', book: book });
+  } catch (error) {
+    console.error('Error updating book:', error);
+    res.status(500).json({ message: 'Failed to update book.' });
+  }
+};
 
 // DELETE a book by ID
 exports.destroy = async (req, res) => {
