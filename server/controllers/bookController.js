@@ -63,7 +63,7 @@ exports.show = async (req, res) => {
 // POST create a new book
 exports.store = async (req, res) => {
   try {
-    const { title, isbn, quantity, donated_by, public_year, description, available, categoryId } = req.body;
+    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId } = req.body;
     const cover_image = req.file ? req.file.filename : null;
 
     const newBook = await Book.create({
@@ -75,7 +75,7 @@ exports.store = async (req, res) => {
       public_year,
       description,
       available,
-      categoryId
+      CategoryId
     });
 
     const imageUrl = cover_image ? `${req.protocol}://${req.get('host')}/uploads/${cover_image}` : null;

@@ -10,13 +10,6 @@ module.exports = (sequelize, DataTypes) => {
     available: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-    },
-    categoryId: {
-      type: DataTypes.INTEGER,
-      references: {
-        model: 'categories', // name of the target table (lowercase plural!)
-        key: 'id',
-      }
     }
   });
 };
