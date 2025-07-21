@@ -36,4 +36,13 @@ exports.store = async (req, res) => {
   return res.status(201).json(newCategory);
 };
 
+exports.update = async (req, res) => {
+  const { id } = req.params;
+  const categories = await db.categories.findByPk(id);
+  if (!categories) return res.status(404).json({ message: 'category not found' });
+
+  const { name, description } = req.body;
+  await categories.update({ name, description});
+  res.json(categories);
+};
 
