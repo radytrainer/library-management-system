@@ -10,6 +10,7 @@ const routes = [
       { path: '', redirect: '/dashboard' },
       { path: 'dashboard', component: Dashboard },
       { path: 'books', component: () => import('@/views/books/BookListView.vue') },
+      { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       // Add more routes like books, members, etc.
     ],
   },
