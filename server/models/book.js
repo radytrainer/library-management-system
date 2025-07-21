@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define('Book', {
+  const Book = sequelize.define('Book', {
     title: DataTypes.STRING,
     isbn: DataTypes.STRING,
     quantilty: DataTypes.INTEGER,
@@ -11,5 +11,18 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    category_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   });
+
+  Book.associate = (models) => {
+    Book.belongsTo(models.Category, {
+      foreignKey: 'category_id',
+      as: 'category',
+    });
+  };
+
+  return Book;
 };
