@@ -3,25 +3,43 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const apiResource = require('./ApiRescource');
+const apiResource = require('./ApiRescource'); // Your custom helper
 
-// import controllers
+// Import controllers
 const bookController = require('../controllers/bookController');
 const categoryController = require('../controllers/categoriesController');
+const authorController = require('../controllers/authorController');
 
-// Ensure uploads folder exists
+// Upload base folder
 const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
 
-// Multer config: save uploaded images to 'uploads' folder
+// Multer storage with dynamic folder based on route
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+  destination: (req, file, cb) => {
+    let folder = uploadDir; // default
+
+    if (req.baseUrl.includes('/authors')) {
+      folder = path.join(uploadDir, 'authors');
+    } else if (req.baseUrl.includes('/books')) {
+      folder = path.join(uploadDir, 'books');
+    } else if (req.baseUrl.includes('/categories')) {
+      folder = path.join(uploadDir, 'categories');
+    }
+
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+
+    cb(null, folder);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
 });
+
 const upload = multer({ storage });
 
+// Setup API resources with multer upload middleware
 const resources = [
   apiResource('/books', bookController, {
     store: [upload.single('cover_image')],
@@ -29,8 +47,13 @@ const resources = [
   }),
   apiResource('/borrow', borrowController),
   apiResource('/categories', categoryController),
+  apiResource('/authors', authorController, {
+    store: [upload.single('profile_image')],
+    update: [upload.single('profile_image')],
+  }),
 ];
 
+// Use each resource route
 resources.forEach(resource => {
   router.use(resource.path, resource.router);
 });

@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
         birth_date: DataTypes.DATE,
         nationality: DataTypes.STRING,
         profile_image: DataTypes.STRING,
-        available: {
+        isLiving: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
         }
