@@ -31,3 +31,4 @@ resources.forEach(resource => {
 });
 
 module.exports = router;
+
