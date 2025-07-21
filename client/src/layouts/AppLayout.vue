@@ -21,6 +21,9 @@
         <RouterLink to="/reports" class="block px-6 py-2 rounded hover:bg-blue-100">
           📊 Reports
         </RouterLink>
+        <RouterLink to="/authors" class="block px-6 py-2 rounded hover:bg-blue-100">
+          📊 Authors
+        </RouterLink>
       </nav>
     </aside>
 
@@ -36,7 +39,6 @@
           </button>
         </div>
       </header>
-
       <!-- Page Content -->
       <main class="p-6 overflow-y-auto">
         <!-- <slot /> -->

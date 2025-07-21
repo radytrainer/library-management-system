@@ -28,3 +28,4 @@ db.sequelize.sync()
   .catch(err => console.error("Failed to sync db:", err));
 
 module.exports = app;
+
