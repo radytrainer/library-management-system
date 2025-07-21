@@ -81,3 +81,31 @@ exports.store = async (req, res) => {
         res.status(500).json({ error: 'Failed to create author' });
     }
 };
+
+// Update an existing author
+exports.update = async (req, res) => {
+    try {
+        const author = await Author.findByPk(req.params.id);
+
+        if (!author) {
+            return res.status(404).json({ error: 'Author not found' });
+        }
+
+        const { name, biography, nationality, birth_date, isLiving } = req.body;
+        const profile_image = req.file ? req.file.filename : author.profile_image;
+
+        await author.update({
+            name,
+            biography,
+            nationality,
+            birth_date,
+            isLiving,
+            profile_image,
+        });
+
+        res.status(200).json({ message: 'Author updated successfully.', author: author.toJSON(), profile_image_url: profile_image ? `${req.protocol}://${req.get('host')}/uploads/authors/${profile_image}` : null });
+    } catch (error) {
+        console.error('Error updating author:', error);
+        res.status(500).json({ error: 'Failed to update author' });
+    }
+};

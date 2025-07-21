@@ -48,6 +48,7 @@ const resources = [
   apiResource('/categories', categoryController),
   apiResource('/authors', authorController, {
     store: [upload.single('profile_image')],
+    update: [upload.single('profile_image')],
   }),
 ];
 
