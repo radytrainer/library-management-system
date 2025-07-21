@@ -11,13 +11,12 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-
 app.use('/uploads', express.static('uploads'));
 
 app.use('/api', routes);
 
 // Database sync (without starting server)
-db.sequelize.sync()
+db.sequelize.sync({ alter: true })
   .then(() => console.log("Database synced"))
   .catch(err => console.error("Failed to sync db:", err));
 
