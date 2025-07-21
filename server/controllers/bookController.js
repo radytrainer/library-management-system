@@ -29,7 +29,24 @@ exports.index = async (req, res) => {
   }
 };
 
+// GET book by id
+exports.show = async (req, res) => {
+  try {
+    const book = await Book.findByPk(req.params.id, {
+      include: [
+        {
+          model: Category,
+          attributes: ['name', 'description'],
+        },
+      ]
+    });
+    res.json({ book: book });
 
+  } catch (error) {
+    console.error('Error fetching books:', error);
+    res.status(500).json({ error: 'Failed to fetch book' });
+  }
+};
 
 
 // POST create a new book
