@@ -20,6 +20,31 @@ exports.index = async (req, res) => {
     }
 };
 
+// Get a single author by ID
+exports.show = async (req, res) => {
+    try {
+        const author = await Author.findByPk(req.params.id);
+
+        if (!author) {
+            return res.status(404).json({ error: 'Author not found' });
+        }
+
+        const imageUrl = author.profile_image
+            ? `${req.protocol}://${req.get('host')}/uploads/authors/${author.profile_image}`
+            : null;
+
+        res.status(200).json({
+            author: {
+                ...author.toJSON(),
+                profile_image_url: imageUrl,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching author:', error);
+        res.status(500).json({ error: 'Failed to fetch author' });
+    }
+};
+
 // Add a new author
 exports.store = async (req, res) => {
     try {
