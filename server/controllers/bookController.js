@@ -4,15 +4,24 @@ const Book = db.Book;
 // GET all books
 exports.index = async (req, res) => {
   try {
-    const books = await Book.findAll({
+    const books = await Book.findAll();
+
+    // Map books to add full URL for image
+    const booksWithImageUrl = books.map(book => {
+      const bookData = book.toJSON();
+      bookData.cover_image_url = bookData.cover_image
+        ? `${req.protocol}://${req.get('host')}/uploads/${bookData.cover_image}`
+        : null;
+      return bookData;
     });
 
-    res.json({ books });
+    res.json({ books: booksWithImageUrl });
   } catch (error) {
     console.error('Error fetching books:', error);
     res.status(500).json({ error: 'Failed to fetch books' });
   }
 };
+
 
 // POST create a new book
 exports.store = async (req, res) => {
