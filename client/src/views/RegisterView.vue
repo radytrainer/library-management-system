@@ -144,6 +144,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const form = reactive({
   name: '',
@@ -186,6 +189,7 @@ const handleSubmit = () => {
   form.profileImage = null
   previewImage.value = null
   if (fileInput.value) fileInput.value.value = ''
+  router.push('/dashboard')
 }
 </script>
 
