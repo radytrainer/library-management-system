@@ -16,4 +16,6 @@ db.Book.hasMany(db.Borrow);
 db.Borrow.belongsTo(db.User);
 db.Borrow.belongsTo(db.Book);
 
+// association between book, category, and author
+
 module.exports = db;
