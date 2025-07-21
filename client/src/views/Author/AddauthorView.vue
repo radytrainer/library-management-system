@@ -15,7 +15,7 @@
     </div>
 
     <!-- Authors Table -->
-    <div class=" bg-white border border-gray-200 rounded-lg">
+    <div class="bg-white border border-gray-200 rounded-lg">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50 text-left">
           <tr>
@@ -95,6 +95,18 @@
           <input v-model="newAuthor.role" type="text" placeholder="Role" class="w-full p-2 border rounded" />
           <textarea v-model="newAuthor.bio" placeholder="Bio" class="w-full p-2 border rounded"></textarea>
           <input v-model="newAuthor.birthday" type="date" class="w-full p-2 border rounded" />
+
+          <!-- Avatar Upload -->
+          <input type="file" accept="image/*" @change="handleAvatarUpload" class="w-full p-2 border rounded" />
+          <!-- Image Preview -->
+          <div v-if="newAuthor.avatar" class="mt-2 flex justify-center">
+            <img
+              :src="newAuthor.avatar"
+              alt="Avatar Preview"
+              class="w-24 h-24 rounded-full object-cover border"
+            />
+          </div>
+
           <div class="flex justify-end gap-2 mt-4">
             <button @click="showAddModal = false" type="button" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add</button>
@@ -114,7 +126,6 @@
 import { ref, watch, onMounted } from 'vue'
 
 const authors = ref([])
-
 const showAddModal = ref(false)
 const activeActionMenu = ref(null)
 
@@ -124,7 +135,8 @@ const newAuthor = ref({
   role: '',
   status: 'active',
   bio: '',
-  birthday: ''
+  birthday: '',
+  avatar: '' // base64 string
 })
 
 // Load authors from localStorage on mount
@@ -135,7 +147,7 @@ onMounted(() => {
   }
 })
 
-// Watch authors and store in localStorage on change
+// Save to localStorage on change
 watch(authors, (newVal) => {
   localStorage.setItem('authors', JSON.stringify(newVal))
 }, { deep: true })
@@ -148,8 +160,20 @@ function openAddDialog() {
     role: '',
     status: 'active',
     bio: '',
-    birthday: ''
+    birthday: '',
+    avatar: ''
   }
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    newAuthor.value.avatar = reader.result // base64 string
+  }
+  reader.readAsDataURL(file)
 }
 
 function submitNewAuthor() {
@@ -163,7 +187,7 @@ function submitNewAuthor() {
     role: newAuthor.value.role || 'Author',
     status: newAuthor.value.status,
     joinDate: joined,
-    avatar: '',
+    avatar: newAuthor.value.avatar,
     bio: newAuthor.value.bio,
     birthday: newAuthor.value.birthday
   })
