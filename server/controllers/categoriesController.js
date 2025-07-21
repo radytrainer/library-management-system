@@ -46,3 +46,11 @@ exports.update = async (req, res) => {
   res.json(categories);
 };
 
+exports.destroy = async (req, res) => {
+  const { id } = req.params;
+  const categories = await db.categories.findByPk(id);
+  if (!categories) return res.status(404).json({ message: 'category not found' });
+
+  await categories.destroy();
+  res.json({ message: 'category deleted successfully' });
+};
