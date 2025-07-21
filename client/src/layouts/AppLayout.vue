@@ -250,7 +250,7 @@
         </div>
       </header>
       <!-- Page Content -->
-      <main class="p-6 overflow-y-auto bg-gray-50">
+      <main class="p-6 ">
         <RouterView />
       </main>
     </div>
