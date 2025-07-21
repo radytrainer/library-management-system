@@ -250,7 +250,6 @@
           </div>
         </div>
       </header>
-
       <!-- Page Content -->
       <main class="p-6 ">
         <RouterView />
