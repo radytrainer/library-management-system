@@ -1,37 +1,58 @@
 const { Author } = require('../models');
 
-exports.store = async (req, res) => {
-  try {
-    const { name, biography, nationality, birth_date, isLiving } = req.body;
+// Get all authors
+exports.index = async (req, res) => {
+    try {
+        const authors = await Author.findAll();
 
-    if (!name || !birth_date) {
-      return res.status(400).json({ error: 'Name and birth date are required.' });
+        const authorsWithImageUrl = authors.map(author => {
+            const authorData = author.toJSON();
+            authorData.profile_image_url = authorData.profile_image
+                ? `${req.protocol}://${req.get('host')}/uploads/authors/${authorData.profile_image}`
+                : null;
+            return authorData;
+        });
+
+        res.status(200).json(authorsWithImageUrl);
+    } catch (error) {
+        console.error('Error fetching authors:', error);
+        res.status(500).json({ error: 'Failed to fetch authors' });
     }
+};
 
-    const profile_image = req.file ? req.file.filename : null;
+// Add a new author
+exports.store = async (req, res) => {
+    try {
+        const { name, biography, nationality, birth_date, isLiving } = req.body;
 
-    const newAuthor = await Author.create({
-      name,
-      biography,
-      nationality,
-      birth_date,
-      profile_image,
-      isLiving,
-    });
+        if (!name || !birth_date) {
+            return res.status(400).json({ error: 'Name and birth date are required.' });
+        }
 
-    const imageUrl = profile_image
-      ? `${req.protocol}://${req.get('host')}/uploads/authors/${profile_image}`
-      : null;
+        const profile_image = req.file ? req.file.filename : null;
 
-    res.status(201).json({
-      message: 'Author created successfully.',
-      author: {
-        ...newAuthor.toJSON(),
-        profile_image_url: imageUrl,
-      },
-    });
-  } catch (error) {
-    console.error('Error creating author:', error);
-    res.status(500).json({ error: 'Failed to create author' });
-  }
+        const newAuthor = await Author.create({
+            name,
+            biography,
+            nationality,
+            birth_date,
+            profile_image,
+            isLiving,
+        });
+
+        const imageUrl = profile_image
+            ? `${req.protocol}://${req.get('host')}/uploads/authors/${profile_image}`
+            : null;
+
+        res.status(201).json({
+            message: 'Author created successfully.',
+            author: {
+                ...newAuthor.toJSON(),
+                profile_image_url: imageUrl,
+            },
+        });
+    } catch (error) {
+        console.error('Error creating author:', error);
+        res.status(500).json({ error: 'Failed to create author' });
+    }
 };
