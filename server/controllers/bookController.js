@@ -1,23 +1,13 @@
-// const db = require('../models');
-// const Book = db.Book;
-// const Category = db.categories;
-// const Author = db.Author;
-
-const { Book, Category, Author } = require('../models');
+const { Book, Category, Author, Language } = require('../models');
 
 // GET all books
 exports.index = async (req, res) => {
   try {
     const books = await Book.findAll({
       include: [
-        {
-          model: Category,
-          attributes: ['name', 'description'],
-        },
-        {
-          model: Author,
-          attributes: ['name', 'biography', 'birth_date', 'nationality'],
-        }
+        { model: Category, attributes: ['name', 'description'] },
+        { model: Author, attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
 
@@ -36,25 +26,18 @@ exports.index = async (req, res) => {
   }
 };
 
-// GET book by id
+// GET book by ID
 exports.show = async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id, {
       include: [
-        {
-          model: Category,
-          attributes: ['name', 'description'],
-        },
-        {
-          model: Author,
-          attributes: ['name', 'biography', 'birth_date', 'nationality'],
-        }
-      ]
+        { model: Category, attributes: ['name', 'description'] },
+        { model: Author, attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Language, as: 'language', attributes: ['name'] },
+      ],
     });
 
-    if (!book) {
-      return res.status(404).json({ error: 'Book not found' });
-    }
+    if (!book) return res.status(404).json({ error: 'Book not found' });
 
     const bookData = book.toJSON();
     bookData.cover_image_url = bookData.cover_image
@@ -62,19 +45,44 @@ exports.show = async (req, res) => {
       : null;
 
     res.json({ book: bookData });
-
   } catch (error) {
     console.error('Error fetching book:', error);
     res.status(500).json({ error: 'Failed to fetch book' });
   }
 };
 
-
-
 // POST create a new book
 exports.store = async (req, res) => {
   try {
-    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId, AuthorId } = req.body;
+    let {
+      title,
+      isbn,
+      quantity,
+      donated_by,
+      public_year,
+      description,
+      available,
+      CategoryId,
+      AuthorId,
+      language,   // language name, e.g., "English"
+      language_id // optional if language_id is provided
+    } = req.body;
+
+    // If language_id is not given, but language name is given,
+    // find the language id from the Language table
+    if (!language_id && language) {
+      const lang = await Language.findOne({ where: { name: language } });
+      if (!lang) {
+        return res.status(400).json({ message: `Language '${language}' not found.` });
+      }
+      language_id = lang.id;
+    }
+
+    // language_id is required for the Book model
+    if (!language_id) {
+      return res.status(400).json({ message: 'Language ID or valid language name is required.' });
+    }
+
     const cover_image = req.file ? req.file.filename : null;
 
     const newBook = await Book.create({
@@ -87,50 +95,75 @@ exports.store = async (req, res) => {
       description,
       available,
       CategoryId,
-      AuthorId
+      AuthorId,
+      language_id,
     });
 
-    const imageUrl = cover_image ? `${req.protocol}://${req.get('host')}/uploads/books/${cover_image}` : null;
+    const imageUrl = cover_image
+      ? `${req.protocol}://${req.get('host')}/uploads/books/${cover_image}`
+      : null;
 
     res.status(201).json({
       message: 'Book is created successfully.',
       book: {
         ...newBook.toJSON(),
-        cover_image_url: imageUrl
-      }
+        cover_image_url: imageUrl,
+      },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Failed to create book.' });
+    console.error('Failed to create book:', error);
+    res.status(500).json({ message: 'Failed to create book.', error: error.message });
   }
 };
+
 
 // PUT update a book by ID
 exports.update = async (req, res) => {
   try {
     const bookId = req.params.id;
-    const { title, isbn, quantity, donated_by, public_year, description, available, CategoryId, AuthorId } = req.body;
-    const cover_image = req.file ? req.file.filename : null;
+    let {
+      title,
+      isbn,
+      quantity,
+      donated_by,
+      public_year,
+      description,
+      available,
+      CategoryId,
+      AuthorId,
+      language_id,
+      language,
+    } = req.body;
 
     const book = await Book.findByPk(bookId);
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found.' });
+    if (!book) return res.status(404).json({ message: 'Book not found.' });
+
+    // If language_id not provided but language name is, find language_id
+    if (!language_id && language) {
+      const lang = await Language.findOne({ where: { name: language } });
+      if (!lang) {
+        return res.status(400).json({ message: `Language '${language}' not found.` });
+      }
+      language_id = lang.id;
     }
+
+    const cover_image = req.file ? req.file.filename : null;
 
     book.title = title;
     book.isbn = isbn;
     book.quantity = quantity;
-    book.cover_image = cover_image || book.cover_image; // Keep existing if no new image
+    book.cover_image = cover_image || book.cover_image;
     book.donated_by = donated_by;
     book.public_year = public_year;
     book.description = description;
     book.available = available;
     book.CategoryId = CategoryId;
     book.AuthorId = AuthorId;
+    book.language_id = language_id || book.language_id;
 
     await book.save();
 
-    res.json({ message: 'Book updated successfully.', book: book });
+    res.json({ message: 'Book updated successfully.', book });
   } catch (error) {
     console.error('Error updating book:', error);
     res.status(500).json({ message: 'Failed to update book.' });
@@ -143,12 +176,7 @@ exports.destroy = async (req, res) => {
     const bookId = req.params.id;
 
     const book = await Book.findByPk(bookId);
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found.' });
-    }
-
-    // Optionally, delete the image file from the uploads folder
-    // You can use fs.unlink if you want to delete the file physically.
+    if (!book) return res.status(404).json({ message: 'Book not found.' });
 
     await book.destroy();
 

@@ -12,8 +12,9 @@
           {{ language === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ' }}
         </h2>
       </div>
+
       <!-- Navigation -->
-      <nav class="flex-1">
+      <nav class="flex-1 overflow-y-auto">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
           <li>
             <RouterLink to="/dashboard" :class="[
@@ -119,7 +120,7 @@
     <div class="flex-1 flex flex-col transition-all duration-300"
       :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
       <!-- Top Navbar -->
-      <header class=" shadow-sm p-4 flex justify-between items-center">
+      <header class="shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
           <!-- Sidebar Toggle Button -->
           <button @click="toggleSidebar"
@@ -134,17 +135,19 @@
           </h1>
 
         </div>
+
         <div class="flex items-center space-x-3">
-          <!-- Search Bar -->
+          <!-- Search -->
           <div class="relative">
             <input type="text" v-model="searchQuery"
               :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }" />
-            <span
-              class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">search</span>
+              :class="{ 'font-khmer': language === 'kh' }"
+            />
+            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">search</span>
           </div>
-          <!-- Language Switcher -->
+
+          <!-- Language Switch -->
           <div class="relative inline-block text-left">
             <button @click="isOpen = !isOpen"
               class="border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
@@ -166,7 +169,8 @@
               </a>
             </div>
           </div>
-          <!-- Notification Icon -->
+
+          <!-- Notification -->
           <div class="relative">
             <span
               class="material-icons text-gray-600 cursor-pointer hover:text-indigo-600 p-2 rounded-full hover:bg-gray-100"
@@ -179,15 +183,15 @@
             <div v-if="showNotifications"
               class="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
               <p class="text-sm text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
-                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }}
-                {{ language === 'en' ? 'new notifications' : 'ការជូនដំណឹងថ្មី' }}
+                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }} {{ language === 'en' ? 'new notifications' : 'ការជូនដំណឹងថ្មី' }}
               </p>
               <button class="mt-3 text-sm text-indigo-600 hover:underline" @click="clearNotifications">
                 {{ language === 'en' ? 'Clear All' : 'លុបទាំងអស់' }}
               </button>
             </div>
           </div>
-          <!-- Profile Dropdown -->
+
+          <!-- Profile -->
           <div class="relative">
             <img src="https://i.pinimg.com/736x/4c/86/d3/4c86d30bd3fcfb2940545982b74ee2d4.jpg" alt="Profile"
               class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
@@ -200,6 +204,18 @@
                 @click="logout">
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
+              <RouterLink
+                to="/register"
+                class="mt-2 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
+              >
+                {{ language === 'en' ? 'Register' : 'ចុះឈ្មោះ' }}
+              </RouterLink>
+              <RouterLink
+                to="/login"
+                class="mt-1 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
+              >
+                {{ language === 'en' ? 'Login' : 'ចូលគណនី' }}
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -231,6 +247,16 @@ const user = ref({
   name: 'Admin User',
   email: 'admin@library.com',
 })
+
+const navItems = [
+  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' } },
+  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' } },
+  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' } },
+  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' } },
+  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' } },
+  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' } },
+  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' } },
+]
 
 function switchLanguage() {
   localStorage.setItem('language', language.value)
@@ -288,7 +314,6 @@ const pageTitle = computed(() => {
 </script>
 
 <style scoped>
-/* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Khmer&display=swap');
 
