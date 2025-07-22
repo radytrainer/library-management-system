@@ -43,29 +43,29 @@ const isAdmin = async (req, res, next) => {
   }
 };
 
-const isModerator = async (req, res, next) => {
+const isLibrarian = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
     const roles = await user.getRoles();
 
-    const modRole = roles.find((role) => role.name === "moderator");
+    const modRole = roles.find((role) => role.name === "librarian");
     if (modRole) {
       next();
       return;
     }
 
-    res.status(403).json({ message: "Require Moderator Role!" });
+    res.status(403).json({ message: "Require librarian Role!" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-const isModeratorOrAdmin = async (req, res, next) => {
+const isLibrarianOrAdmin = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
     const roles = await user.getRoles();
 
-    const hasRole = roles.some((role) => ["admin", "moderator"].includes(role.name));
+    const hasRole = roles.some((role) => ["admin", "librarian"].includes(role.name));
     if (hasRole) {
       next();
       return;
@@ -77,10 +77,10 @@ const isModeratorOrAdmin = async (req, res, next) => {
   }
 };
 
-// ✅ Export all functions for CommonJS
+// Export all functions for CommonJS
 module.exports = {
   verifyToken,
   isAdmin,
-  isModerator,
-  isModeratorOrAdmin,
+  isLibrarian,
+  isLibrarianOrAdmin,
 };

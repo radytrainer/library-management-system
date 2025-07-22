@@ -1,18 +1,20 @@
 const express = require("express");
 const {
   getAllUsers,
-  getUserProfile,
   deleteUser,
+  deleteAccount,
+  getUserProfile,
   allAccess,
   userBoard,
   adminBoard,
-  moderatorBoard,
+  librarianBoard,
+
 } = require("../controllers/userController");
 
 const {
   verifyToken,
   isAdmin,
-  isModerator,
+  isLibrarian,
 } = require("../middlewares/authJwt");
 
 const router = express.Router();
@@ -21,12 +23,15 @@ router.get("/public", allAccess);
 
 // Protected route
 router.get("/profile", verifyToken, getUserProfile);
-router.get("/", verifyToken, getAllUsers);
-router.delete("/delete/:id", verifyToken, deleteUser);
+router.get("/", verifyToken, getAllUsers);//get all users 
+// Delete account route
+router.delete('/:id', [verifyToken, isAdmin], deleteUser);
+router.delete('/me', verifyToken, deleteAccount);
+
 
 // Role-based routes
 router.get("/users", verifyToken, userBoard);
-router.get("/librarian", [verifyToken, isModerator], moderatorBoard);
+router.get("/librarian", [verifyToken, isLibrarian], librarianBoard);
 router.get("/admin", [verifyToken, isAdmin], adminBoard);
 
 module.exports = router;

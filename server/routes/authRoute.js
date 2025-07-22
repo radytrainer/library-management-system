@@ -19,6 +19,4 @@ router.post("/signin", signin);
 
 // Protected routes
 router.post("/logout", verifyToken, logout);
-router.delete("/delete-account", verifyToken, deleteAccount);
-
 module.exports = router;
