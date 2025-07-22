@@ -30,14 +30,10 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  // Add associations if needed
   Borrow.associate = (models) => {
-    Borrow.belongsTo(models.User, { foreignKey: "user_id" });
-    Borrow.belongsTo(models.Book, { foreignKey: "book_id" });
-    Borrow.belongsTo(models.User, {
-      foreignKey: "librarian_id",
-      as: "librarian",
-    });
+    Borrow.belongsTo(models.User, { foreignKey: "user_id", as: "user" });
+    Borrow.belongsTo(models.Book, { foreignKey: "book_id", as: "book" });
+    Borrow.belongsTo(models.User, { foreignKey: "librarian_id", as: "librarian" });
   };
 
   return Borrow;
