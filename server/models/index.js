@@ -8,6 +8,7 @@ const BookModel = require('./book');
 const CategoryModel = require('./categories');
 const AuthorModel = require('./author');
 const BorrowModel = require('./borrow');
+const LanguageModel = require('./languageBook');
 
 const db = {};
 
@@ -22,6 +23,7 @@ db.Book = BookModel(sequelize, Sequelize.DataTypes);
 db.Category = CategoryModel(sequelize, Sequelize.DataTypes);
 db.Author = AuthorModel(sequelize, Sequelize.DataTypes);
 db.Borrow = BorrowModel(sequelize, Sequelize.DataTypes);
+db.Language = LanguageModel(sequelize, Sequelize.DataTypes);
 
 // Setup associations
 
@@ -50,10 +52,11 @@ db.Borrow.belongsTo(db.User, { as: 'user', foreignKey: 'user_id' });
 db.Borrow.belongsTo(db.User, { as: 'librarian', foreignKey: 'librarian_id' });
 db.Borrow.belongsTo(db.Book, { as: 'book', foreignKey: 'book_id' });
 
-
 db.User.hasMany(db.Borrow, { foreignKey: 'user_id' });
 db.User.hasMany(db.Borrow, { as: 'librarianBorrows', foreignKey: 'librarian_id' });
 db.Book.hasMany(db.Borrow, { foreignKey: 'book_id' });
+db.Book.belongsTo(db.Language, { foreignKey: 'language_id', as: 'language' });
+db.Language.hasMany(db.Book, { foreignKey: 'language_id' });
 
 // Export roles list if you use it elsewhere
 db.ROLES = ['user', 'admin', 'librarian'];
