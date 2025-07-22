@@ -13,6 +13,7 @@ const routes = [
       { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
       { path: 'borrows/add', name: 'borrow-add', component: () => import('@/views/borrows/BorrowFormView.vue') },
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
+      { path: 'categories', name: '', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       // Add more routes like books, members, etc.
     ],
   },
