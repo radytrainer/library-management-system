@@ -7,5 +7,5 @@
 </script>
 
 <style>
-/* Optional global styles */
+
 </style>

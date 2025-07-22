@@ -1,109 +1,173 @@
-// controllers/userController.js
-const db = require('../models');
-const bcrypt = require('bcrypt');
-const saltRounds = 10; // Adjust based on your security requirements
-const User = db.User;
+const db = require("../models/index");
+const { user: User, role: Role } = db;
 
-// CREATE - Register new user
-exports.createUser = async (req, res) => {
+const allAccess = (req, res) => {
+  res.status(200).json({ message: "Public Content." });
+};
+
+const userBoard = (req, res) => {
+  res.status(200).json({ message: "User Content." });
+};
+
+const adminBoard = (req, res) => {
+  res.status(200).json({ message: "Admin Content." });
+};
+
+const librarianBoard = (req, res) => {
+  res.status(200).json({ message: "librarian Content." });
+};
+
+const getUserProfile = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
+    const userId = req.userId;
 
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({ message: 'Email already in use' });
-    }
-
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const newUser = await User.create({ 
-      name, 
-      email, 
-      password: hashedPassword, // Store only the hash
-      role: role || 'student'
+    const user = await User.findByPk(userId, {
+      include: {
+        model: Role,
+        as: "roles",
+        attributes: ["name"],
+      },
+      attributes: ["id", "username", "email", "createdAt"],
     });
 
-    const { password: _, ...userWithoutPassword } = newUser.toJSON();
-    res.status(201).json(userWithoutPassword);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    const authorities = user.roles.map((role) => `ROLE_${role.name.toUpperCase()}`);
+
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      roles: authorities,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// READ - Get all users (admin only)
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ['password'] } // Never return passwords
+      include: [
+        {
+          model: Role,
+          as: "roles",
+          attributes: ["name"],
+          through: { attributes: [] }, 
+        },
+      ],
+      attributes: ["id", "username", "email", "createdAt"], // Remove 'role'
+      order: [["createdAt", "DESC"]],
     });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    const formattedUsers = users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      roles: user.roles.map((role) => `ROLE_${role.name.toUpperCase()}`),
+      createdAt: user.createdAt,
+    }));
+
+    res.status(200).json({
+      message: "Users retrieved successfully!",
+      users: formattedUsers,
+      total: formattedUsers.length,
+    });
+  } catch (error) {
+    console.error("Get all users error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+// delete user 
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const requesterId = req.userId;
+
+    if (Number.parseInt(id) === requesterId) {
+      return res.status(400).json({
+        message: "Use logout endpoint to delete your own account!",
+      });
+    }
+
+    await db.sequelize.transaction(async (t) => {
+      await db.sequelize.query("DELETE FROM user_roles WHERE userId = ?", {
+        replacements: [id],
+        type: db.Sequelize.QueryTypes.DELETE,
+        transaction: t,
+      });
+
+      const result = await User.destroy({
+        where: { id: id },
+        transaction: t,
+      });
+
+      if (result === 0) {
+        throw new Error("User not found");
+      }
+    });
+
+    res.status(200).json({
+      message: "User deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    if (error.message === "User not found") {
+      res.status(404).json({ message: "User not found!" });
+    } else {
+      res.status(500).json({ message: error.message });
+    }
   }
 };
 
-// READ - Get single user
-exports.getUserById = async (req, res) => {
+const deleteAccount = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, {
-      attributes: { exclude: ['password'] }
+    const userId = req.userId;
+
+    await db.sequelize.transaction(async (t) => {
+      await db.sequelize.query("DELETE FROM user_roles WHERE userId = ?", {
+        replacements: [userId],
+        type: db.Sequelize.QueryTypes.DELETE,
+        transaction: t,
+      });
+
+      const result = await User.destroy({
+        where: { id: userId },
+        transaction: t,
+      });
+
+      if (result === 0) {
+        throw new Error("User not found");
+      }
     });
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json({
+      message: "Account deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Delete account error:", error); // Ensure 'console' is correct
+    if (error.message === "User not found") {
+      res.status(404).json({ message: "User not found!" });
+    } else {
+      res.status(500).json({ message: error.message });
     }
-    
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
 };
 
-// UPDATE - Update user
-exports.updateUser = async (req, res) => {
-  try {
-    const user = await User.findByPk(req.params.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
 
-    const { name, email, role } = req.body;
-    
-    // Prevent email updates to existing accounts
-    if (email && email !== user.email) {
-      return res.status(400).json({ message: 'Email cannot be changed' });
-    }
 
-    await user.update({ 
-      name: name || user.name,
-      role: role || user.role
-    });
 
-    const { password: _, ...updatedUser } = user.toJSON();
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// DELETE - Delete user
-exports.deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByPk(req.params.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    await user.destroy();
-    res.json({ message: 'User deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+module.exports = {
+  allAccess,
+  userBoard,
+  adminBoard,
+  librarianBoard,
+  getUserProfile,
+  getAllUsers,
+  deleteUser,
+  deleteAccount,
 };
