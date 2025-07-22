@@ -2,17 +2,24 @@ const jwt = require("jsonwebtoken");
 const db = require("../models");
 const authConfig = require("../config/auth.config.js");
 
-const { user: User } = db;
+// const { user: User } = db;
+
+const User = db.User; // use exact casing from your model export
 
 const verifyToken = async (req, res, next) => {
-  const token = req.headers["x-access-token"] || req.headers["authorization"];
+  let token = req.headers["x-access-token"] || req.headers["authorization"];
 
   if (!token) {
     return res.status(403).json({ message: "No token provided!" });
   }
 
+  // Remove "Bearer " prefix if using Authorization header
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7);
+  }
+
   try {
-    const decoded = jwt.verify(token.replace("Bearer ", ""), authConfig.secret);
+    const decoded = jwt.verify(token, authConfig.secret);
     req.userId = decoded.id;
 
     const user = await User.findByPk(req.userId);
@@ -20,7 +27,7 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized!" });
     }
 
-    next();
+    next(); // ✅ authenticated user proceeds
   } catch (err) {
     return res.status(401).json({ message: "Unauthorized!" });
   }

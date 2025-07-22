@@ -17,12 +17,12 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+
 app.use('/api', routes);
 
 // Routes registration user
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-
 // Database sync (without starting server)
 db.sequelize.sync({ alter: true })
   .then(() => console.log("Database synced"))
