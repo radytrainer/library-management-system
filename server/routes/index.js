@@ -46,7 +46,7 @@ const resources = [
     store: [upload.single('cover_image')],
     update: [upload.single('cover_image')],
   }),
-  apiResource('/borrow', borrowController),
+  apiResource('/borrow', bookController),
   apiResource('/categories', categoryController),
   apiResource('/authors', authorController, {
     store: [upload.single('profile_image')],
