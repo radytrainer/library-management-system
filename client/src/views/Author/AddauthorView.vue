@@ -100,7 +100,26 @@
         </form>
       </div>
     </div>
-
+     <!-- View Author Modal -->
+    <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm space-y-4 text-sm">
+        <h3 class="text-lg font-semibold text-gray-800">Author Information</h3>
+        <div class="text-center">
+          <img
+            :src="viewedAuthor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(viewedAuthor.name)}&background=random`"
+            class="w-24 h-24 rounded-full mx-auto object-cover border"
+            alt="Avatar"
+          />
+        </div>
+        <div><strong>Name:</strong> {{ viewedAuthor.name }}</div>
+        <div><strong>Email:</strong> {{ viewedAuthor.email }}</div>
+        <div><strong>Description:</strong> {{ viewedAuthor.description || '-' }}</div>
+        <div><strong>Birthday:</strong> {{ viewedAuthor.birthday || '-' }}</div>
+        <div class="text-right">
+          <button @click="closeViewModal" class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700">Close</button>
+        </div>
+      </div>
+    </div>
     <!-- Empty State -->
     <div v-if="authors.length === 0" class="text-center py-12 text-gray-500">
       No authors found.
