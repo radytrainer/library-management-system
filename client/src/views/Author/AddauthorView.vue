@@ -14,7 +14,7 @@
       </button>
     </div>
 
-    <!-- Authors Table -->
+    <!-- Author Table -->
     <div class="bg-white border border-gray-200 rounded-lg">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50 text-left">
@@ -22,8 +22,7 @@
             <th class="px-4 py-3 font-medium text-gray-600">ID</th>
             <th class="px-4 py-3 font-medium text-gray-600">Profile</th>
             <th class="px-4 py-3 font-medium text-gray-600">Email</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Role</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Bio</th>
+            <th class="px-4 py-3 font-medium text-gray-600">Description</th>
             <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
             <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
           </tr>
@@ -42,38 +41,22 @@
               </div>
             </td>
             <td class="px-4 py-3 text-gray-700">{{ author.email }}</td>
-            <td class="px-4 py-3">
-              <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {{ author.role }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-gray-600">{{ author.bio || '-' }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ author.description || '-' }}</td>
             <td class="px-4 py-3 text-gray-600">{{ author.birthday || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <div class="relative inline-block text-left">
-                <button @click="toggleActionMenu(author.id)" aria-label="Actions menu">
+                <button @click="toggleActionMenu(author.id)">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm0 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
                   </svg>
                 </button>
-
-                <!-- Pop-up Action Menu -->
                 <div
                   v-if="activeActionMenu === author.id"
                   class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-10 py-1"
                 >
-                  <button
-                    @click="editAuthor(author)"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    @click="deleteAuthor(author.id)"
-                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Delete
-                  </button>
+                  <button @click="openEditDialog(author)" class="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100">Edit</button>
+                  <button @click="deleteAuthor(author.id)" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Delete</button>
+                  <button @click="viewAuthor(author)" class="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">View</button>
                 </div>
               </div>
             </td>
@@ -82,40 +65,62 @@
       </table>
     </div>
 
-    <!-- Add Author Modal -->
-    <div
-      v-if="showAddModal"
-      class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
-    >
-      <div class="bg-white p-6 rounded-lg w-full max-w-md">
-        <h3 class="text-lg font-semibold mb-4">Add Author</h3>
-        <form @submit.prevent="submitNewAuthor" class="space-y-3">
-          <input v-model="newAuthor.name" type="text" placeholder="Name" class="w-full p-2 border rounded" required />
-          <input v-model="newAuthor.email" type="email" placeholder="Email" class="w-full p-2 border rounded" required />
-          <input v-model="newAuthor.role" type="text" placeholder="Role" class="w-full p-2 border rounded" />
-          <textarea v-model="newAuthor.bio" placeholder="Bio" class="w-full p-2 border rounded"></textarea>
-          <input v-model="newAuthor.birthday" type="date" class="w-full p-2 border rounded" />
-
-          <!-- Avatar Upload -->
-          <input type="file" accept="image/*" @change="handleAvatarUpload" class="w-full p-2 border rounded" />
-          <!-- Image Preview -->
-          <div v-if="newAuthor.avatar" class="mt-2 flex justify-center">
-            <img
-              :src="newAuthor.avatar"
-              alt="Avatar Preview"
-              class="w-24 h-24 rounded-full object-cover border"
-            />
+    <!-- Add/Edit Modal -->
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div class="bg-white p-4 rounded-xl shadow-lg w-full max-w-sm space-y-4">
+        <h3 class="text-base font-semibold text-gray-800">{{ isEditing ? 'Edit Author' : 'Add New Author' }}</h3>
+        <form @submit.prevent="isEditing ? updateAuthor() : submitNewAuthor()" class="space-y-3 text-sm">
+          <div>
+            <label class="block font-medium text-gray-700 mb-1">Name</label>
+            <input v-model="form.name" type="text" class="w-full p-2 border rounded focus:ring focus:outline-none" required />
           </div>
-
-          <div class="flex justify-end gap-2 mt-4">
-            <button @click="showAddModal = false" type="button" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add</button>
+          <div>
+            <label class="block font-medium text-gray-700 mb-1">Email</label>
+            <input v-model="form.email" type="email" class="w-full p-2 border rounded focus:ring focus:outline-none" required />
+          </div>
+          <div>
+            <label class="block font-medium text-gray-700 mb-1">Description</label>
+            <textarea v-model="form.description" rows="2" class="w-full p-2 border rounded"></textarea>
+          </div>
+          <div>
+            <label class="block font-medium text-gray-700 mb-1">Birthday</label>
+            <input v-model="form.birthday" type="date" class="w-full p-2 border rounded" />
+          </div>
+          <div>
+            <label class="block font-medium text-gray-700 mb-1">Upload Avatar</label>
+            <input type="file" accept="image/*" @change="handleAvatarUpload" class="w-full p-2 border rounded" />
+          </div>
+          <div v-if="form.avatar" class="text-center">
+            <img :src="form.avatar" alt="Avatar Preview" class="w-20 h-20 mx-auto mt-2 rounded-full object-cover border" />
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" @click="closeModal" class="px-3 py-1.5 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</button>
+            <button type="submit" class="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700">{{ isEditing ? 'Update' : 'Add' }}</button>
           </div>
         </form>
       </div>
     </div>
-
-    <!-- Empty state -->
+     <!-- View Author Modal -->
+    <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm space-y-4 text-sm">
+        <h3 class="text-lg font-semibold text-gray-800">Author Information</h3>
+        <div class="text-center">
+          <img
+            :src="viewedAuthor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(viewedAuthor.name)}&background=random`"
+            class="w-24 h-24 rounded-full mx-auto object-cover border"
+            alt="Avatar"
+          />
+        </div>
+        <div><strong>Name:</strong> {{ viewedAuthor.name }}</div>
+        <div><strong>Email:</strong> {{ viewedAuthor.email }}</div>
+        <div><strong>Description:</strong> {{ viewedAuthor.description || '-' }}</div>
+        <div><strong>Birthday:</strong> {{ viewedAuthor.birthday || '-' }}</div>
+        <div class="text-right">
+          <button @click="closeViewModal" class="px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- Empty State -->
     <div v-if="authors.length === 0" class="text-center py-12 text-gray-500">
       No authors found.
     </div>
@@ -126,81 +131,75 @@
 import { ref, watch, onMounted } from 'vue'
 
 const authors = ref([])
-const showAddModal = ref(false)
+const showModal = ref(false)
+const showViewModal = ref(false)
+const isEditing = ref(false)
 const activeActionMenu = ref(null)
+const editId = ref(null)
+const viewedAuthor = ref({})
 
-const newAuthor = ref({
-  name: '',
-  email: '',
-  role: '',
-  status: 'active',
-  bio: '',
-  birthday: '',
-  avatar: '' // base64 string
+const form = ref({
+  name: '', email: '', role: '', description: '', birthday: '', avatar: ''
 })
 
-// Load authors from localStorage on mount
 onMounted(() => {
   const stored = localStorage.getItem('authors')
-  if (stored) {
-    authors.value = JSON.parse(stored)
-  }
+  if (stored) authors.value = JSON.parse(stored)
 })
 
-// Save to localStorage on change
 watch(authors, (newVal) => {
   localStorage.setItem('authors', JSON.stringify(newVal))
 }, { deep: true })
 
 function openAddDialog() {
-  showAddModal.value = true
-  newAuthor.value = {
-    name: '',
-    email: '',
-    role: '',
-    status: 'active',
-    bio: '',
-    birthday: '',
-    avatar: ''
-  }
+  showModal.value = true
+  isEditing.value = false
+  editId.value = null
+  form.value = { name: '', email: '', role: '', description: '', birthday: '', avatar: '' }
+}
+
+function openEditDialog(author) {
+  showModal.value = true
+  isEditing.value = true
+  editId.value = author.id
+  form.value = { ...author }
+}
+
+function closeModal() {
+  showModal.value = false
+  form.value = { name: '', email: '', role: '', description: '', birthday: '', avatar: '' }
+  editId.value = null
+  isEditing.value = false
+}
+
+function viewAuthor(author) {
+  viewedAuthor.value = { ...author }
+  showViewModal.value = true
+}
+
+function closeViewModal() {
+  viewedAuthor.value = {}
+  showViewModal.value = false
 }
 
 function handleAvatarUpload(event) {
   const file = event.target.files[0]
   if (!file) return
-
   const reader = new FileReader()
-  reader.onload = () => {
-    newAuthor.value.avatar = reader.result // base64 string
-  }
+  reader.onload = () => form.value.avatar = reader.result
   reader.readAsDataURL(file)
 }
 
 function submitNewAuthor() {
   const newId = authors.value.length ? Math.max(...authors.value.map(a => a.id)) + 1 : 1
-  const joined = new Date().toISOString().split('T')[0]
-
-  authors.value.push({
-    id: newId,
-    name: newAuthor.value.name,
-    email: newAuthor.value.email,
-    role: newAuthor.value.role || 'Author',
-    status: newAuthor.value.status,
-    joinDate: joined,
-    avatar: newAuthor.value.avatar,
-    bio: newAuthor.value.bio,
-    birthday: newAuthor.value.birthday
-  })
-
-  showAddModal.value = false
+  authors.value.push({ ...form.value, id: newId })
+  closeModal()
 }
 
-function toggleActionMenu(id) {
-  activeActionMenu.value = activeActionMenu.value === id ? null : id
-}
-
-function editAuthor(author) {
-  alert('Edit clicked for: ' + author.name)
+function updateAuthor() {
+  const index = authors.value.findIndex(a => a.id === editId.value)
+  if (index !== -1) authors.value[index] = { ...form.value, id: editId.value }
+  closeModal()
 }
 
 function deleteAuthor(id) {
@@ -208,4 +207,19 @@ function deleteAuthor(id) {
     authors.value = authors.value.filter(author => author.id !== id)
   }
 }
+
+function toggleActionMenu(id) {
+  if (activeActionMenu.value === id) {
+    activeActionMenu.value = null
+  } else {
+    activeActionMenu.value = id
+    setTimeout(() => {
+      if (activeActionMenu.value === id) {
+        activeActionMenu.value = null
+      }
+    }, 3000) // 3 seconds
+  }
+}
+
+
 </script>
