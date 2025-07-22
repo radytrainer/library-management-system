@@ -9,6 +9,7 @@ const apiResource = require('./ApiRescource'); // Your custom helper
 const bookController = require('../controllers/bookController');
 const categoryController = require('../controllers/categoriesController');
 const authorController = require('../controllers/authorController');
+const borrowController = require('../controllers/borrowController');
 
 // Upload base folder
 const uploadDir = path.join(__dirname, '../uploads');
