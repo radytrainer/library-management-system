@@ -14,7 +14,7 @@
           </option>
         </select>
 
-<select v-model="limit" class="border rounded px-4 py-2">
+        <select v-model="limit" class="border rounded px-4 py-2">
           <option v-for="n in [10, 20, 50]" :key="n" :value="n">Show {{ n }}</option>
         </select>
       </div>
@@ -117,78 +117,69 @@
     </div>
 
     <!-- Book Detail Modal -->
-<div
-  v-if="showBookDetail"
-  class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50"
-  @click.self="showBookDetail = false"
->
-  <div class="relative w-full max-w-3xl mx-4 md:mx-0 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 transition-all">
-    
-    <!-- Close Button -->
-    <button
-      class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"
-      @click="showBookDetail = false"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
+    <div v-if="showBookDetail"
+      class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50"
+      @click.self="showBookDetail = false">
+      <div
+        class="relative w-full max-w-3xl mx-4 md:mx-0 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200 transition-all">
 
-    <div class="grid grid-cols-1 md:grid-cols-2">
-      
-      <!-- Book Cover -->
-      <div class="bg-gray-100 p-5 flex items-center justify-center">
-        <img
-          v-if="selectedBook.book?.cover_image"
-          :src="selectedBook.book.cover_image"
-          alt="Book Cover"
-          class="w-full h-80 object-cover rounded-lg shadow-md"
-        />
-        <div
-          v-else
-          class="w-full h-80 bg-white border flex items-center justify-center text-gray-400 text-sm rounded-lg"
-        >
-          No Cover Image
+        <!-- Close Button -->
+        <button class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"
+          @click="showBookDetail = false">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-2">
+
+          <!-- Book Cover -->
+          <div class="bg-gray-100 p-5 flex items-center justify-center">
+            <img v-if="selectedBook.book?.cover_image" :src="selectedBook.book.cover_image" alt="Book Cover"
+              class="w-full h-80 object-cover rounded-lg shadow-md" />
+            <div v-else
+              class="w-full h-80 bg-white border flex items-center justify-center text-gray-400 text-sm rounded-lg">
+              No Cover Image
+            </div>
+          </div>
+
+          <!-- Book Info -->
+          <div class="p-6 flex flex-col justify-center space-y-5">
+            <div>
+              <h2 class="text-2xl font-bold text-blue-700">
+                {{ selectedBook.book?.title }}
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">
+                Detailed information about the borrowed book
+              </p>
+            </div>
+
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="flex justify-between">
+                <span class="font-medium text-gray-600">Author:</span>
+                <span>{{ selectedBook.book?.author }}</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="font-medium text-gray-600">Category:</span>
+                <span>{{ selectedBook.book?.category }}</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="font-medium text-gray-600">Borrowed By:</span>
+                <span class="text-blue-600 font-semibold">{{ selectedBook.user?.name }}</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="font-medium text-gray-600">Borrow Date:</span>
+                <span>{{ selectedBook.borrow_date }}</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="font-medium text-gray-600">Return Date:</span>
+                <span>{{ selectedBook.return_date }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
-
-      <!-- Book Info -->
-      <div class="p-6 flex flex-col justify-center space-y-5">
-        <div>
-          <h2 class="text-2xl font-bold text-blue-700">
-            {{ selectedBook.book?.title }}
-          </h2>
-          <p class="text-sm text-gray-500 mt-1">
-            Detailed information about the borrowed book
-          </p>
-        </div>
-
-        <ul class="space-y-2 text-sm text-gray-700">
-          <li class="flex justify-between">
-            <span class="font-medium text-gray-600">Author:</span>
-            <span>{{ selectedBook.book?.author }}</span>
-          </li>
-          <li class="flex justify-between">
-            <span class="font-medium text-gray-600">Category:</span>
-            <span>{{ selectedBook.book?.category }}</span>
-          </li>
-          <li class="flex justify-between">
-            <span class="font-medium text-gray-600">Borrowed By:</span>
-            <span class="text-blue-600 font-semibold">{{ selectedBook.user?.name }}</span>
-          </li>
-          <li class="flex justify-between">
-            <span class="font-medium text-gray-600">Borrow Date:</span>
-            <span>{{ selectedBook.borrow_date }}</span>
-          </li>
-          <li class="flex justify-between">
-            <span class="font-medium text-gray-600">Return Date:</span>
-            <span>{{ selectedBook.return_date }}</span>
-          </li>
-        </ul>
       </div>
     </div>
-  </div>
-</div>
 
 
     <!-- Add Borrow Modal -->
