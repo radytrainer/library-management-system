@@ -55,162 +55,89 @@
       <div class="absolute inset-0 bg-black bg-opacity-50"></div>
     </div>
 
-    <!-- Login Form -->
+    <!-- Registration Form -->
     <div class="relative z-10 w-full max-w-md backdrop-blur-md border border-white/30 rounded-2xl shadow-2xl p-8">
-      <h2 class="text-2xl font-bold text-white text-center mb-6">Welcome Back</h2>
-      <p class="text-white/80 text-center mb-8">Sign in to your account</p>
-
-      <!-- Success Message -->
-      <div v-if="successMessage" class="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
-        <p class="text-green-300 text-sm text-center">{{ successMessage }}</p>
-      </div>
-
-      <!-- Error Messages -->
-      <div v-if="errorMessage" class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-        <p class="text-red-300 text-sm text-center">{{ errorMessage }}</p>
-      </div>
-
-      <form @submit.prevent="handleLogin" class="space-y-5">
+      <h2 class="text-2xl font-bold text-white text-center mb-6">Create Your Account</h2>
+      <form @submit.prevent="handleSubmit" class="space-y-5">
+        <!-- Profile Upload -->
+        <div class="flex flex-col items-center space-y-2">
+          <div
+            class="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-300 bg-white flex items-center justify-center cursor-pointer shadow-lg
+                    hover:scale-105 transition-transform duration-300"
+            @click="triggerFileInput"
+            title="Click to upload profile image"
+          >
+            <img
+              v-if="previewImage"
+              :src="previewImage"
+              alt="Profile Preview"
+              class="w-full h-full object-cover"
+            />
+            <span v-else class="text-blue-500 font-semibold text-sm">Upload</span>
+          </div>
+          <input type="file" accept="image/*" ref="fileInput" @change="onFileChange" class="hidden" />
+          <label class="text-sm font-semibold text-white">Profile Image</label>
+        </div>
+        <!-- Full Name -->
+        <div>
+          <label for="name" class="block text-sm font-medium text-white mb-1">Full Name</label>
+          <input
+            v-model="form.name"
+            type="text"
+            id="name"
+            required
+            placeholder="Your Full Name"
+            class="w-full px-4 py-2 bg-transparent text-white placeholder-white border border-white/50 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+          />
+        </div>
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-white mb-1">
-            Email <span class="text-red-400">*</span>
-          </label>
+          <label for="email" class="block text-sm font-medium text-white mb-1">Email</label>
           <input
-            v-model="loginForm.email"
+            v-model="form.email"
             type="email"
             id="email"
             required
-            placeholder="Enter your email"
-            :class="[
-              'w-full px-4 py-2 bg-transparent text-white placeholder-white/70 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all',
-              emailError ? 'border-red-500' : 'border-white/50'
-            ]"
-            @blur="validateEmail"
-            @input="clearEmailError"
+            placeholder="example@mail.com"
+            class="w-full px-4 py-2 bg-transparent text-white placeholder-white border border-white/50 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
           />
-          <p v-if="emailError" class="text-red-400 text-xs mt-1">{{ emailError }}</p>
         </div>
-
         <!-- Password -->
         <div>
-          <label for="password" class="block text-sm font-medium text-white mb-1">
-            Password <span class="text-red-400">*</span>
-          </label>
-          <div class="relative">
-            <input
-              v-model="loginForm.password"
-              :type="showPassword ? 'text' : 'password'"
-              id="password"
-              required
-              placeholder="Enter your password"
-              :class="[
-                'w-full px-4 py-2 pr-12 bg-transparent text-white placeholder-white/70 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all',
-                passwordError ? 'border-red-500' : 'border-white/50'
-              ]"
-              @blur="validatePassword"
-              @input="clearPasswordError"
-            />
-            <button
-              type="button"
-              @click="togglePasswordVisibility"
-              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white transition-colors"
-            >
-              <svg v-if="showPassword" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-              </svg>
-              <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-              </svg>
-            </button>
-          </div>
-          <p v-if="passwordError" class="text-red-400 text-xs mt-1">{{ passwordError }}</p>
+          <label for="password" class="block text-sm font-medium text-white mb-1">Password</label>
+          <input
+            v-model="form.password"
+            type="password"
+            id="password"
+            required
+            placeholder="Enter your password"
+            class="w-full px-4 py-2 bg-transparent text-white placeholder-white border border-white/50 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+          />
         </div>
-
-        <!-- Remember Me -->
-        <div class="flex items-center justify-between">
-          <label class="flex items-center">
-            <input
-              v-model="loginForm.rememberMe"
-              type="checkbox"
-              class="w-4 h-4 text-blue-600 bg-transparent border-white/50 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span class="ml-2 text-sm text-white">Remember me</span>
-          </label>
-          
-          <a 
-            href="#" 
-            @click.prevent="showForgotPassword = true"
-            class="text-sm text-blue-300 hover:text-blue-200 hover:underline transition-colors"
-          >
-            Forgot Password?
-          </a>
+        <!-- Confirm Password -->
+        <div>
+          <label for="confirmPassword" class="block text-sm font-medium text-white mb-1">Confirm Password</label>
+          <input
+            v-model="form.confirmPassword"
+            type="password"
+            id="confirmPassword"
+            required
+            placeholder="Re-enter your password"
+            class="w-full px-4 py-2 bg-transparent text-white placeholder-white border border-white/50 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+          />
         </div>
-
-        <!-- Submit Button -->
+        <!-- Submit -->
         <button
           type="submit"
-          :disabled="isLoading"
-          class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-50 text-white font-semibold rounded-xl shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          class="w-full py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition"
         >
-          <span v-if="isLoading" class="flex items-center justify-center">
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Signing in...
-          </span>
-          <span v-else>Sign In</span>
+          Register
         </button>
       </form>
-
-      <!-- Sign Up Link -->
-      <p class="text-xs text-center text-white mt-6">
-        Don't have an account?
-        <a href="#" @click.prevent="goToSignUp" class="text-blue-300 hover:text-blue-200 hover:underline transition-colors">
-          Sign Up
-        </a>
+      <p class="text-xs text-center text-white mt-4">
+        Already have an account?
+        <a href="#" class="text-blue-300 hover:underline">Sign In</a>
       </p>
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div v-if="showForgotPassword" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Reset Password</h3>
-        <p class="text-gray-600 mb-4">Enter your email address and we'll send you a link to reset your password.</p>
-        
-        <form @submit.prevent="handleForgotPassword">
-          <div class="mb-4">
-            <label for="resetEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              v-model="resetEmail"
-              type="email"
-              id="resetEmail"
-              required
-              placeholder="Enter your email"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <div class="flex gap-3">
-            <button
-              type="button"
-              @click="showForgotPassword = false"
-              class="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Send Reset Link
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 </template>
@@ -221,146 +148,49 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Form data
-const loginForm = reactive({
+const form = reactive({
+  name: '',
   email: '',
   password: '',
-  rememberMe: false
+  confirmPassword: '',
+  profileImage: null,
 })
 
-// State management
-const isLoading = ref(false)
-const showPassword = ref(false)
-const showForgotPassword = ref(false)
-const resetEmail = ref('')
+const previewImage = ref(null)
+const fileInput = ref(null)
 
-// Error handling
-const errorMessage = ref('')
-const successMessage = ref('')
-const emailError = ref('')
-const passwordError = ref('')
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
 
-// Mock user database (in real app, this would be handled by backend)
-const mockUsers = [
-  { email: 'admin@library.com', password: 'admin123', name: 'Admin User' },
-  { email: 'user@library.com', password: 'user123', name: 'Library User' },
-  { email: 'test@example.com', password: 'test123', name: 'Test User' }
-]
-
-// Validation functions
-const validateEmail = () => {
-  if (!loginForm.email) {
-    emailError.value = 'Email is required'
-    return false
+const onFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    form.profileImage = file
+    previewImage.value = URL.createObjectURL(file)
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginForm.email)) {
-    emailError.value = 'Please enter a valid email address'
-    return false
-  }
-  emailError.value = ''
-  return true
 }
 
-const validatePassword = () => {
-  if (!loginForm.password) {
-    passwordError.value = 'Password is required'
-    return false
-  }
-  passwordError.value = ''
-  return true
-}
-
-const clearEmailError = () => {
-  if (emailError.value) emailError.value = ''
-  if (errorMessage.value) errorMessage.value = ''
-}
-
-const clearPasswordError = () => {
-  if (passwordError.value) passwordError.value = ''
-  if (errorMessage.value) errorMessage.value = ''
-}
-
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value
-}
-
-// Authentication functions
-const authenticateUser = (email, password) => {
-  return mockUsers.find(user => user.email === email && user.password === password)
-}
-
-const createSession = (user, rememberMe) => {
-  const sessionData = {
-    user: { email: user.email, name: user.name },
-    timestamp: Date.now(),
-    rememberMe
-  }
-  
-  if (rememberMe) {
-    localStorage.setItem('userSession', JSON.stringify(sessionData))
-  } else {
-    sessionStorage.setItem('userSession', JSON.stringify(sessionData))
-  }
-  console.log('Session created:', sessionData)
-}
-
-const handleLogin = async () => {
-  errorMessage.value = ''
-  successMessage.value = ''
-  
-  const isEmailValid = validateEmail()
-  const isPasswordValid = validatePassword()
-  
-  if (!isEmailValid || !isPasswordValid) {
+const handleSubmit = () => {
+  if (form.password !== form.confirmPassword) {
+    alert('Passwords do not match!')
     return
   }
-  
-  isLoading.value = true
-  
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    const user = authenticateUser(loginForm.email, loginForm.password)
-    if (user) {
-      createSession(user, loginForm.rememberMe)
-      successMessage.value = `Welcome back, ${user.name}!`
-      router.push('/dashboard') // <-- Redirect to dashboard after login
-    } else {
-      errorMessage.value = 'Invalid email or password. Please try again.'
-    }
-  } catch (error) {
-    errorMessage.value = 'An error occurred during login. Please try again.'
-    console.error('Login error:', error)
-  } finally {
-    isLoading.value = false
-  }
+  console.log('Form submitted:', {
+    name: form.name,
+    email: form.email,
+    password: form.password,
+    profileImage: form.profileImage,
+  })
+  form.name = ''
+  form.email = ''
+  form.password = ''
+  form.confirmPassword = ''
+  form.profileImage = null
+  previewImage.value = null
+  if (fileInput.value) fileInput.value.value = ''
   router.push('/dashboard')
 }
-
-const handleForgotPassword = async () => {
-  if (!resetEmail.value) {
-    alert('Please enter your email address')
-    return
-  }
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  alert(`Password reset link sent to ${resetEmail.value}`)
-  showForgotPassword.value = false
-  resetEmail.value = ''
-}
-
-const goToSignUp = () => {
-  router.push('/register')
-}
-
-const checkExistingSession = () => {
-  const sessionData = localStorage.getItem('userSession') || sessionStorage.getItem('userSession')
-  if (sessionData) {
-    const session = JSON.parse(sessionData)
-    console.log('Existing session found:', session)
-}
-
-
-checkExistingSession()
-} 
 </script>
 
 <style scoped>
@@ -679,5 +509,16 @@ checkExistingSession()
 @keyframes symbolFloat6 {
   0%, 100% { transform: translateZ(210px) translateY(0px) rotateY(0deg); }
   50% { transform: translateZ(210px) translateY(-16px) rotateY(-15deg); }
+}
+
+/* Fade transition for original slideshow (kept for compatibility) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

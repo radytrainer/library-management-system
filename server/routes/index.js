@@ -9,6 +9,8 @@ const apiResource = require('./ApiRescource'); // Your custom helper
 const bookController = require('../controllers/bookController');
 const categoryController = require('../controllers/categoriesController');
 const authorController = require('../controllers/authorController');
+const borrowController = require('../controllers/borrowController');
+const languageBook = require('../controllers/langaugeBook');
 
 // Upload base folder
 const uploadDir = path.join(__dirname, '../uploads');
@@ -45,8 +47,9 @@ const resources = [
     store: [upload.single('cover_image')],
     update: [upload.single('cover_image')],
   }),
-  apiResource('/borrow', bookController),
+  apiResource('/borrow', borrowController),
   apiResource('/categories', categoryController),
+  apiResource('/language', languageBook),
   apiResource('/authors', authorController, {
     store: [upload.single('profile_image')],
     update: [upload.single('profile_image')],
