@@ -3,9 +3,9 @@ const {
   getAllUsers,
   deleteUser,
   deleteAccount,
-  updateUserById,
+  updateUser,
   getUserById,
-  deleteUserById,
+  getUserProfile,
   allAccess,
   userBoard,
   adminBoard,
@@ -14,6 +14,7 @@ const {
 } = require("../controllers/userController");
 const {
   verifyToken,
+  verifyTokengetuser,
   isAdmin,
   isLibrarian,
 } = require("../middlewares/authJwt");
@@ -24,12 +25,11 @@ const router = express.Router();
 router.get("/public", allAccess);
 
 // Protected route
-// router.get("/profile", verifyToken, getUserProfile);
-router.get("/", verifyToken, getAllUsers);//get all users 
+router.get("/", verifyTokengetuser, getAllUsers);//get all users 
+router.get("/:id", verifyTokengetuser, getUserById);//get user by id
+router.put("/:id", verifyTokengetuser, updateUser);//update user by id
+router.get("/profile", verifyToken, getUserProfile);//get user profile using usename and password
 
-// Delete account route
-router.delete("/delete-account", verifyToken, deleteAccount);
-router.delete("/:id", verifyToken, isAdmin, deleteUser);
 // Role-based routes
 router.get("/users", verifyToken, userBoard);
 router.get("/librarian", [verifyToken, isLibrarian], librarianBoard);

@@ -3,9 +3,6 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const authConfig = require("../config/auth.config");
 
-const User = db.User;
-const Role = db.Role;
-
 const signup = async (req, res) => {
   try {
     const { username, email, password, date_of_birth, phone, RoleId } = req.body;
@@ -30,7 +27,9 @@ const signup = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    // Create user with optional profile image
+    const { User, Role } = db;
+
+    // Create user
     const user = await User.create({
       username,
       email,
@@ -38,26 +37,28 @@ const signup = async (req, res) => {
       date_of_birth: dob,
       phone,
       profile_image,
-      RoleId: RoleId || null // we’ll assign it below if needed
+      roleId: RoleId || null,
     });
 
-    // Check and assign role
+    // Assign default role if RoleId not provided
     let role = null;
 
     if (RoleId) {
       role = await Role.findByPk(RoleId);
     } else {
-      role = await Role.findOne({ where: { name: 'user' } });
+      role = await Role.findOne({ where: { name: "user" } });
     }
 
     if (role) {
-      user.RoleId = role.id;
+      user.roleId = role.id;
       await user.save();
     }
 
-    // Include role in response
     const userWithRole = await User.findByPk(user.id, {
-      include: { model: Role },
+      include: {
+        model: Role,
+        as: "Role", // ✅ required due to alias
+      },
     });
 
     const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
@@ -74,6 +75,20 @@ const signup = async (req, res) => {
     });
   } catch (error) {
     console.error("Signup error:", error);
+
+    if (
+      error.name === "SequelizeValidationError" ||
+      error.name === "SequelizeUniqueConstraintError"
+    ) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.errors.map((e) => ({
+          field: e.path,
+          message: e.message,
+        })),
+      });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
@@ -86,9 +101,14 @@ const signin = async (req, res) => {
       return res.status(400).json({ message: "Username and password are required!" });
     }
 
+    const { User, Role } = db;
+
     const user = await User.findOne({
       where: { username },
-      include: { model: Role }, // no alias
+      include: {
+        model: Role,
+        as: "Role", // ✅ must use alias
+      },
     });
 
     if (!user) {
@@ -125,6 +145,7 @@ const signin = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
+    const { User } = db;
     const userId = req.userId;
 
     await User.destroy({ where: { id: userId } });
@@ -138,9 +159,8 @@ const logout = async (req, res) => {
   }
 };
 
-
 module.exports = {
   signup,
   signin,
-  logout
+  logout,
 };

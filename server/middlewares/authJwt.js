@@ -5,7 +5,6 @@ const authConfig = require("../config/auth.config.js");
 // const { user: User } = db;
 
 const User = db.User; // use exact casing from your model export
-
 const verifyToken = async (req, res, next) => {
   let token = req.headers["x-access-token"] || req.headers["authorization"];
 
@@ -13,7 +12,6 @@ const verifyToken = async (req, res, next) => {
     return res.status(403).json({ message: "No token provided!" });
   }
 
-  // Remove "Bearer " prefix if using Authorization header
   if (token.startsWith("Bearer ")) {
     token = token.slice(7);
   }
@@ -24,15 +22,34 @@ const verifyToken = async (req, res, next) => {
 
     const user = await User.findByPk(req.userId);
     if (!user) {
-      return res.status(401).json({ message: "Unauthorized!" });
+      return res.status(401).json({ message: "Unauthorized! User not found." });
     }
 
-    next(); // ✅ authenticated user proceeds
+    next();
   } catch (err) {
     return res.status(401).json({ message: "Unauthorized!" });
   }
 };
 
+const verifyTokengetuser = (req, res, next) => {
+  let token = req.headers["x-access-token"] || req.headers["authorization"];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized!" });
+  }
+
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7, token.length);
+  }
+
+  jwt.verify(token, authConfig.secret, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Unauthorized!" });
+    }
+    req.userId = decoded.id;
+    next();
+  });
+};
 const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
@@ -87,6 +104,7 @@ const isLibrarianOrAdmin = async (req, res, next) => {
 // Export all functions for CommonJS
 module.exports = {
   verifyToken,
+  verifyTokengetuser,
   isAdmin,
   isLibrarian,
   isLibrarianOrAdmin,
