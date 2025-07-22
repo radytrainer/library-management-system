@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from '@/services/api'
+import axios from '@/services/axios'
 
 export const useBookStore = defineStore('book', {
   state: () => ({
