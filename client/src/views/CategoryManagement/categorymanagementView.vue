@@ -113,7 +113,18 @@
       </div>
     </div>
 
-   
+   <!-- View Modal -->
+    <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm space-y-3 text-sm">
+        <h3 class="text-lg font-semibold text-gray-800">📘 Category Details</h3>
+        <div><strong>Name:</strong> {{ viewedCategory.name }}</div>
+        <div><strong>Description:</strong> {{ viewedCategory.description || '-' }}</div>
+        <div><strong>QTY:</strong> {{ viewedCategory.qty }}</div>
+        <div class="text-right">
+          <button @click="closeViewModal" class="mt-3 px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700">Close</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Empty State -->
     <div v-if="paginatedCategories.length === 0" class="text-center py-12 text-gray-400 italic">
