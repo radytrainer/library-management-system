@@ -9,6 +9,7 @@
     "concurrently": "^7.0.0"
   },
   "dependencies": {
+    "lucide-vue-next": "^0.525.0",
     "multer": "^2.0.2"
   }
 }
