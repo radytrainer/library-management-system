@@ -25,8 +25,6 @@ db.Author = AuthorModel(sequelize, Sequelize.DataTypes);
 db.Borrow = BorrowModel(sequelize, Sequelize.DataTypes);
 db.Language = LanguageModel(sequelize, Sequelize.DataTypes);
 
-// Setup associations
-
 // Many-to-many: Role <-> User through user_roles join table
 db.Role.belongsToMany(db.User, {
   through: 'user_roles',
@@ -40,12 +38,12 @@ db.User.belongsToMany(db.Role, {
   as: 'roles',
 });
 
-// Book belongs to Category and Author
-db.Book.belongsTo(db.Category);
-db.Category.hasMany(db.Book);
+db.Book.belongsTo(db.Author, { foreignKey: 'AuthorId', as: 'author' });
+db.Author.hasMany(db.Book, { foreignKey: 'AuthorId' });
 
-db.Book.belongsTo(db.Author);
-db.Author.hasMany(db.Book);
+db.Book.belongsTo(db.Category, { foreignKey: 'CategoryId', as: 'category' });
+db.Category.hasMany(db.Book, { foreignKey: 'CategoryId' });
+
 
 // Define any other associations you have, for example Borrow relations
 db.Borrow.belongsTo(db.User, { as: 'user', foreignKey: 'user_id' });
