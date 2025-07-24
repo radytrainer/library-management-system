@@ -1,38 +1,20 @@
 const express = require("express");
-const {
-  getAllUsers,
-  deleteUser,
-  deleteAccount,
-  updateUser,
-  getUserById,
-  getUserProfile,
-  allAccess,
-  userBoard,
-  adminBoard,
-  librarianBoard,
-
-} = require("../controllers/userController");
-const {
-  verifyToken,
-  verifyTokengetuser,
-  isAdmin,
-  isLibrarian,
-} = require("../middlewares/authJwt");
-
-
 const router = express.Router();
-// Public route
-router.get("/public", allAccess);
+const userController = require("../controllers/userController"); // Your controller file
+const authJwt = require("../middlewares/authJwt");
 
-// Protected route
-router.get("/", verifyTokengetuser, getAllUsers);//get all users 
-router.get("/:id", verifyTokengetuser, getUserById);//get user by id
-router.put("/:id", verifyTokengetuser, updateUser);//update user by id
-router.get("/profile", verifyToken, getUserProfile);//get user profile using usename and password
+router.get("/all", userController.allAccess); // Public route
+router.get("/user", [authJwt.verifyToken], userController.userBoard); // User route
+router.get("/admin", [authJwt.verifyToken, authJwt.isAdmin], userController.adminBoard); // Admin route
+router.get("/librarian", [authJwt.verifyToken, authJwt.isLibrarian], userController.librarianBoard); // Librarian route
 
-// Role-based routes
-router.get("/users", verifyToken, userBoard);
-router.get("/librarian", [verifyToken, isLibrarian], librarianBoard);
-router.get("/admin", [verifyToken, isAdmin], adminBoard);
+// User management routes
+router.post("/", [authJwt.verifyToken, authJwt.isAdmin], userController.createUser); // Create user (admin only)
+router.get("/users", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getAllUsers); // Get all users (admin or librarian)
+router.get("/:id", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getUserById); // Get user by ID (admin or librarian)
+router.put("/:id", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.updateUser); // Update user (admin or librarian) 
+router.delete("/:id", [authJwt.verifyToken,authJwt.isAdmin], userController.deleteUserById); // Delete user (admin only)
+router.get("/profile", [authJwt.verifyToken], userController.getUserProfile); // Get current user's profile
+router.delete("/profile", [authJwt.verifyToken], userController.deleteAccount); // Delete current user's account
 
 module.exports = router;

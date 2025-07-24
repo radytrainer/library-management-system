@@ -4,3 +4,4 @@
 /server/build
 /client/dist
 /server/dist
+node_modules/

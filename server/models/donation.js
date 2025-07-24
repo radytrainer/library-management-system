@@ -1,19 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define('Book', {
+  return sequelize.define('Donation', {
     title: DataTypes.STRING,
     isbn: DataTypes.STRING,
     quantity: DataTypes.INTEGER,
     cover_image: DataTypes.STRING,
-    donated_by: DataTypes.STRING,
-    public_year: DataTypes.INTEGER,
-    description: DataTypes.TEXT,
+    language: DataTypes.STRING,
+    author: DataTypes.STRING,
+    status: {
+      type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    },
     available: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-    // language_id: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    // },
   });
 };

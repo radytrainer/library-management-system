@@ -3,13 +3,13 @@ const { Book, Category, Author, Language } = require('../models');
 // GET all books
 exports.index = async (req, res) => {
   try {
-const books = await Book.findAll({
-  include: [
-    { model: Category, as: 'category', attributes: ['name', 'description'] },
-    { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
-    { model: Language, as: 'language', attributes: ['name'] },
-  ],
-});
+    const books = await Book.findAll({
+      include: [
+        { model: Category, as: 'category', attributes: ['name', 'description'] },
+        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Language, as: 'language', attributes: ['name'] },
+      ],
+    });
 
     const booksWithImageUrl = books.map(book => {
       const bookData = book.toJSON();
@@ -65,8 +65,8 @@ exports.store = async (req, res) => {
       available,
       CategoryId,
       AuthorId,
-      language, 
-      language_id 
+      language,
+      language_id
     } = req.body;
 
     if (!language_id && language) {

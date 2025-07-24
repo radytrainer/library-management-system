@@ -11,6 +11,7 @@ const categoryController = require('../controllers/categoriesController');
 const authorController = require('../controllers/authorController');
 const borrowController = require('../controllers/borrowController');
 const languageBook = require('../controllers/langaugeBook');
+const donationController = require('../controllers/donationController');
 
 // Upload base folder
 const uploadDir = path.join(__dirname, '../uploads');
@@ -26,6 +27,8 @@ const storage = multer.diskStorage({
       folder = path.join(uploadDir, 'books');
     } else if (req.baseUrl.includes('/categories')) {
       folder = path.join(uploadDir, 'categories');
+    } else if (req.baseUrl.includes('/donations')) {
+      folder = path.join(uploadDir, 'donations');
     }
 
     if (!fs.existsSync(folder)) {
@@ -53,6 +56,10 @@ const resources = [
   apiResource('/authors', authorController, {
     store: [upload.single('profile_image')],
     update: [upload.single('profile_image')],
+  }),
+  apiResource('/donations', donationController, {
+    store: [upload.single('cover_image')],
+    update: [upload.single('cover_image')],
   }),
 ];
 

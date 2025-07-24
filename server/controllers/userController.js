@@ -272,62 +272,76 @@ const getUserProfile = async (req, res) => {
 // Update user by specific ID
 const updateUser = async (req, res) => {
   try {
-    const { id } = req.params
-    const { username, email, date_of_birth, profile_image, phone, RoleId, password } = req.body
+    const { id } = req.params;
 
-    const user = await User.findByPk(id)
+    // ✅ Check if req.body exists
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({ message: "Request body is missing!" });
+    }
+
+    const {
+      username,
+      email,
+      date_of_birth,
+      profile_image,
+      phone,
+      RoleId,
+      password
+    } = req.body;
+
+    const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ message: "User not found!" })
+      return res.status(404).json({ message: "User not found!" });
     }
 
-    // Check if email is being changed and if it's already taken
+    // ✅ Check if email is being changed and if it's already taken
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({ where: { email } })
+      const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
-        return res.status(400).json({ message: "Email is already in use!" })
+        return res.status(400).json({ message: "Email is already in use!" });
       }
     }
 
-    // Check if phone is being changed and if it's already taken
+    // ✅ Check if phone is being changed and if it's already taken
     if (phone && phone !== user.phone) {
-      const existingUser = await User.findOne({ where: { phone } })
+      const existingUser = await User.findOne({ where: { phone } });
       if (existingUser) {
-        return res.status(400).json({ message: "Phone number is already in use!" })
+        return res.status(400).json({ message: "Phone number is already in use!" });
       }
     }
 
-    // Validate role if provided
+    // ✅ Validate role if provided
     if (RoleId) {
-      const role = await Role.findByPk(RoleId)
+      const role = await Role.findByPk(RoleId);
       if (!role) {
-        return res.status(400).json({ message: "Invalid role ID!" })
+        return res.status(400).json({ message: "Invalid role ID!" });
       }
     }
 
-    // Prepare update data
-    const updateData = {}
-    if (username) updateData.username = username
-    if (email) updateData.email = email
-    if (date_of_birth) updateData.date_of_birth = date_of_birth
-    if (profile_image) updateData.profile_image = profile_image
-    if (phone) updateData.phone = phone
-    if (RoleId) updateData.RoleId = RoleId
+    // ✅ Prepare update data
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (date_of_birth) updateData.date_of_birth = date_of_birth;
+    if (profile_image) updateData.profile_image = profile_image;
+    if (phone) updateData.phone = phone;
+    if (RoleId) updateData.RoleId = RoleId;
 
-    // Hash password if provided
+    // ✅ Hash password if provided
     if (password) {
-      updateData.password = bcrypt.hashSync(password, 8)
+      updateData.password = bcrypt.hashSync(password, 8);
     }
 
-    await user.update(updateData)
+    // ✅ Update user
+    await user.update(updateData);
 
-    // Fetch updated user with role
+    // ✅ Fetch updated user with role
     const updatedUser = await User.findByPk(id, {
       include: [
         {
           model: Role,
           as: "Role",
           attributes: ["id", "name", "description"],
-          required: false,
         },
       ],
       attributes: [
@@ -341,8 +355,9 @@ const updateUser = async (req, res) => {
         "createdAt",
         "updatedAt",
       ],
-    })
+    });
 
+    // ✅ Format response
     const formattedUser = {
       id: updatedUser.id,
       username: updatedUser.username,
@@ -359,45 +374,40 @@ const updateUser = async (req, res) => {
         : null,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt,
-    }
+    };
 
     res.status(200).json({
       message: "User updated successfully!",
       user: formattedUser,
-    })
+    });
   } catch (error) {
-    console.error("Update user error:", error)
-    res.status(500).json({ message: error.message })
+    console.error("Update user error:", error);
+    res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 // Delete user by specific ID
-const deleteUser = async (req, res) => {
+const deleteUserById = async (req, res) => {
   try {
-    const { id } = req.params
-    const requesterId = req.userId
+    const { User } = db;
+    const userId = req.params.id;
 
-    if (Number.parseInt(id) === requesterId) {
-      return res.status(400).json({
-        message: "Use delete-account endpoint to delete your own account!",
-      })
+    const deleted = await User.destroy({ where: { id: userId } });
+
+    if (deleted === 0) {
+      return res.status(404).json({ message: "User not found!" });
     }
-
-    const user = await User.findByPk(id)
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" })
-    }
-
-    await user.destroy()
 
     res.status(200).json({
-      message: "User deleted successfully!",
-    })
+      message: `User with ID ${userId} deleted successfully!`,
+    });
   } catch (error) {
-    console.error("Delete user error:", error)
-    res.status(500).json({ message: error.message })
+    console.error("Delete user error:", error);
+    res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 // Delete current user's account
 const deleteAccount = async (req, res) => {
@@ -430,6 +440,6 @@ module.exports = {
   getUserById,
   getUserProfile,
   updateUser,
-  deleteUser,
+  deleteUserById,
   deleteAccount,
 }

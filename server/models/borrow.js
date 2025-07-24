@@ -35,27 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  Borrow.associate = (models) => {
-    // Link to borrower user
-    Borrow.belongsTo(models.User, {
-      foreignKey: "user_id",
-      as: "user",
-      constraints: false,
-    });
 
-    // Link to librarian user
-    Borrow.belongsTo(models.User, {
-      foreignKey: "librarian_id",
-      as: "librarian",
-      constraints: false,
-    });
-
-    // Link to book
-    Borrow.belongsTo(models.Book, {
-      foreignKey: "book_id",
-      as: "book",
-    });
-  };
 
   return Borrow;
 };

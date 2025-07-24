@@ -16,12 +16,13 @@ db.Category = require("./categories")(sequelize, Sequelize.DataTypes);
 db.Author = require("./author")(sequelize, Sequelize.DataTypes);
 db.Borrow = require("./borrow")(sequelize, Sequelize.DataTypes);
 db.Language = require("./languageBook")(sequelize, Sequelize.DataTypes);
+db.Donation = require("./donation")(sequelize, Sequelize.DataTypes);
 
 //
 // ========== ASSOCIATIONS ==========
 //
 
-// 1. Role -> Users (One-to-Many as 'roleUsers' to avoid alias conflict)
+// 2. Role -> Users (One-to-Many as 'roleUsers' to avoid alias conflict)
 db.Role.hasMany(db.User, {
   foreignKey: 'roleId',
   as: 'roleUsers', 
@@ -55,5 +56,9 @@ db.User.hasMany(db.Borrow, { as: 'librarianBorrows', foreignKey: 'librarian_id' 
 
 // 8. Book -> Borrow
 db.Book.hasMany(db.Borrow, { foreignKey: 'book_id' });
+
+// 9. User -> Donation
+db.User.hasMany(db.Donation, { foreignKey: 'user_id', as: 'donations' });
+db.Donation.belongsTo(db.User, { foreignKey: 'user_id', as: 'user' });
 
 module.exports = db;
