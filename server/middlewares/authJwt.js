@@ -2,109 +2,84 @@ const jwt = require("jsonwebtoken");
 const db = require("../models");
 const authConfig = require("../config/auth.config.js");
 
-// const { user: User } = db;
+const { User, Role } = db;
 
-const User = db.User; // use exact casing from your model export
+// Verify JWT token and attach userId to request
 const verifyToken = async (req, res, next) => {
-  let token = req.headers["x-access-token"] || req.headers["authorization"];
-
-  if (!token) {
-    return res.status(403).json({ message: "No token provided!" });
-  }
-
-  if (token.startsWith("Bearer ")) {
-    token = token.slice(7);
-  }
-
   try {
+    let token = req.headers["x-access-token"] || req.headers["authorization"];
+
+    if (!token) {
+      return res.status(403).json({ message: "No token provided!" });
+    }
+
+    if (token.startsWith("Bearer ")) {
+      token = token.slice(7);
+    }
+
     const decoded = jwt.verify(token, authConfig.secret);
     req.userId = decoded.id;
 
-    const user = await User.findByPk(req.userId);
+    const user = await User.findByPk(req.userId, {
+      include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"] }],
+    });
+
     if (!user) {
       return res.status(401).json({ message: "Unauthorized! User not found." });
     }
 
+    req.user = user; // Attach full user object for role checking
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Unauthorized!" });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(401).json({ message: "Unauthorized! Invalid token." });
   }
 };
 
-const verifyTokengetuser = (req, res, next) => {
-  let token = req.headers["x-access-token"] || req.headers["authorization"];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized!" });
-  }
-
-  if (token.startsWith("Bearer ")) {
-    token = token.slice(7, token.length);
-  }
-
-  jwt.verify(token, authConfig.secret, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Unauthorized!" });
-    }
-    req.userId = decoded.id;
-    next();
-  });
-};
+// Check if user is an admin
 const isAdmin = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    const adminRole = roles.find((role) => role.name === "admin");
-    if (adminRole) {
-      next();
-      return;
+    const user = req.user; // Use user attached by verifyToken
+    if (!user.Role || user.Role.name !== "admin") {
+      return res.status(403).json({ message: "Require Admin Role!" });
     }
-
-    res.status(403).json({ message: "Require Admin Role!" });
+    next();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin role check error:", error);
+    res.status(500).json({ message: "Server error during role check." });
   }
 };
 
+// Check if user is a librarian
 const isLibrarian = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    const modRole = roles.find((role) => role.name === "librarian");
-    if (modRole) {
-      next();
-      return;
+    const user = req.user; // Use user attached by verifyToken
+    if (!user.Role || user.Role.name !== "librarian") {
+      return res.status(403).json({ message: "Require Librarian Role!" });
     }
-
-    res.status(403).json({ message: "Require librarian Role!" });
+    next();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Librarian role check error:", error);
+    res.status(500).json({ message: "Server error during role check." });
   }
 };
 
+// Check if user is either librarian or admin
 const isLibrarianOrAdmin = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    const hasRole = roles.some((role) => ["admin", "librarian"].includes(role.name));
-    if (hasRole) {
-      next();
-      return;
+    const user = req.user; // Use user attached by verifyToken
+    if (!user.Role || !["admin", "librarian"].includes(user.Role.name)) {
+      return res.status(403).json({ message: "Require Librarian or Admin Role!" });
     }
-
-    res.status(403).json({ message: "Require Moderator or Admin Role!" });
+    next();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("LibrarianOrAdmin role check error:", error);
+    res.status(500).json({ message: "Server error during role check." });
   }
 };
 
-// Export all functions for CommonJS
 module.exports = {
   verifyToken,
-  verifyTokengetuser,
   isAdmin,
   isLibrarian,
   isLibrarianOrAdmin,

@@ -143,24 +143,9 @@ const signin = async (req, res) => {
   }
 };
 
-const logout = async (req, res) => {
-  try {
-    const { User } = db;
-    const userId = req.userId;
 
-    await User.destroy({ where: { id: userId } });
-
-    res.status(200).json({
-      message: "User account deleted successfully!",
-    });
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
 
 module.exports = {
   signup,
-  signin,
-  logout,
+  signin
 };

@@ -2,7 +2,6 @@ const express = require("express");
 const {
   signup,
   signin,
-  logout,
 } = require("../controllers/authController.js");
 const {
   checkDuplicateUsernameOrEmail,
@@ -20,6 +19,6 @@ router.post("/signup", upload.single("profile_image"),signup);
 router.post("/signup", [checkDuplicateUsernameOrEmail, checkRolesExisted], signup);
 router.post("/signin", signin);
 
-// Protected routes
-router.post("/logout", verifyToken, logout);
+
+
 module.exports = router;

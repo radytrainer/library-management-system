@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize")
 
 module.exports = (sequelize) => {
   const Role = sequelize.define(
-    "Role",
+    "Roles",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -21,7 +21,7 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "roles",
-      timestamps: false,
+      timestamps: true,
     },
   )
 
