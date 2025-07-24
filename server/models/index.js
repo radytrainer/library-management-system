@@ -1,43 +1,59 @@
-const Sequelize = require('sequelize');
-const sequelize = require('../config/db');
+const Sequelize = require("sequelize");
+const sequelize = require("../config/db");
 
-const userModel = require('./userModel');
-const roleModel = require('./roleModel');
+// Initialize DB object
 const db = {};
 
+// Sequelize instances
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
-// Call model functions to get Sequelize Models
-db.user = userModel(sequelize, Sequelize);
-db.role = roleModel(sequelize, Sequelize);
 
-// Check that models are Sequelize Models
-console.log("User model is Sequelize Model:", db.user.prototype instanceof Sequelize.Model);
-console.log("Role model is Sequelize Model:", db.role.prototype instanceof Sequelize.Model);
+// Import models
+db.User = require("./user")(sequelize, Sequelize.DataTypes);
+db.Role = require("./role")(sequelize, Sequelize.DataTypes);
+db.Book = require("./book")(sequelize, Sequelize.DataTypes);
+db.Category = require("./categories")(sequelize, Sequelize.DataTypes);
+db.Author = require("./author")(sequelize, Sequelize.DataTypes);
+db.Borrow = require("./borrow")(sequelize, Sequelize.DataTypes);
+db.Language = require("./languageBook")(sequelize, Sequelize.DataTypes);
 
-// Setup associations
-db.role.belongsToMany(db.user, {
-  through: "user_roles",
-  foreignKey: "roleId",
-  otherKey: "userId",
+//
+// ========== ASSOCIATIONS ==========
+//
+
+// 2. Role -> Users (One-to-Many as 'roleUsers' to avoid alias conflict)
+db.Role.hasMany(db.User, {
+  foreignKey: 'roleId',
+  as: 'roleUsers', 
 });
-db.user.belongsToMany(db.role, {
-  through: "user_roles",
-  foreignKey: "userId",
-  otherKey: "roleId",
-  as: "roles",
+
+db.User.belongsTo(db.Role, {
+  foreignKey: 'roleId',
+  as: 'Role',
 });
 
-db.ROLES = ["user", "admin", "librarian"];
+// 3. Book -> Author
+db.Book.belongsTo(db.Author, { foreignKey: 'AuthorId', as: 'author' });
+db.Author.hasMany(db.Book, { foreignKey: 'AuthorId' });
 
-db.Book = require('./book')(sequelize, Sequelize.DataTypes);
-db.Category  = require('./categories')(sequelize, Sequelize.DataTypes);
-db.Author = require('./author')(sequelize, Sequelize.DataTypes);
+// 4. Book -> Category
+db.Book.belongsTo(db.Category, { foreignKey: 'CategoryId', as: 'category' });
+db.Category.hasMany(db.Book, { foreignKey: 'CategoryId' });
 
-db.Book.belongsTo(db.Category);
-db.Category.hasMany(db.Book);
+// 5. Book -> Language
+db.Book.belongsTo(db.Language, { foreignKey: 'language_id', as: 'language' });
+db.Language.hasMany(db.Book, { foreignKey: 'language_id' });
 
-db.Book.belongsTo(db.Author);
-db.Author.hasMany(db.Book);
+// 6. Borrow -> User (borrower and librarian), Book
+db.Borrow.belongsTo(db.User, { as: 'user', foreignKey: 'user_id' });
+db.Borrow.belongsTo(db.User, { as: 'librarian', foreignKey: 'librarian_id' });
+db.Borrow.belongsTo(db.Book, { as: 'book', foreignKey: 'book_id' });
+
+// 7. User -> Borrow
+db.User.hasMany(db.Borrow, { foreignKey: 'user_id' });
+db.User.hasMany(db.Borrow, { as: 'librarianBorrows', foreignKey: 'librarian_id' });
+
+// 8. Book -> Borrow
+db.Book.hasMany(db.Borrow, { foreignKey: 'book_id' });
 
 module.exports = db;

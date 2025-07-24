@@ -12,17 +12,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    isbn: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    borrowed_quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
     borrow_date: {
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
     },
-    due_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
     return_date: {
       type: DataTypes.DATEONLY,
-      allowNull: true,
+      allowNull: false,
     },
     status: {
       type: DataTypes.STRING,
@@ -30,15 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  // Add associations if needed
-  Borrow.associate = (models) => {
-    Borrow.belongsTo(models.User, { foreignKey: "user_id" });
-    Borrow.belongsTo(models.Book, { foreignKey: "book_id" });
-    Borrow.belongsTo(models.User, {
-      foreignKey: "librarian_id",
-      as: "librarian",
-    });
-  };
+
 
   return Borrow;
 };

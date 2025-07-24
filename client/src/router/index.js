@@ -13,11 +13,12 @@ const routes = [
       { path: '', redirect: '/dashboard' },
       { path: 'dashboard', name: 'dashboard', component: Dashboard },
       { path: 'books', name: 'books', component: () => import('@/views/books/BookListView.vue') },
-      {path: 'books/addbook',name: 'add-book',component: () => import('@/views/books/AddBookForm.vue')},
       { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
       { path: 'borrows/add', name: 'borrow-add', component: () => import('@/views/borrows/BorrowFormView.vue') },
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
+      { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
+      // Add more routes like books, members, etc.
     ],
   },
   { path: '/login', component: Login },
