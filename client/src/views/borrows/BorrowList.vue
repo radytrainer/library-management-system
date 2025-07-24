@@ -603,22 +603,6 @@ function showToast(msg, type = 'success') {
   }, 3000)
 }
 
-async function markAsReturned(id) {
-  try {
-    await updateBorrow(id, {
-      status: 'returned',
-      date_return: new Date().toISOString().slice(0, 10),
-    })
-
-    await fetchBorrowData()
-
-    showToast('Book marked as returned successfully.', 'success')
-  } catch (error) {
-    console.error('Failed to return book:', error)
-    showToast('Failed to mark as returned.', 'error')
-  }
-}
-
 const showConfirmModal = ref(false)
 const returnId = ref(null)
 
