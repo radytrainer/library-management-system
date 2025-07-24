@@ -33,12 +33,12 @@
         <button disabled class="bg-gray-200 px-6 py-2 rounded-md cursor-not-allowed text-gray-500 select-none">
           Export
         </button>
-        <button 
-          @click="navigateToAdd" 
-          class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition shadow-md"
-        >
-          + Add Borrow
-        </button>
+<button 
+  @click="showModal = true" 
+  class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition shadow-md"
+>
+  + Add Borrow
+</button>
       </div>
     </div>
 
@@ -309,7 +309,7 @@
               required
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             >
-              <option value="borrowed">Borrowed</option>
+              <option value="borrowed_quantity">Quantity</option>
               <option value="returned">Returned</option>
             </select>
           </div>
@@ -336,6 +336,57 @@
         </form>
       </div>
     </div>
+
+    <!-- Add Borrow Modal -->
+<div 
+  v-if="showModal" 
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+  @click.self="showModal = false"
+>
+  <div class="bg-white p-6 rounded-xl shadow-lg w-[550px] max-w-full">
+    <h3 class="text-xl font-semibold mb-4 text-gray-800">Add Borrow Record</h3>
+    
+    <form @submit.prevent="submitAddBorrow" class="space-y-4">
+      <div>
+        <label class="block mb-1 font-medium">Book Title</label>
+        <input v-model="addForm.bookTitle" type="text" required class="w-full border px-3 py-2 rounded" />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">User Name</label>
+        <input v-model="addForm.userName" type="text" required class="w-full border px-3 py-2 rounded" />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">Borrow Date</label>
+        <input v-model="addForm.borrow_date" type="date" required class="w-full border px-3 py-2 rounded" />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">Return Date</label>
+        <input v-model="addForm.return_date" type="date" class="w-full border px-3 py-2 rounded" />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">Quantity</label>
+        <input v-model.number="addForm.borrowed_quantity" type="number" min="1" required class="w-full border px-3 py-2 rounded" />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">Status</label>
+        <select v-model="addForm.status" class="w-full border px-3 py-2 rounded" required>
+          <option value="borrowed">Borrowed</option>
+          <option value="returned">Returned</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end gap-4 mt-4">
+        <button type="button" @click="showModal = false" class="px-5 py-2 rounded border hover:bg-gray-100">Cancel</button>
+        <button type="submit" class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
   </div>
 </template>
 
@@ -490,6 +541,47 @@ function submitUpdate() {
 
 function navigateToAdd() {
   router.push({ name: 'borrow-add' })
+}
+const addForm = ref({
+  bookTitle: '',
+  userName: '',
+  borrow_date: '',
+  return_date: '',
+  borrowed_quantity: 1,
+  status: 'borrowed'
+})
+
+async function submitAddBorrow() {
+  try {
+    // Prepare data to send to your API
+    const payload = {
+      bookTitle: addForm.value.bookTitle,
+      userName: addForm.value.userName,
+      borrow_date: addForm.value.borrow_date,
+      return_date: addForm.value.return_date,
+      borrowed_quantity: addForm.value.borrowed_quantity,
+      status: addForm.value.status,
+    }
+
+    // Call your create API function here
+    await createBorrow(payload)
+
+    // Refresh data after adding
+    await fetchBorrowData()
+
+    // Close modal and reset form
+    showModal.value = false
+    addForm.value = {
+      bookTitle: '',
+      userName: '',
+      borrow_date: '',
+      return_date: '',
+      borrowed_quantity: 1,
+      status: 'borrowed'
+    }
+  } catch (error) {
+    console.error('Failed to add borrow record:', error)
+  }
 }
 
 </script>
