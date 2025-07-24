@@ -23,7 +23,6 @@ module.exports = (sequelize, DataTypes) => {
     profile_image: {
       type: DataTypes.STRING,
     },
-
   });
 
   return User;

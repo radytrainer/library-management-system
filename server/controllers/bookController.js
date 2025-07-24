@@ -29,13 +29,13 @@ const books = await Book.findAll({
 // GET book by ID
 exports.show = async (req, res) => {
   try {
-const book = await Book.findByPk(req.params.id, {
-  include: [
-    { model: Category, as: 'category', attributes: ['name', 'description'] },
-    { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
-    { model: Language, as: 'language', attributes: ['name'] },
-  ],
-});
+    const book = await Book.findByPk(req.params.id, {
+      include: [
+        { model: Category, as: 'category', attributes: ['name', 'description'] },
+        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Language, as: 'language', attributes: ['name'] },
+      ],
+    });
 
     if (!book) return res.status(404).json({ error: 'Book not found' });
 
@@ -51,6 +51,7 @@ const book = await Book.findByPk(req.params.id, {
   }
 };
 
+
 // POST create a new book
 exports.store = async (req, res) => {
   try {
@@ -64,12 +65,10 @@ exports.store = async (req, res) => {
       available,
       CategoryId,
       AuthorId,
-      language,   // language name, e.g., "English"
-      language_id // optional if language_id is provided
+      language, 
+      language_id 
     } = req.body;
 
-    // If language_id is not given, but language name is given,
-    // find the language id from the Language table
     if (!language_id && language) {
       const lang = await Language.findOne({ where: { name: language } });
       if (!lang) {
