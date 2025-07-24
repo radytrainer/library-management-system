@@ -2,22 +2,27 @@ const jwt = require("jsonwebtoken");
 const db = require("../models");
 const authConfig = require("../config/auth.config.js");
 
-const { user: User } = db;
+// const { user: User } = db;
 
+const User = db.User; // use exact casing from your model export
 const verifyToken = async (req, res, next) => {
-  const token = req.headers["x-access-token"] || req.headers["authorization"];
+  let token = req.headers["x-access-token"] || req.headers["authorization"];
 
   if (!token) {
     return res.status(403).json({ message: "No token provided!" });
   }
 
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7);
+  }
+
   try {
-    const decoded = jwt.verify(token.replace("Bearer ", ""), authConfig.secret);
+    const decoded = jwt.verify(token, authConfig.secret);
     req.userId = decoded.id;
 
     const user = await User.findByPk(req.userId);
     if (!user) {
-      return res.status(401).json({ message: "Unauthorized!" });
+      return res.status(401).json({ message: "Unauthorized! User not found." });
     }
 
     next();
@@ -26,6 +31,25 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
+const verifyTokengetuser = (req, res, next) => {
+  let token = req.headers["x-access-token"] || req.headers["authorization"];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized!" });
+  }
+
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7, token.length);
+  }
+
+  jwt.verify(token, authConfig.secret, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Unauthorized!" });
+    }
+    req.userId = decoded.id;
+    next();
+  });
+};
 const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
@@ -80,6 +104,7 @@ const isLibrarianOrAdmin = async (req, res, next) => {
 // Export all functions for CommonJS
 module.exports = {
   verifyToken,
+  verifyTokengetuser,
   isAdmin,
   isLibrarian,
   isLibrarianOrAdmin,
