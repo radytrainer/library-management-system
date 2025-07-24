@@ -3,13 +3,13 @@ const { Book, Category, Author, Language } = require('../models');
 // GET all books
 exports.index = async (req, res) => {
   try {
-    const books = await Book.findAll({
-      include: [
-        { model: Category, attributes: ['name', 'description'] },
-        { model: Author, attributes: ['name', 'biography', 'birth_date', 'nationality'] },
-        { model: Language, as: 'language', attributes: ['name'] },
-      ],
-    });
+const books = await Book.findAll({
+  include: [
+    { model: Category, as: 'category', attributes: ['name', 'description'] },
+    { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+    { model: Language, as: 'language', attributes: ['name'] },
+  ],
+});
 
     const booksWithImageUrl = books.map(book => {
       const bookData = book.toJSON();
@@ -29,13 +29,13 @@ exports.index = async (req, res) => {
 // GET book by ID
 exports.show = async (req, res) => {
   try {
-    const book = await Book.findByPk(req.params.id, {
-      include: [
-        { model: Category, attributes: ['name', 'description'] },
-        { model: Author, attributes: ['name', 'biography', 'birth_date', 'nationality'] },
-        { model: Language, as: 'language', attributes: ['name'] },
-      ],
-    });
+const book = await Book.findByPk(req.params.id, {
+  include: [
+    { model: Category, as: 'category', attributes: ['name', 'description'] },
+    { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+    { model: Language, as: 'language', attributes: ['name'] },
+  ],
+});
 
     if (!book) return res.status(404).json({ error: 'Book not found' });
 
