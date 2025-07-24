@@ -21,20 +21,6 @@ db.Language = require("./languageBook")(sequelize, Sequelize.DataTypes);
 // ========== ASSOCIATIONS ==========
 //
 
-// 1. Role <-> User (Many-to-Many through user_roles)
-db.Role.belongsToMany(db.User, {
-  through: 'user_roles',
-  foreignKey: 'roleId',
-  otherKey: 'userId',
-});
-
-db.User.belongsToMany(db.Role, {
-  through: 'user_roles',
-  foreignKey: 'userId',
-  otherKey: 'roleId',
-  as: 'roles',
-});
-
 // 2. Role -> Users (One-to-Many as 'roleUsers' to avoid alias conflict)
 db.Role.hasMany(db.User, {
   foreignKey: 'roleId',
