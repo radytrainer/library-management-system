@@ -1,5 +1,3 @@
-const author = require("./author");
-
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define('Donation', {
     title: DataTypes.STRING,
@@ -14,6 +12,6 @@ module.exports = (sequelize, DataTypes) => {
     available: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-    }
+    },
   });
 };
