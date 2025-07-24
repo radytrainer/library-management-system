@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Dashboard from '@/views/DashboardView.vue'
@@ -20,10 +21,9 @@ const routes = [
       // Add more routes like books, members, etc.
     ],
   },
-  { path: '/login', component: Login },      // Standalone Login page
-  { path: '/register', component: Register } // Standalone Register page
+  { path: '/login', component: Login },
+  { path: '/register', component: Register },
 ]
-
 
 const router = createRouter({
   history: createWebHistory(),
