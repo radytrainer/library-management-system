@@ -7,10 +7,13 @@ module.exports = (sequelize, DataTypes) => {
     donated_by: DataTypes.STRING,
     public_year: DataTypes.INTEGER,
     description: DataTypes.TEXT,
-    language: DataTypes.STRING,
     available: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-    }
+    },
+    // language_id: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    // },
   });
 };
