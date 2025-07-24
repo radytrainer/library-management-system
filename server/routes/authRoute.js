@@ -3,7 +3,6 @@ const {
   signup,
   signin,
   logout,
-  deleteAccount,
 } = require("../controllers/authController.js");
 const {
   checkDuplicateUsernameOrEmail,
@@ -12,6 +11,10 @@ const {
 const { verifyToken } = require("../middlewares/authJwt");
 
 const router = express.Router();
+const upload = require("../middlewares/upload");
+
+// Use multer middleware for profile_image field
+router.post("/signup", upload.single("profile_image"),signup);
 
 // Public routes
 router.post("/signup", [checkDuplicateUsernameOrEmail, checkRolesExisted], signup);

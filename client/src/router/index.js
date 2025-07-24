@@ -16,6 +16,7 @@ const routes = [
       { path: 'borrows/add', name: 'borrow-add', component: () => import('@/views/borrows/BorrowFormView.vue') },
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
+      { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       // Add more routes like books, members, etc.
     ],
   },
