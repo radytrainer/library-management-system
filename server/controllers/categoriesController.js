@@ -1,15 +1,58 @@
-const { Category } = require('../models');
+const { Category, Book, Sequelize } = require('../models');
 
 exports.index = async (req, res) => {
-  const categories = await Category.findAll();
-  res.json(categories);
+  try {
+    const categories = await Category.findAll({
+      attributes: {
+        include: [
+          [Sequelize.fn("COUNT", Sequelize.col("Books.id")), "qty"]
+        ]
+      },
+      include: [
+        {
+          model: Book,
+          attributes: []
+        }
+      ],
+      group: ['Category.id']
+    });
+
+    res.json(categories);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 exports.show = async (req, res) => {
-  const category = await Category.findByPk(req.params.id);
-  if (!category) return res.status(404).json({ message: 'category not found' });
-  res.json(category);
+  try {
+    const category = await Category.findOne({
+      where: { id: req.params.id },
+      attributes: {
+        include: [
+          [Sequelize.fn("COUNT", Sequelize.col("Books.id")), "qty"]
+        ]
+      },
+      include: [
+        {
+          model: Book,
+          attributes: [],
+        }
+      ],
+      group: ['Category.id']
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    res.json(category);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
+
 
 exports.store = async (req, res) => {
   const { name, description } = req.body;
