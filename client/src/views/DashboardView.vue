@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="max-w-7xl mx-auto px-5 py-5 bg-[#F8F8F8]">
+  <div class="">
+    <div class="max-w-7xl mx-auto p-8 bg-[#F8F8F8]">
       <!-- Hero Section -->
       <div class="relative overflow-hidden bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-3xl mb-8">
         <div class="absolute inset-0 bg-black/20"></div>
