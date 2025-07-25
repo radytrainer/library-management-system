@@ -140,7 +140,7 @@
             </div>
 
             <div class="space-y-4">
-              <div v-for="(member, index) in topMembers" :key="member.id"
+              <div v-for="(member) in topMembers" :key="member.id"
                 class="flex items-center space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                 <div class="relative">
                   <img :src="member.avatar" :alt="member.name" class="w-16 h-16 rounded-full object-cover">
