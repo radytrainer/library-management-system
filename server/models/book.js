@@ -11,9 +11,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-    language_id: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-},
+    // language_id: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    // },
   });
 };

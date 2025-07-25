@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Dashboard from '@/views/DashboardView.vue'
@@ -13,17 +14,15 @@ const routes = [
       { path: 'dashboard', name: 'dashboard', component: Dashboard },
       { path: 'books', name: 'books', component: () => import('@/views/books/BookListView.vue') },
       { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
-      { path: 'borrows/add', name: 'borrow-add', component: () => import('@/views/borrows/BorrowFormView.vue') },
-      { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
-      { path: 'users', component: () => import('@/views/User/UserListView.vue') },
-      { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
+      { path: 'authors',name: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
+      { path: 'users',name:'users', component: () => import('@/views/User/UserListView.vue') },
+      { path: 'categories', name:'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       // Add more routes like books, members, etc.
     ],
   },
-  { path: '/login', component: Login },      // Standalone Login page
-  { path: '/register', component: Register } // Standalone Register page
+  { path: '/login', component: Login },
+  { path: '/register', component: Register },
 ]
-
 
 const router = createRouter({
   history: createWebHistory(),

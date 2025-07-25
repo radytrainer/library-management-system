@@ -221,7 +221,7 @@
         </div>
       </header>
       <!-- Page Content -->
-      <main class="p-6 ">
+      <main>
         <RouterView />
       </main>
     </div>

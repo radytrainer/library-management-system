@@ -7,7 +7,6 @@ const User = db.User;
 const formatBorrow = (borrow) => ({
   id: borrow.id,
   user_name: borrow.user?.username,
-  email_borrower: borrow.user?.email,
   book_name: borrow.book?.title,
   isbn: borrow.book?.isbn,
   quantity: borrow.borrowed_quantity,
@@ -17,50 +16,135 @@ const formatBorrow = (borrow) => ({
   status: borrow.status,
 });
 
-// GET /api/borrows
 exports.index = async (req, res) => {
   try {
-    const borrows = await Borrow.findAll({
+    const borrows = await db.Borrow.findAll({
       include: [
-        { model: User, as: 'user', attributes: ['username', 'email'] },
-        { model: Book, as: 'book', attributes: ['title', 'isbn', 'quantity'] },
-        { model: User, as: 'librarian', attributes: ['username'] }
+        {
+          model: db.User,
+          as: 'user',
+          attributes: ['username', 'email']
+        },
+        {
+          model: db.User,
+          as: 'librarian',
+          attributes: ['username']
+        },
+        {
+          model: db.Book,
+          as: 'book',
+          attributes: ['title', 'cover_image'],
+          include: [
+            {
+              model: db.Author,
+              as: 'author',
+              attributes: ['name']
+            },
+            {
+              model: db.Category,
+              as: 'category',
+              attributes: ['name']
+            }
+          ]
+        }
       ]
     });
 
-    res.json(borrows.map(formatBorrow));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch borrow records.' });
+    const formatted = borrows.map(borrow => ({
+      id: borrow.id,
+      book: {
+        title: borrow.book.title,
+        author: borrow.book.author?.name || null,
+        category: borrow.book.category?.name || null,
+        cover_image: borrow.book.cover_image
+      },
+      user: {
+        name: borrow.user.username 
+      },
+      borrowed_quantity: borrow.borrowed_quantity, 
+      status:borrow.status,
+      borrow_date: borrow.borrow_date,
+      return_date: borrow.return_date
+    }));
+
+    res.status(200).json(formatted);
+  } catch (error) {
+    console.error('[BorrowController] Error fetching borrow records:', error);
+    res.status(500).json({ message: 'Failed to fetch borrow records.', error: error.message });
   }
 };
-
 // GET /api/borrows/:id
 exports.show = async (req, res) => {
   try {
-    const borrow = await Borrow.findByPk(req.params.id, {
+    const borrow = await db.Borrow.findByPk(req.params.id, {
       include: [
-        { model: User, as: 'user', attributes: ['username', 'email'] },
-        { model: Book, as: 'book', attributes: ['title', 'isbn', 'quantity'] },
-        { model: User, as: 'librarian', attributes: ['username'] }
+        {
+          model: db.User,
+          as: 'user',
+          attributes: ['username', 'email']
+        },
+        {
+          model: db.User,
+          as: 'librarian',
+          attributes: ['username']
+        },
+        {
+          model: db.Book,
+          as: 'book',
+          attributes: ['title', 'cover_image'],
+          include: [
+            {
+              model: db.Author,
+              as: 'author',
+              attributes: ['name']
+            },
+            {
+              model: db.Category,
+              as: 'category',
+              attributes: ['name']
+            }
+          ]
+        }
       ]
     });
 
-    if (!borrow) return res.status(404).json({ message: 'Borrow record not found.' });
+    if (!borrow) {
+      return res.status(404).json({ message: 'Borrow record not found.' });
+    }
 
-    res.json(formatBorrow(borrow));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch borrow record.' });
+    const formatted = {
+      id: borrow.id,
+      book: {
+        title: borrow.book.title,
+        author: borrow.book.author?.name || null,
+        category: borrow.book.category?.name || null,
+        cover_image: borrow.book.cover_image
+      },
+      user: {
+        name: borrow.user.username
+      },
+      librarian: {
+        name: borrow.librarian.username
+      },
+      borrowed_quantity: borrow.borrowed_quantity,
+      status:borrow.status,
+      borrow_date: borrow.borrow_date,
+      return_date: borrow.return_date
+    };
+
+    res.status(200).json(formatted);
+  } catch (error) {
+    console.error('[BorrowController] Error fetching borrow record:', error);
+    res.status(500).json({ message: 'Failed to fetch borrow record.', error: error.message });
   }
 };
+
 
 // POST /api/borrows
 exports.store = async (req, res) => {
   try {
     const {
       user_name,
-      email_borrower,
       book_name,
       isbn,
       quantity,
@@ -72,7 +156,7 @@ exports.store = async (req, res) => {
 
     // 1. Find user
     const user = await User.findOne({
-      where: { username: user_name, email: email_borrower }
+      where: { username: user_name }
     });
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
@@ -89,13 +173,6 @@ exports.store = async (req, res) => {
     const librarian = await User.findOne({ where: { username: librarian_name } });
     if (!librarian) return res.status(404).json({ message: 'Librarian not found.' });
         // Basic input validation
-    if (!user_name || !email_borrower || !book_name || !isbn || !quantity || !librarian_name || !date_borrow) {
-      return res.status(400).json({ message: 'Missing required fields.' });
-    }
-
-    if (typeof quantity !== 'number' || quantity <= 0) {
-      return res.status(400).json({ message: 'Quantity must be a positive number.' });
-    }
 
     // Validate dates
     if (isNaN(new Date(date_borrow))) {
@@ -110,7 +187,7 @@ const newBorrow = await Borrow.create({
   user_id: user.id,
   book_id: book.id,
   librarian_id: librarian.id,
-  isbn: isbn, // <-- ✅ ADD THIS LINE
+  isbn: isbn,
   borrow_date: new Date(date_borrow),
   return_date: new Date(date_return),
   status: status || 'borrowed',
@@ -152,32 +229,69 @@ const newBorrow = await Borrow.create({
 exports.update = async (req, res) => {
   try {
     const borrow = await Borrow.findByPk(req.params.id);
-    if (!borrow) return res.status(404).json({ message: 'Borrow record not found.' });
+    if (!borrow) {
+      return res.status(404).json({ message: 'Borrow record not found.' });
+    }
 
     const { return_date, status } = req.body;
 
+    // Update borrow record
     await borrow.update({
-      return_date: return_date || borrow.return_date,
-      status: status || borrow.status
+      return_date: return_date ?? borrow.return_date,
+      status: status ?? borrow.status
     });
 
+    // If book is returned, mark it available
     if (status === 'returned') {
       const book = await Book.findByPk(borrow.book_id);
-      if (book) await book.update({ available: true });
+      if (book) {
+        await book.update({ available: true });
+      }
     }
 
-    const updatedBorrow = await Borrow.findByPk(borrow.id, {
+    // Re-fetch updated borrow with full relationships
+    const updated = await Borrow.findByPk(borrow.id, {
       include: [
-        { model: User, as: 'user', attributes: ['username', 'email'] },
-        { model: Book, as: 'book', attributes: ['title', 'isbn', 'quantity'] },
-        { model: User, as: 'librarian', attributes: ['username'] }
+        {
+          model: User,
+          as: 'user',
+          attributes: ['username']
+        },
+        {
+          model: User,
+          as: 'librarian',
+          attributes: ['username']
+        },
+        {
+          model: Book,
+          as: 'book',
+          attributes: ['title']
+        }
       ]
     });
 
-    res.json(formatBorrow(updatedBorrow));
+    // Return consistent formatted data
+    const formatted = {
+      id: updated.id,
+      book: {
+        title: updated.book.title,
+      },
+      user: {
+        name: updated.user.username,
+      },
+      librarian: {
+        name: updated.librarian.username
+      },
+      borrowed_quantity: updated.borrowed_quantity,
+      borrow_date: updated.borrow_date,
+      return_date: updated.return_date,
+      status: updated.status
+    };
+
+    res.status(200).json(formatted);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to update borrow record.' });
+    console.error('[BorrowController] Failed to update borrow:', err);
+    res.status(500).json({ message: 'Failed to update borrow record.', error: err.message });
   }
 };
 

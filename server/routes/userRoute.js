@@ -1,37 +1,26 @@
 const express = require("express");
-const {
-  getAllUsers,
-  deleteUser,
-  deleteAccount,
-  getUserProfile,
-  allAccess,
-  userBoard,
-  adminBoard,
-  librarianBoard,
-
-} = require("../controllers/userController");
-
-const {
-  verifyToken,
-  isAdmin,
-  isLibrarian,
-} = require("../middlewares/authJwt");
-
 const router = express.Router();
-// Public route
-router.get("/public", allAccess);
+const userController = require("../controllers/userController");
+const authJwt = require("../middlewares/authJwt");
 
-// Protected route
-router.get("/profile", verifyToken, getUserProfile);
-router.get("/", verifyToken, getAllUsers);//get all users 
-// Delete account route
-router.delete('/:id', [verifyToken, isAdmin], deleteUser);
-router.delete('/me', verifyToken, deleteAccount);
+// Public and role-specific boards
+router.get("/all", userController.allAccess);
+router.get("/user", [authJwt.verifyToken], userController.userBoard);
+router.get("/admin", [authJwt.verifyToken, authJwt.isAdmin], userController.adminBoard);
+router.get("/librarian", [authJwt.verifyToken, authJwt.isLibrarian], userController.librarianBoard);
 
+// User management routes
+router.post("/", [authJwt.verifyToken, authJwt.isAdmin], userController.createUser); // Admin creates user
+router.get("/users", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getAllUsers); // Admin/librarian get all users
+router.get("/:id", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getUserById); // Admin/librarian get user by ID
 
-// Role-based routes
-router.get("/users", verifyToken, userBoard);
-router.get("/librarian", [verifyToken, isLibrarian], librarianBoard);
-router.get("/admin", [verifyToken, isAdmin], adminBoard);
+//  Flexible update: user can update self, admin can update others
+router.put("/users/:id", [authJwt.verifyToken], userController.updateUser);
+
+router.delete("/:id", [authJwt.verifyToken, authJwt.isAdmin], userController.deleteUserById); // Admin deletes user by ID
+
+// Profile routes (self)
+router.get("/profile", [authJwt.verifyToken], userController.getUserProfile); // Get own profile the user
+router.delete("/profile", [authJwt.verifyToken], userController.deleteAccount); // Delete own account
 
 module.exports = router;
