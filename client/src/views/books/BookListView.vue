@@ -1,11 +1,11 @@
 <template>
-  <div class="p-6 space-y-6">
-    <!-- Header Section -->
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-      <div class="space-y-1">
-        <h2 class="text-3xl font-bold text-gray-800">Book List</h2>
-        <p class="text-md text-gray-500 max-w-md">
-          View and manage all books in the library. You can search, filter, or add new books using the button.
+  <div class=" space-y-6 p-10">
+    <!-- Header and Add Button -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-700">Book List</h2>
+        <p class="text-sm text-gray-500">
+          Browse all books available in the library system. Use the search or filters to find what you need quickly.
         </p>
       </div>
       <button @click="openForm()"

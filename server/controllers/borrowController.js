@@ -7,7 +7,6 @@ const User = db.User;
 const formatBorrow = (borrow) => ({
   id: borrow.id,
   user_name: borrow.user?.username,
-  email_borrower: borrow.user?.email,
   book_name: borrow.book?.title,
   isbn: borrow.book?.isbn,
   quantity: borrow.borrowed_quantity,
@@ -63,6 +62,7 @@ exports.index = async (req, res) => {
         name: borrow.user.username 
       },
       borrowed_quantity: borrow.borrowed_quantity, 
+      status:borrow.status,
       borrow_date: borrow.borrow_date,
       return_date: borrow.return_date
     }));
@@ -127,6 +127,7 @@ exports.show = async (req, res) => {
         name: borrow.librarian.username
       },
       borrowed_quantity: borrow.borrowed_quantity,
+      status:borrow.status,
       borrow_date: borrow.borrow_date,
       return_date: borrow.return_date
     };
@@ -144,7 +145,6 @@ exports.store = async (req, res) => {
   try {
     const {
       user_name,
-      email_borrower,
       book_name,
       isbn,
       quantity,
@@ -156,7 +156,7 @@ exports.store = async (req, res) => {
 
     // 1. Find user
     const user = await User.findOne({
-      where: { username: user_name, email: email_borrower }
+      where: { username: user_name }
     });
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
@@ -187,7 +187,7 @@ const newBorrow = await Borrow.create({
   user_id: user.id,
   book_id: book.id,
   librarian_id: librarian.id,
-  isbn: isbn, // <-- ✅ ADD THIS LINE
+  isbn: isbn,
   borrow_date: new Date(date_borrow),
   return_date: new Date(date_return),
   status: status || 'borrowed',

@@ -269,12 +269,15 @@ const getUserProfile = async (req, res) => {
 };
 
 
-// Update user by specific ID
 const updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
+    const targetUserId = req.params.id || req.userId;
+    const isSelfUpdate = !req.params.id || req.params.id == req.userId;
 
-    // ✅ Check if req.body exists
+    if (!isSelfUpdate && req.userRole !== "admin") {
+      return res.status(403).json({ message: "You are not authorized to update this user." });
+    }
+
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({ message: "Request body is missing!" });
     }
@@ -286,57 +289,47 @@ const updateUser = async (req, res) => {
       profile_image,
       phone,
       RoleId,
-      password
+      password,
     } = req.body;
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(targetUserId);
     if (!user) {
       return res.status(404).json({ message: "User not found!" });
     }
 
-    // ✅ Check if email is being changed and if it's already taken
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({ where: { email } });
-      if (existingUser) {
+      const existing = await User.findOne({ where: { email } });
+      if (existing && existing.id !== user.id) {
         return res.status(400).json({ message: "Email is already in use!" });
       }
     }
 
-    // ✅ Check if phone is being changed and if it's already taken
     if (phone && phone !== user.phone) {
-      const existingUser = await User.findOne({ where: { phone } });
-      if (existingUser) {
+      const existing = await User.findOne({ where: { phone } });
+      if (existing && existing.id !== user.id) {
         return res.status(400).json({ message: "Phone number is already in use!" });
       }
     }
 
-    // ✅ Validate role if provided
-    if (RoleId) {
+    if (RoleId && !isSelfUpdate) {
       const role = await Role.findByPk(RoleId);
       if (!role) {
         return res.status(400).json({ message: "Invalid role ID!" });
       }
     }
 
-    // ✅ Prepare update data
     const updateData = {};
     if (username) updateData.username = username;
     if (email) updateData.email = email;
-    if (date_of_birth) updateData.date_of_birth = date_of_birth;
-    if (profile_image) updateData.profile_image = profile_image;
     if (phone) updateData.phone = phone;
-    if (RoleId) updateData.RoleId = RoleId;
+    if (profile_image) updateData.profile_image = profile_image;
+    if (date_of_birth) updateData.date_of_birth = date_of_birth;
+    if (RoleId && !isSelfUpdate) updateData.RoleId = RoleId;
+    if (password) updateData.password = bcrypt.hashSync(password, 8);
 
-    // ✅ Hash password if provided
-    if (password) {
-      updateData.password = bcrypt.hashSync(password, 8);
-    }
-
-    // ✅ Update user
     await user.update(updateData);
 
-    // ✅ Fetch updated user with role
-    const updatedUser = await User.findByPk(id, {
+    const updatedUser = await User.findByPk(user.id, {
       include: [
         {
           model: Role,
@@ -357,8 +350,7 @@ const updateUser = async (req, res) => {
       ],
     });
 
-    // ✅ Format response
-    const formattedUser = {
+    const formatted = {
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
@@ -377,12 +369,12 @@ const updateUser = async (req, res) => {
     };
 
     res.status(200).json({
-      message: "User updated successfully!",
-      user: formattedUser,
+      message: isSelfUpdate ? "Profile updated successfully!" : "User updated successfully!",
+      user: formatted,
     });
   } catch (error) {
-    console.error("Update user error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("Flexible update error:", error);
+    res.status(500).json({ message: "Server error while updating user." });
   }
 };
 

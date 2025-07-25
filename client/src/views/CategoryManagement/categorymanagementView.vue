@@ -1,6 +1,6 @@
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 p-10">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h2 class="text-2xl font-bold text-gray-800">📚 Category Management</h2>
@@ -131,6 +131,7 @@
       ⚠️ No categories found.
     </div>
   </div>
+  
 </template>
 
 <script setup>
