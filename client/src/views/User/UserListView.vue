@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-4">
+    <div class="space-y-4 p-10">
         <!-- Header -->
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">User Management</h2>

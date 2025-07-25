@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="p-10">
 <!-- Header Section -->
     <div class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
