@@ -62,11 +62,8 @@
                 class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                 Edit
               </button>
-              <button @click="deleteBook(book.id); closeMenu()"
-                class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                Delete
-              </button>
             </div>
+            
           </div>
 
           <!-- Card Content -->
