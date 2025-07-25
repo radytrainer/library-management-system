@@ -19,6 +19,7 @@ const routes = [
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       // Add more routes like books, members, etc.
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
     ],
   },
   { path: '/login', component: Login },
