@@ -131,6 +131,7 @@
       ⚠️ No categories found.
     </div>
   </div>
+  
 </template>
 
 <script setup>
