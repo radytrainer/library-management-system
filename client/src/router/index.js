@@ -20,6 +20,7 @@ const routes = [
       { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
 
       // Add more routes like books, members, etc.
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
     ],
   },
   { path: '/login', component: Login },
