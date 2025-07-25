@@ -17,6 +17,8 @@ const routes = [
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
+      { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+
       // Add more routes like books, members, etc.
     ],
   },
