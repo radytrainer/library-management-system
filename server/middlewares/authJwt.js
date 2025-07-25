@@ -28,14 +28,14 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized! User not found." });
     }
 
-    req.user = user; // Attach full user object for role checking
+    req.user = user;                     // Optional: full user object
+    req.userRole = user.Role?.name || "user"; // 👈 Add this line
     next();
   } catch (error) {
     console.error("Token verification error:", error);
     return res.status(401).json({ message: "Unauthorized! Invalid token." });
   }
 };
-
 // Check if user is an admin
 const isAdmin = async (req, res, next) => {
   try {
