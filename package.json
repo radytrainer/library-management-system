@@ -9,6 +9,8 @@
     "concurrently": "^7.0.0"
   },
   "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "lucide-vue-next": "^0.525.0",
     "multer": "^2.0.2"
   }
 }
