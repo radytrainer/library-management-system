@@ -19,30 +19,30 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- All Books Card -->
-      <div
+      <div @click="viewAllBooks"
         class="cursor-pointer bg-white rounded-xl shadow-md border border-blue-200 p-6 hover:shadow-lg transition duration-300">
-        <h2 @click="viewAllBooks" class="text-lg font-semibold text-blue-700 mb-2">All Books</h2>
+        <h2 class="text-lg font-semibold text-blue-700 mb-2">All Books</h2>
         <p class="text-gray-600">View and manage all books in the library.</p>
       </div>
 
       <!-- New Book Card -->
-      <div
+      <div @click="viewNewBook"
         class="cursor-pointer bg-white rounded-xl shadow-md border border-green-200 p-6 hover:shadow-lg transition duration-300">
-        <h2 @click="viewNewBook" class="text-lg font-semibold text-green-700 mb-2">New Book</h2>
+        <h2 class="text-lg font-semibold text-green-700 mb-2">New Book</h2>
         <p class="text-gray-600">Add a new book to the library.</p>
       </div>
 
       <!-- Available Books Card -->
-      <div
+      <div @click="viewAvailableBooks"
         class="cursor-pointer bg-white rounded-xl shadow-md border border-yellow-200 p-6 hover:shadow-lg transition duration-300">
-        <h2 @click="viewAvailableBooks" class="text-lg font-semibold text-yellow-700 mb-2">Available</h2>
+        <h2 class="text-lg font-semibold text-yellow-700 mb-2">Available</h2>
         <p class="text-gray-600">View all available books in the library.</p>
       </div>
 
       <!-- Limited Books Card -->
-      <div
+      <div @click="viewLimitedBooks"
         class="cursor-pointer bg-white rounded-xl shadow-md border border-red-200 p-6 hover:shadow-lg transition duration-300">
-        <h2 @click="viewLimitedBooks" class="text-lg font-semibold text-red-700 mb-2">Limited</h2>
+        <h2 class="text-lg font-semibold text-red-700 mb-2">Limited</h2>
         <p class="text-gray-600">View all limited books in the library.</p>
       </div>
     </div>
@@ -62,7 +62,7 @@
           </tr>
         </thead>
         <tbody class="text-gray-700">
-          <tr v-for="book in books" :key="book.id" class="border-t hover:bg-gray-50">
+          <tr v-for="book in filteredBooks" :key="book.id" class="border-t hover:bg-gray-50">
             <td class="px-6 py-3">
               <div class="flex items-center gap-4">
                 <img :src="book.cover_image_url" alt="book" class="w-12 h-12 rounded-full object-cover" />
@@ -461,8 +461,9 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import {
   getBooks,
   getCategories,
@@ -472,6 +473,7 @@ import {
   updateBook,
   deleteBook,
 } from '@/services/Api/book'
+import Swal from 'sweetalert2'
 
 // --- Reactive State ---
 
@@ -480,6 +482,10 @@ const books = ref([])
 const authors = ref([])
 const categories = ref([])
 const languages = ref([])
+
+const filteredBooks = ref([]);
+const filterType = ref('all');
+const LIMIT_THRESHOLD = 3;
 
 // UI state
 const showForm = ref(false)
@@ -512,10 +518,50 @@ const fetchBooks = async () => {
     authors.value = authorsRes.data
     categories.value = categoriesRes.data
     languages.value = languagesRes.data
+    applyFilter();
   } catch (err) {
     console.error('Failed to fetch data:', err)
   }
 }
+
+// Filter books based on filterType
+const applyFilter = () => {
+  switch (filterType.value) {
+    case 'all':
+      filteredBooks.value = books.value;
+      break;
+
+    case 'new':
+      filteredBooks.value = [...books.value]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 10);
+      break;
+
+    case 'available':
+      filteredBooks.value = books.value.filter(b => b.quantity >= 3);
+      break;
+
+    case 'limited':
+      filteredBooks.value = books.value.filter(b => b.quantity <= LIMIT_THRESHOLD);
+      break;
+
+    default:
+      filteredBooks.value = books.value;
+  }
+};
+
+
+// Handlers for card clicks
+const viewAllBooks = () => {
+  filterType.value = 'all';
+  applyFilter();
+  // show your books list UI or navigate
+};
+
+const viewAvailableBooks = () => {
+  filterType.value = 'available';
+  applyFilter();
+};
 
 // --- UI Functions ---
 
@@ -623,29 +669,104 @@ const submitForm = async () => {
 
     if (form.value.id) {
       await updateBook(form.value.id, formData)
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        text: 'The book has been updated successfully.',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      })
     } else {
       await apiCreateBook(formData)
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        text: 'The book has been added successfully.',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      })
     }
 
     await fetchBooks()
     closeForm()
   } catch (err) {
     console.error('Error submitting form:', err)
+    Swal.fire({
+      toast: true,
+      position: 'bottom-end',
+      icon: 'error',
+      title: 'Oops...',
+      text: 'Something went wrong!',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+      }
+    })
   }
 }
 
-// --- Delete ---
+
 const deleteBookById = async (id) => {
-  if (confirm('Are you sure you want to delete this book?')) {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "Do you really want to delete this book?",
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+    reverseButtons: true,
+  });
+
+  if (result.isConfirmed) {
     try {
-      await deleteBook(id)
-      await fetchBooks()
+      await deleteBook(id);
+      await fetchBooks();
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: 'Deleted!',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+      });
     } catch (err) {
-      console.error('Error deleting book:', err)
+      console.error('Error deleting book:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Failed to delete the book.',
+      });
     }
   }
-}
+};
+
+
+const viewNewBook = () => {
+  filterType.value = 'new';
+  applyFilter();
+};
+
+const viewLimitedBooks = () => {
+  filterType.value = 'limited';
+  applyFilter();
+};
 </script>
+
 <style scoped>
 .form-group {
   @apply space-y-2;
