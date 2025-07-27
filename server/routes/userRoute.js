@@ -13,7 +13,7 @@ router.get("/librarian", [authJwt.verifyToken, authJwt.isLibrarian], userControl
 router.post("/", [authJwt.verifyToken, authJwt.isAdmin], userController.createUser); // Admin creates user
 router.get("/users", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getAllUsers); // Admin/librarian get all users
 router.get("/:id", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getUserById); // Admin/librarian get user by ID
-
+router.get("/roles", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getRoles);
 //  Flexible update: user can update self, admin can update others
 router.put("/users/:id", [authJwt.verifyToken], userController.updateUser);
 
