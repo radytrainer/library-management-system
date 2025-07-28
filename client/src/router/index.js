@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import Register from '@/views/RegisterView.vue'
 import Login from '@/views/LoginView.vue'
+// import Website from '@/views/WebsiteView.vue'
 
 const routes = [
   {
