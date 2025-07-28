@@ -56,7 +56,10 @@ exports.index = async (req, res) => {
         title: borrow.book.title,
         author: borrow.book.author?.name || null,
         category: borrow.book.category?.name || null,
-        cover_image: borrow.book.cover_image
+cover_image: borrow.book.cover_image
+  ? `${req.protocol}://${req.get('host')}/uploads/books/${borrow.book.cover_image}`
+  : null
+
       },
       user: {
         name: borrow.user.username 
