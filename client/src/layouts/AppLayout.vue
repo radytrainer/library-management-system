@@ -349,7 +349,8 @@ const pageTitle = computed(() => {
   const map = {
     dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
     borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
-    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
+    books_list: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
+    books_all: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
     users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
     authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
     categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },

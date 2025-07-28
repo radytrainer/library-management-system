@@ -19,8 +19,8 @@ const routes = [
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       { path: 'website', name: 'website', component: Website },
       { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
-      { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
-      { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
+      { path: 'books/list', name: 'books_list', component: () => import('@/views/books/ListBook.vue') },
+      { path: 'books/all', name: 'books_all', component: () => import('@/views/books/AllBook.vue') },
 
       // Add more routes like books, members, etc.
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
