@@ -1,41 +1,46 @@
 <template>
   <div class="space-y-4 p-10">
     <!-- Header -->
-    <div class="mb-10 flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold text-gray-800">Author Management</h2>
-        <p class="text-gray-500">Manage your authors efficiently</p>
+    <!-- Blue Card Wrapper -->
+    <div class="bg-sky-500 border border-blue-100 rounded-2xl shadow p-6 space-y-6 mb-10">
+      <!-- Title and Filters -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-white mt-4">Author Management</h2>
+          <p class="text-white">A modern, efficient way to manage authors for your library or publishing team.</p>
+        </div>
+
+        <div class="flex gap-4 md:flex-row mt-10">
+          <!-- Nationality Filter -->
+          <select v-model="selectedNationality"
+            class="text-sm border border-white-200 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-white-200 focus:outline-none justify-center">
+            <option value="">Nationality</option>
+            <option v-for="nation in nationalities" :key="nation" :value="nation">
+              {{ nation }}
+            </option>
+          </select>
+
+          <!-- Limit -->
+          <select v-model="limit"
+            class="text-sm border border-blue-200 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">Authors</option>
+            <option v-for="n in [10, 20, 50]" :key="n" :value="n">Show {{ n }}</option>
+          </select>
+        </div>
       </div>
-
-      <div class="flex gap-4">
-        <!-- Nationality Filter -->
-        <select v-model="selectedNationality" class="text-gray border rounded px-4 py-2">
-          <option value="">Nationality</option>
-          <option v-for="nation in nationalities" :key="nation" :value="nation">
-            {{ nation }}
-          </option>
-        </select>
-
-        <!-- Limit -->
-        <select v-model="limit" class="border rounded px-4 py-2">
-          <option value="">Authors</option>
-          <option v-for="n in [10, 20, 50]" :key="n" :value="n">Show {{ n }}</option>
-        </select>
+      <!-- Search and Add Button -->
+      <div class="flex justify-between items-center">
+        <input v-model="search" type="text" placeholder="Search Author Name..."
+          class="border border-blue-200 rounded-lg px-4 py-2 w-1/3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
       </div>
     </div>
-
-    <div class="flex justify-between items-center mb-4">
-      <input v-model="search" type="text" placeholder="Search Author Name..." class="border rounded px-4 py-2 w-1/3" />
-
-      <div class="flex items-center gap-4">
-        <button @click="openAddDialog" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-          + Add Author
-        </button>
-      </div>
+    <div class="flex justify-end mb-4">
+      <button @click="openAddDialog" class="bg-sky-400 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+        + Add Author
+      </button>
     </div>
-
     <!-- Authors Table -->
-    <div class="bg-white border border-gray-200 rounded-lg">
+    <div class="bg-white border border-gray-200 rounded-xl mt-9">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50 text-left">
           <tr>
