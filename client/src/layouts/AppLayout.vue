@@ -145,6 +145,18 @@
               </span>
             </RouterLink>
           </li>
+          <li>
+            <RouterLink to="/website" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : ''
+            ]">
+              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">public</span>
+              <span v-if="isSidebarOpen">
+                {{ language === 'en' ? 'Website' : 'គេហទំព័រ' }}
+              </span>
+            </RouterLink>
+          </li>
         </ul>
       </nav>
     </aside>

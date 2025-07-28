@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import Register from '@/views/RegisterView.vue'
 import Login from '@/views/LoginView.vue'
+import Website from '@/views/WebsiteView.vue'
 
 const routes = [
   {
@@ -16,6 +17,7 @@ const routes = [
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
+      { path: 'website', name: 'website', component: Website },
       { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
       { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
       { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
