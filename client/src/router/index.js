@@ -7,7 +7,7 @@ import Login from '@/views/LoginView.vue'
 import Register from '@/views/RegisterView.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
-
+import UserListView from '@/views/User/UserListView.vue'
 import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 
@@ -24,7 +24,7 @@ const routes = [
       const role = authStore.user?.role
       if (role === 'admin') return '/dashboard'
       if (role === 'librarian' || role === 'user') return '/books'
-      // return '/login'
+      return '/login'
     }
   },
 
@@ -121,11 +121,11 @@ router.beforeEach((to, from, next) => {
   // }
 
   // Role check
-  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-    if (userRole === 'admin') return next('/dashboard')
-    if (userRole === 'librarian' || userRole === 'user') return next('/books')
-    return next('/login')
-  }
+  // if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+  //   if (userRole === 'admin') return next('/dashboard')
+  //   if (userRole === 'librarian' || userRole === 'user') return next('/books')
+  //   return next('/login')
+  // }
 
   next()
 })
