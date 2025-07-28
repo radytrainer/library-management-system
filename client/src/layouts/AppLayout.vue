@@ -27,8 +27,9 @@ const navItems = [
 
 // ✅ Filter navigation by role
 const filteredNav = computed(() => {
-  return navItems.filter(item => item.roles.includes(user.value.role))
+  return navItems.filter(item => item.roles.includes(authStore.user?.role || ''))
 })
+
 
 // ✅ Language switch
 function selectLanguage(lang) {
@@ -63,11 +64,13 @@ const user = ref({
 })
 
 function logout() {
-  authStore.user = null   
-  localStorage.removeItem('user')  // If you save user in localStorage
-
-  router.push('/login')   // Redirect to login page
+  authStore.reset()
+  user.value = { name: '', email: '', role: '', profile_image: '' }
+  router.push('/login')
 }
+
+
+
 
 const profileInitial = computed(() => {
   if (user.value.email) {
@@ -81,9 +84,12 @@ onMounted(() => {
   language.value = localStorage.getItem('language') || 'en'
   const savedUser = localStorage.getItem('user')
   if (savedUser) {
-    user.value = JSON.parse(savedUser)
+    const parsedUser = JSON.parse(savedUser)
+    user.value = parsedUser
+    authStore.user = parsedUser // ✅ Sync Pinia store
   }
 })
+
 
 
 // ✅ Dynamic Page Title
@@ -125,6 +131,18 @@ const pageTitle = computed(() => {
             ]">
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">{{ item.icon }}</span>
               <span v-if="isSidebarOpen">{{ item.label[language] }}</span>
+            </RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/website" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : ''
+            ]">
+              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">public</span>
+              <span v-if="isSidebarOpen">
+                {{ language === 'en' ? 'Website' : 'គេហទំព័រ' }}
+              </span>
             </RouterLink>
           </li>
         </ul>
@@ -231,6 +249,8 @@ const pageTitle = computed(() => {
                 @click="logout">
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
+
+
             </div>
           </div>
         </div>

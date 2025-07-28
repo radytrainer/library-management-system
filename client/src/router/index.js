@@ -8,6 +8,8 @@ import Register from '@/views/RegisterView.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
 
+import Website from '@/views/WebsiteView.vue'
+import ListBook from '@/views/books/ListBook.vue'
 
 const routes = [
   // Public routes
@@ -53,7 +55,7 @@ const routes = [
       {
         path: 'books',
         name: 'books',
-        component: () => import('@/views/books/BookListView.vue'),
+        component: ListBook,
         meta: { roles: ['admin', 'librarian', 'user'] },
       },
       {
@@ -74,6 +76,19 @@ const routes = [
         component: () => import('@/views/Author/AddauthorView.vue'),
         meta: { roles: ['admin', 'librarian', 'user'] },
       },
+      { path: '', redirect: '/dashboard' },
+      { path: 'dashboard', name: 'dashboard', component: Dashboard },
+      { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
+      { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
+      { path: 'users', component: () => import('@/views/User/UserListView.vue') },
+      { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
+      { path: 'website', name: 'website', component: Website },
+      { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+      { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
+      { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
+
+      // Add more routes like books, members, etc.
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
     ],
   },
 
@@ -101,9 +116,9 @@ router.beforeEach((to, from, next) => {
   }
 
   // Require login for protected routes
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    return next('/login')
-  }
+  // if (to.meta.requiresAuth && !isLoggedIn) {
+  //   return next('/login')
+  // }
 
   // Role check
   if (to.meta.roles && !to.meta.roles.includes(userRole)) {
