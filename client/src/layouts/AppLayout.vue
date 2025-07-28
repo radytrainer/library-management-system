@@ -14,7 +14,7 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto">
+      <nav class="flex-1 overflow-y-auto scrollbar-hide pr-1">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
           <li>
             <RouterLink to="/dashboard" :class="[
@@ -28,18 +28,51 @@
               </span>
             </RouterLink>
           </li>
+          
           <li>
-            <RouterLink to="/books" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
+            <!-- Parent Menu -->
+            <div @click="toggleBookMenu" :class="[
+              'flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-200',
               isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/books' ? 'bg-custom-hover-page shadow-sm' : ''
             ]">
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">menu_book</span>
               <span v-if="isSidebarOpen">
                 {{ language === 'en' ? 'Books' : 'សៀវភៅ' }}
               </span>
-            </RouterLink>
+              <span v-if="isSidebarOpen" class="ml-auto material-icons text-sm">
+                {{ isBookMenuOpen ? 'expand_less' : 'expand_more' }}
+              </span>
+            </div>
+
+            <!-- Child Menu with vertical line -->
+            <ul v-if="isBookMenuOpen && isSidebarOpen" class="ml-8 mt-1 relative space-y-1"
+              style="border-left: 2px solid #065084; /* Tailwind blue-500 color */">
+              <li class="relative pl-4">
+                <!-- Horizontal line -->
+                <span class="absolute left-0 top-1/2 w-3 h-0.5 bg-blue-500 -translate-y-1/2"
+                  style="border-radius: 2px;"></span>
+
+                <RouterLink to="/books/list"
+                  class="block px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-custom-hover-page"
+                  :class="{ 'bg-custom-hover-page shadow-sm': $route.path === '/books/list' }">
+                  {{ language === 'en' ? 'List Books' : 'បញ្ជីសៀវភៅ' }}
+                </RouterLink>
+              </li>
+              <li class="relative pl-4">
+                <!-- Horizontal line -->
+                <span class="absolute left-0 top-1/2 w-3 h-0.5 bg-blue-500 -translate-y-1/2"
+                  style="border-radius: 2px;"></span>
+
+                <RouterLink to="/books/all"
+                  class="block px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-custom-hover-page"
+                  :class="{ 'bg-custom-hover-page shadow-sm': $route.path === '/books/all' }">
+                  {{ language === 'en' ? 'All Books' : 'សៀវភៅទាំងអស់' }}
+                </RouterLink>
+              </li>
+            </ul>
           </li>
+
+
           <li>
             <RouterLink to="/borrows" :class="[
               'flex items-center p-3 rounded-lg transition-colors duration-200',
@@ -154,9 +187,9 @@
             <input type="text" v-model="searchQuery"
               :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }"
-            />
-            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">search</span>
+              :class="{ 'font-khmer': language === 'kh' }" />
+            <span
+              class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">search</span>
           </div>
 
           <!-- Language Switch -->
@@ -195,7 +228,8 @@
             <div v-if="showNotifications"
               class="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
               <p class="text-sm text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
-                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }} {{ language === 'en' ? 'new notifications' : 'ការជូនដំណឹងថ្មី' }}
+                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }} {{ language === 'en' ?
+                  'newnotifications' : 'ការជូនដំណឹងថ្មី' }}
               </p>
               <button class="mt-3 text-sm text-indigo-600 hover:underline" @click="clearNotifications">
                 {{ language === 'en' ? 'Clear All' : 'លុបទាំងអស់' }}
@@ -216,16 +250,12 @@
                 @click="logout">
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
-              <RouterLink
-                to="/register"
-                class="mt-2 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
-              >
+              <RouterLink to="/register"
+                class="mt-2 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block">
                 {{ language === 'en' ? 'Register' : 'ចុះឈ្មោះ' }}
               </RouterLink>
-              <RouterLink
-                to="/login"
-                class="mt-1 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
-              >
+              <RouterLink to="/login"
+                class="mt-1 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block">
                 {{ language === 'en' ? 'Login' : 'ចូលគណនី' }}
               </RouterLink>
             </div>
@@ -254,6 +284,12 @@ const showNotifications = ref(false)
 const showProfileDropdown = ref(false)
 const isSidebarOpen = ref(true)
 const isOpen = ref(false)
+
+const isBookMenuOpen = ref(false)
+
+function toggleBookMenu() {
+  isBookMenuOpen.value = !isBookMenuOpen.value
+}
 
 const user = ref({
   name: 'Admin User',
