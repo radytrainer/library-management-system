@@ -12,7 +12,21 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: "Username, email, and password are required!" });
     }
 
-    // Format DOB (DD.MM.YYYY → YYYY-MM-DD)
+    const { User, Role } = db;
+
+    // ✅ Check for existing email
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already registered!" });
+    }
+
+    // ✅ Check for existing username
+    const existingUsername = await User.findOne({ where: { username } });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already taken!" });
+    }
+
+    // ✅ Format DOB (DD.MM.YYYY → YYYY-MM-DD)
     const dob = date_of_birth
       ? new Date(date_of_birth.split('.').reverse().join('-')).toISOString().split('T')[0]
       : null;
@@ -25,11 +39,10 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: "Date of birth cannot be in the future." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 8);
+    // ✅ Hash password with consistent rounds
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const { User, Role } = db;
-
-    // Create user
+    // ✅ Create user
     const user = await User.create({
       username,
       email,
@@ -40,9 +53,8 @@ const signup = async (req, res) => {
       roleId: RoleId || null,
     });
 
-    // Assign default role if RoleId not provided
+    // ✅ Assign default role if RoleId not provided
     let role = null;
-
     if (RoleId) {
       role = await Role.findByPk(RoleId);
     } else {
@@ -54,13 +66,15 @@ const signup = async (req, res) => {
       await user.save();
     }
 
+    // ✅ Get role for response
     const userWithRole = await User.findByPk(user.id, {
       include: {
         model: Role,
-        as: "Role", // ✅ required due to alias
+        as: "Role",
       },
     });
 
+    // ✅ Generate JWT
     const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
 
     res.status(201).json({
@@ -69,7 +83,7 @@ const signup = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        role: userWithRole.Role?.name || "unknown",
+        role: userWithRole.Role?.name || "user",
         accessToken: token,
       },
     });
@@ -92,22 +106,23 @@ const signup = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+  
 
 const signin = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password are required!" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required!" });
     }
 
     const { User, Role } = db;
 
     const user = await User.findOne({
-      where: { username },
+      where: { email },
       include: {
         model: Role,
-        as: "Role", // ✅ must use alias
+        as: "Role",
       },
     });
 
@@ -121,11 +136,7 @@ const signin = async (req, res) => {
       return res.status(401).json({ accessToken: null, message: "Invalid password!" });
     }
 
-    const token = jwt.sign({ id: user.id }, authConfig.secret, {
-      expiresIn: 86400,
-    });
-
-    const roleName = user.Role ? `ROLE_${user.Role.name.toUpperCase()}` : "ROLE_USER";
+    const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
 
     res.status(200).json({
       message: "Login successful!",
@@ -133,7 +144,7 @@ const signin = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        roles: [roleName],
+        role: user.Role?.name || "user",
         accessToken: token,
       },
     });
@@ -142,6 +153,7 @@ const signin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 

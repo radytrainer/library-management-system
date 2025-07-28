@@ -6,14 +6,16 @@ export const useAuthStore = defineStore('auth', {
     token: null,
   }),
   actions: {
-    login(userData) {
-      this.user = userData.user
-      this.token = userData.accessToken
+    setUser(user) {
+      this.user = user
+    },
+    setToken(token) {
+      this.token = token
     },
     logout() {
       this.user = null
       this.token = null
     },
   },
-  persist: true, // Optional: persists user across refreshes (needs pinia-plugin-persistedstate)
+  persist: true, // requires pinia-plugin-persistedstate plugin
 })

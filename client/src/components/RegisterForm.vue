@@ -56,9 +56,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/axios'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 const form = ref({ name:'', email:'', phone:'', password:'', confirmPassword:'' })
 const formError = ref('')
 const isSubmitting = ref(false)
@@ -69,7 +72,7 @@ const handleSubmit = async () => {
   formError.value = ''
   isSubmitting.value = true
 
-  // ✅ Validation (same as your original)
+  // ✅ Check password confirmation
   if (form.value.password !== form.value.confirmPassword) {
     formError.value = 'Passwords do not match'
     isSubmitting.value = false
@@ -87,8 +90,23 @@ const handleSubmit = async () => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    sessionStorage.setItem('token', response.data.user.accessToken)
-    router.push('/dashboard')
+    const user = response.data.user
+
+    // ✅ Save token and role into Pinia store
+    authStore.setUser({
+      token: user.accessToken,
+      role: user.role,
+      name: user.username,
+      email: user.email
+    })
+
+    // ✅ Redirect based on role
+    if (user.role === 'admin') {
+      router.push('/dashboard')
+    } else {
+      router.push('/borrows')
+    }
+
   } catch (err) {
     formError.value = err.response?.data?.message || 'Something went wrong!'
   } finally {
