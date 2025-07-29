@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto space-y-6 p-8">
-    <!-- Header -->
-    <div class="w-full bg-sky-600 rounded-xl shadow-md p-12 flex flex-col md:flex-row md:justify-between justify-center gap-12 py-5">
+    <!-- Header with Static Book Image -->
+    <div class="w-full bg-sky-500 rounded-xl shadow-md p-12 flex flex-col md:flex-row md:justify-between justify-center gap-12 py-5">
       <div class="flex flex-col gap-4 pr-4 md:pr-12">
         <div>
           <h1 class="text-4xl font-bold text-white mt-8">📚 Book Inventory</h1>
@@ -12,37 +12,42 @@
             Whether you're donating, editing, or reviewing book details, everything you need is just a few clicks away.
           </p>
         </div>
-        <div class="flex flex-wrap gap-4 items-center">
-          <button @click="openAddDialog"
-            class="flex items-center gap-2 px-5 py-2.5 bg-sky-300 text-white rounded-md hover:bg-blue-400 text-sm shadow"
-            aria-label="Donate Book">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M12 4v16m8-8H4" />
-            </svg>
-            Donate Books
-          </button>
-        </div>
       </div>
-      <!-- Image at the End -->
       <div class="flex justify-end items-center p-6">
-        <img src="https://i.pinimg.com/736x/7f/dd/cd/7fddcd3fbcac9e9eaeccba931387917c.jpg" alt="Book Inventory Image"
-          class="w-40 h-40 object-cover rounded-xl shadow-md" />
+        <div class="relative w-40 h-40 overflow-hidden rounded-xl shadow-md">
+          <img src="https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg"
+               class="w-full h-full object-cover"
+               alt="Book Image" />
+        </div>
       </div>
     </div>
 
-    <!-- Search -->
-    <div>
-      <input v-model="searchTerm" type="text" placeholder="Search by title, ISBN, or owner..."
-        class="w-full border border-gray-400 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+    <!-- Search and Donate Button -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="w-full sm:w-1/2">
+        <input v-model="searchTerm" type="text" placeholder="Search by title, ISBN, or owner..."
+          class="w-full border border-gray-400 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+      </div>
+      <button @click="openAddDialog"
+        class="flex items-center gap-2 px-5 py-2.5 bg-sky-500 text-white rounded-md hover:bg-blue-400 text-sm shadow"
+        aria-label="Donate Book">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M12 4v16m8-8H4" />
+        </svg>
+        Donate
+      </button>
     </div>
 
     <!-- Book Cards -->
     <div v-if="visibleBooks.length"
       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 pb-4">
       <div v-for="book in visibleBooks" :key="book.id"
-        class="bg-white shadow border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+        class="bg-white shadow border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer"
+        @click="viewBook(book)">
         <div class="relative">
-          <img v-if="book.cover_image" :src="book.cover_image" alt="Book Cover"
+          <img v-if="book.book_image" :src="book.book_image" alt="Book Cover"
+            class="w-full h-44 object-cover bg-gray-100" />
+          <img v-else src="https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg" alt="No Book Cover"
             class="w-full h-44 object-cover bg-gray-100" />
           <button @click.stop="toggleMenu(book.id)"
             class="absolute top-2 right-2 text-white hover:bg-black/80 rounded-full p-1 text-lg z-30"
@@ -76,7 +81,7 @@
     <!-- Show More Button -->
     <div v-if="canShowMore" class="flex justify-center mt-6">
       <button @click="showMore"
-        class="px-6 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-00 transition shadow">
+        class="px-6 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition shadow">
         Show More
       </button>
     </div>
@@ -86,15 +91,34 @@
       No books found.
     </div>
 
-    <!-- Add/Edit Modal -->
-    <div v-if="showAddDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <!-- Add/Edit/View Modal -->
+    <div v-if="showAddDialog" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
       <div role="dialog" aria-modal="true" class="bg-white p-5 sm:p-6 rounded-xl w-full max-w-md shadow-lg relative">
         <button class="absolute top-2.5 right-3 text-gray-400 hover:text-gray-800 text-xl" @click="closeDialog"
           aria-label="Close Modal">×</button>
         <h2 class="text-xl font-bold text-center text-gray-800 mb-5">
-          {{ isEditing ? '✏️ Edit Book' : '📘 Donate a New Book' }}
+          {{ isEditing ? '✏️ Edit Book' : isViewing ? '📖 Book Details' : '📘 Donate a New Book' }}
         </h2>
-        <form @submit.prevent="submitDonation" class="space-y-3 text-sm">
+        <div v-if="isViewing" class="space-y-3 text-sm">
+          <div><span class="font-medium text-gray-700">Title:</span> {{ donation.title }}</div>
+          <div><span class="font-medium text-gray-700">ISBN:</span> {{ donation.isbn }}</div>
+          <div><span class="font-medium text-gray-700">Quantity:</span> {{ donation.quantity }}</div>
+          <div><span class="font-medium text-gray-700">Owner:</span> {{ donation.owner }}</div>
+          <div><span class="font-medium text-gray-700">Language:</span> {{ getLanguageName(donation.language_id) }}</div>
+          <div><span class="font-medium text-gray-700">Category:</span> {{ getCategoryName(donation.category_id) }}</div>
+          <div>
+            <span class="font-medium text-gray-700">Cover Image:</span>
+            <img :src="donation.book_image || 'https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg'" 
+                 alt="Book Cover" class="h-28 object-contain rounded border mt-1" />
+          </div>
+          <div class="flex justify-end pt-2">
+            <button @click="closeDialog"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1.5 rounded-md font-medium shadow-sm transition">
+              Close
+            </button>
+          </div>
+        </div>
+        <form v-else @submit.prevent="submitDonation" class="space-y-3 text-sm">
           <div><label class="block mb-1 text-gray-700">Title</label><input v-model="donation.title" required
               class="w-full border px-3 py-1.5 rounded-md" /></div>
           <div><label class="block mb-1 text-gray-700">ISBN</label><input v-model="donation.isbn" required
@@ -124,10 +148,11 @@
             </div>
           </div>
           <div>
-            <label class="block mb-1 text-gray-700">Cover Image (optional)</label>
-            <input type="file" accept="image/*" @change="handleImageUpload" class="text-sm w-full" />
-            <div v-if="donation.cover_image" class="mt-2">
-              <img :src="donation.cover_image" alt="Preview" class="h-28 object-contain rounded border" />
+            <label class="block mb-1 text-gray-700">Cover Image URL (optional)</label>
+            <input v-model="donation.book_image" type="text" placeholder="Enter image URL"
+              class="w-full border px-3 py-1.5 rounded-md" />
+            <div v-if="donation.book_image" class="mt-2">
+              <img :src="donation.book_image" alt="Preview" class="h-28 object-contain rounded border" />
             </div>
           </div>
           <div class="flex justify-end pt-2">
@@ -150,6 +175,7 @@ const visibleCount = ref(8)
 const sortBy = ref('')
 const showAddDialog = ref(false)
 const isEditing = ref(false)
+const isViewing = ref(false)
 const editingBookId = ref(null)
 const activeMenuId = ref(null)
 
@@ -161,7 +187,7 @@ const donation = ref({
   owner: '',
   language_id: '',
   category_id: '',
-  cover_image: ''
+  book_image: ''
 })
 
 watch(books, newBooks => {
@@ -172,13 +198,6 @@ watch(searchTerm, () => {
   visibleCount.value = 8 // reset on search
 })
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-
 const handleClickOutside = (e) => {
   if (!e.target.closest('.dropdown-menu')) closeMenu()
 }
@@ -186,23 +205,38 @@ const handleClickOutside = (e) => {
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id
 }
+
 const closeMenu = () => activeMenuId.value = null
 
 const openAddDialog = () => {
   isEditing.value = false
+  isViewing.value = false
   resetForm()
   showAddDialog.value = true
 }
+
 const openEditDialog = (book) => {
   isEditing.value = true
+  isViewing.value = false
   editingBookId.value = book.id
   Object.assign(donation.value, { ...book })
   showAddDialog.value = true
 }
+
+const viewBook = (book) => {
+  isEditing.value = false
+  isViewing.value = true
+  Object.assign(donation.value, { ...book })
+  showAddDialog.value = true
+  closeMenu()
+}
+
 const closeDialog = () => {
   showAddDialog.value = false
+  isViewing.value = false
   resetForm()
 }
+
 const resetForm = () => {
   Object.assign(donation.value, {
     title: '',
@@ -211,17 +245,9 @@ const resetForm = () => {
     owner: '',
     language_id: '',
     category_id: '',
-    cover_image: ''
+    book_image: ''
   })
   editingBookId.value = null
-}
-
-const handleImageUpload = (e) => {
-  const file = e.target.files[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = e => donation.value.cover_image = e.target.result
-  reader.readAsDataURL(file)
 }
 
 const submitDonation = () => {
@@ -239,9 +265,6 @@ const submitDonation = () => {
 
 const deleteBook = (id) => {
   books.value = books.value.filter(b => b.id !== id)
-}
-const viewBook = (book) => {
-  alert(`Viewing Book: ${book.title}`)
 }
 
 const filteredBooks = computed(() => {
@@ -267,3 +290,10 @@ const showMore = () => visibleCount.value += 8
 const getLanguageName = id => ({ 1: 'English', 2: 'French', 3: 'Khmer' }[id] || 'Unknown')
 const getCategoryName = id => ({ 1: 'Fiction', 2: 'Classic', 3: 'Science' }[id] || 'Unknown')
 </script>
+
+<style>
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+</style>
