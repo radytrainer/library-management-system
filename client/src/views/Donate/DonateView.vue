@@ -23,8 +23,10 @@
           </button>
         </div>
       </div>
-      <div class="flex-shrink-0">
-        <img src="../../../public/pic.png" alt="Bookshelf" class="w-80 h-auto object-contain" />
+      <!-- Image at the End -->
+      <div class="flex justify-end items-center p-6">
+        <img src="https://i.pinimg.com/736x/7f/dd/cd/7fddcd3fbcac9e9eaeccba931387917c.jpg" alt="Book Inventory Image"
+          class="w-40 h-40 object-cover rounded-xl shadow-md" />
       </div>
     </div>
 

@@ -82,52 +82,20 @@ const routes = [
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
-      { path: 'website', name: 'website', component: Website },
-      { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+      { path: 'donations', name: 'donations', component: () => import('@/views/Donate/DonateView.vue') },
       { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
       { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
-
-      // Add more routes like books, members, etc.
-      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') },
     ],
   },
-
-  // Fallback
-  { path: '/:pathMatch(.*)*', redirect: '/login' },
+  { path: '/website', name: 'website', component: Website }, // ← Moved outside of AppLayout
+  { path: '/login', component: Login },
+  { path: '/register', component: Register },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
-
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  const isLoggedIn = !!authStore.user
-  const userRole = authStore.user?.role
-
-  // Public routes
-  if (to.meta.requiresAuth === false) {
-    if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
-      if (userRole === 'admin') return next('/dashboard')
-      if (userRole === 'librarian' || userRole === 'user') return next('/books')
-    }
-    return next()
-  }
-
-  // Require login for protected routes
-  // if (to.meta.requiresAuth && !isLoggedIn) {
-  //   return next('/login')
-  // }
-
-  // Role check
-  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-    if (userRole === 'admin') return next('/dashboard')
-    if (userRole === 'librarian' || userRole === 'user') return next('/books')
-    return next('/login')
-  }
-
-  next()
 })
 
 export default router
