@@ -6,7 +6,8 @@ const User = db.User;
 // Format borrow record output
 const formatBorrow = (borrow) => ({
   id: borrow.id,
-  user_name: borrow.user?.username,
+  user_name: borrow.user?.username || borrow.borrower_name,
+  email: borrow.user?.email || borrow.borrower_email,
   book_name: borrow.book?.title,
   isbn: borrow.book?.isbn,
   quantity: borrow.borrowed_quantity,
@@ -53,21 +54,24 @@ exports.index = async (req, res) => {
     const formatted = borrows.map(borrow => ({
       id: borrow.id,
       book: {
-        title: borrow.book.title,
-        author: borrow.book.author?.name || null,
-        category: borrow.book.category?.name || null,
-cover_image: borrow.book.cover_image
-  ? `${req.protocol}://${req.get('host')}/uploads/books/${borrow.book.cover_image}`
-  : null
-
+        title: borrow.book?.title || null,
+        author: borrow.book?.author?.name || null,
+        category: borrow.book?.category?.name || null,
+        cover_image: borrow.book?.cover_image
+          ? `${req.protocol}://${req.get('host')}/uploads/books/${borrow.book.cover_image}`
+          : null
       },
       user: {
-        name: borrow.user.username 
+        name: borrow.user?.username || borrow.borrower_name || null,
+        email: borrow.user?.email || borrow.borrower_email || null,
       },
-      borrowed_quantity: borrow.borrowed_quantity, 
-      status:borrow.status,
+      borrowed_quantity: borrow.borrowed_quantity,
+      status: borrow.status,
       borrow_date: borrow.borrow_date,
-      return_date: borrow.return_date
+      return_date: borrow.return_date,
+      librarian: {
+        name: borrow.librarian?.username || null
+      }
     }));
 
     res.status(200).json(formatted);
@@ -76,7 +80,7 @@ cover_image: borrow.book.cover_image
     res.status(500).json({ message: 'Failed to fetch borrow records.', error: error.message });
   }
 };
-// GET /api/borrows/:id
+
 exports.show = async (req, res) => {
   try {
     const borrow = await db.Borrow.findByPk(req.params.id, {
@@ -118,19 +122,20 @@ exports.show = async (req, res) => {
     const formatted = {
       id: borrow.id,
       book: {
-        title: borrow.book.title,
-        author: borrow.book.author?.name || null,
-        category: borrow.book.category?.name || null,
-        cover_image: borrow.book.cover_image
+        title: borrow.book?.title || null,
+        author: borrow.book?.author?.name || null,
+        category: borrow.book?.category?.name || null,
+        cover_image: borrow.book?.cover_image || null
       },
       user: {
-        name: borrow.user.username
+        name: borrow.user?.username || borrow.borrower_name || null,
+        email: borrow.user?.email || borrow.borrower_email || null,
       },
       librarian: {
-        name: borrow.librarian.username
+        name: borrow.librarian?.username || null
       },
       borrowed_quantity: borrow.borrowed_quantity,
-      status:borrow.status,
+      status: borrow.status,
       borrow_date: borrow.borrow_date,
       return_date: borrow.return_date
     };
@@ -142,12 +147,14 @@ exports.show = async (req, res) => {
   }
 };
 
-
 // POST /api/borrows
 exports.store = async (req, res) => {
   try {
     const {
       user_name,
+      user_barcode,
+      email,
+      is_new_user,
       book_name,
       isbn,
       quantity,
@@ -157,25 +164,36 @@ exports.store = async (req, res) => {
       status
     } = req.body;
 
-    // 1. Find user
-    const user = await User.findOne({
-      where: { username: user_name }
-    });
-    if (!user) return res.status(404).json({ message: 'User not found.' });
+    let user = null;
+    let borrower_name = null;
+    let borrower_email = null;
 
-    // 2. Find book by title + ISBN
+    if (is_new_user) {
+      // Guest borrower: save name/email only (no user account)
+      borrower_name = user_name;
+      borrower_email = email;
+    } else {
+      // Find existing user by barcode if provided, else by username
+      if (user_barcode) {
+        user = await User.findOne({ where: { barcode: user_barcode } });
+      } else if (user_name) {
+        user = await User.findOne({ where: { username: user_name } });
+      }
+
+      if (!user) return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Find book by title and ISBN
     const book = await Book.findOne({ where: { title: book_name, isbn } });
     if (!book) return res.status(404).json({ message: 'Book not found.' });
 
-    // 3. Check available quantity
     if (book.quantity < quantity) {
       return res.status(400).json({ message: 'Not enough copies available.' });
     }
 
-    // 4. Find librarian
+    // Find librarian
     const librarian = await User.findOne({ where: { username: librarian_name } });
     if (!librarian) return res.status(404).json({ message: 'Librarian not found.' });
-        // Basic input validation
 
     // Validate dates
     if (isNaN(new Date(date_borrow))) {
@@ -185,27 +203,28 @@ exports.store = async (req, res) => {
       return res.status(400).json({ message: 'Invalid return date.' });
     }
 
-    // 5. Create borrow record
-const newBorrow = await Borrow.create({
-  user_id: user.id,
-  book_id: book.id,
-  librarian_id: librarian.id,
-  isbn: isbn,
-  borrow_date: new Date(date_borrow),
-  return_date: new Date(date_return),
-  status: status || 'borrowed',
-  borrowed_quantity: quantity
-});
+    // Create borrow record
+    const newBorrow = await Borrow.create({
+      user_id: user ? user.id : null,
+      borrower_name,
+      borrower_email,
+      book_id: book.id,
+      librarian_id: librarian.id,
+      isbn,
+      borrow_date: new Date(date_borrow),
+      return_date: new Date(date_return),
+      status: status || 'borrowed',
+      borrowed_quantity: quantity
+    });
 
-
-    // 6. Update book quantity and availability
+    // Update book quantity
     const updatedQuantity = book.quantity - quantity;
     await book.update({
       quantity: updatedQuantity,
       available: updatedQuantity > 0
     });
 
-    // 7. Return the borrow record
+    // Fetch result with associations
     const borrowWithAssociations = await Borrow.findByPk(newBorrow.id, {
       include: [
         { model: User, as: 'user', attributes: ['username', 'email'] },
@@ -236,15 +255,48 @@ exports.update = async (req, res) => {
       return res.status(404).json({ message: 'Borrow record not found.' });
     }
 
-    const { return_date, status } = req.body;
+    const {
+      user_name,
+      borrower_name,
+      borrower_email,
+      book_name,
+      return_date,
+      status,
+    } = req.body;
 
-    // Update borrow record
-    await borrow.update({
-      return_date: return_date ?? borrow.return_date,
-      status: status ?? borrow.status
-    });
+    // Variables to update
+    const updateData = {};
 
-    // If book is returned, mark it available
+    // Update user_id if user_name provided
+    if (user_name) {
+      const user = await User.findOne({ where: { username: user_name } });
+      if (!user) return res.status(404).json({ message: 'User not found.' });
+      updateData.user_id = user.id;
+
+      // Clear guest borrower info when updating to existing user
+      updateData.borrower_name = null;
+      updateData.borrower_email = null;
+    } else if (borrower_name || borrower_email) {
+      // Update guest borrower info, clear user_id if switching to guest
+      updateData.borrower_name = borrower_name || borrow.borrower_name;
+      updateData.borrower_email = borrower_email || borrow.borrower_email;
+      updateData.user_id = null;
+    }
+
+    // Update book_id if book_name provided
+    if (book_name) {
+      const book = await Book.findOne({ where: { title: book_name } });
+      if (!book) return res.status(404).json({ message: 'Book not found.' });
+      updateData.book_id = book.id;
+    }
+
+    if (return_date) updateData.return_date = return_date;
+    if (status) updateData.status = status;
+
+    // Update the borrow record
+    await borrow.update(updateData);
+
+    // If book is returned, mark available
     if (status === 'returned') {
       const book = await Book.findByPk(borrow.book_id);
       if (book) {
@@ -252,43 +304,33 @@ exports.update = async (req, res) => {
       }
     }
 
-    // Re-fetch updated borrow with full relationships
+    // Fetch updated borrow with associations
     const updated = await Borrow.findByPk(borrow.id, {
       include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['username']
-        },
-        {
-          model: User,
-          as: 'librarian',
-          attributes: ['username']
-        },
-        {
-          model: Book,
-          as: 'book',
-          attributes: ['title']
-        }
-      ]
+        { model: User, as: 'user', attributes: ['username', 'email'] },
+        { model: User, as: 'librarian', attributes: ['username'] },
+        { model: Book, as: 'book', attributes: ['title', 'isbn'] },
+      ],
     });
 
-    // Return consistent formatted data
+    // Format response with fallback for guest borrower
     const formatted = {
       id: updated.id,
       book: {
-        title: updated.book.title,
+        title: updated.book?.title,
+        isbn: updated.book?.isbn,
       },
       user: {
-        name: updated.user.username,
+        name: updated.user?.username || updated.borrower_name,
+        email: updated.user?.email || updated.borrower_email,
       },
       librarian: {
-        name: updated.librarian.username
+        name: updated.librarian?.username,
       },
       borrowed_quantity: updated.borrowed_quantity,
       borrow_date: updated.borrow_date,
       return_date: updated.return_date,
-      status: updated.status
+      status: updated.status,
     };
 
     res.status(200).json(formatted);
