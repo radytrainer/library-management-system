@@ -93,7 +93,7 @@ const routes = [
   },
 
   // Fallback
-  { path: '/:pathMatch(.*)*', redirect: '/login' },
+  // { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({

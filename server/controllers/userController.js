@@ -1,6 +1,8 @@
 const db = require("../models/index")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
+const JsBarcode = require('jsbarcode');
+const { createCanvas } = require('canvas');
 const { v4: uuidv4 } = require("uuid") // For generating unique barcode
 const { User, Role } = db
 
@@ -19,7 +21,23 @@ const adminBoard = (req, res) => {
 const librarianBoard = (req, res) => {
   res.status(200).json({ message: "Librarian Content." })
 }
+const getUserBarcode = async (req, res) => {
+  try {
+    const userId = req.params.id;
 
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // ✅ Generate barcode
+    const canvas = createCanvas();
+    JsBarcode(canvas, user.id.toString(), { format: 'CODE128' });
+
+    res.setHeader('Content-Type', 'image/png');
+    canvas.pngStream().pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: 'Error generating barcode' });
+  }
+};
 const createUser = async (req, res) => {
   try {
     if (!req.userRole || !["admin", "librarian"].includes(req.userRole)) {
@@ -107,13 +125,7 @@ const createUser = async (req, res) => {
       profile_image: userWithRole.profile_image,
       phone: userWithRole.phone,
       barcode: userWithRole.barcode,
-      role: userWithRole.Role
-        ? {
-            id: userWithRole.Role.id,
-            name: userWithRole.Role.name,
-            description: userWithRole.Role.description,
-          }
-        : null,
+      role: userWithRole.Role.name || null,
       createdAt: userWithRole.createdAt,
       updatedAt: userWithRole.updatedAt,
     };
@@ -137,7 +149,7 @@ const getAllUsers = async (req, res) => {
         {
           model: Role,
           as: "Role",
-          attributes: ["id", "name", "description"],
+          // attributes: ["id", "name", "description"],
           required: false,
         },
       ],
@@ -164,13 +176,7 @@ const getAllUsers = async (req, res) => {
       profile_image: user.profile_image,
       phone: user.phone,
       barcode: user.barcode, // Include barcode
-      role: user.Role
-        ? {
-            id: user.Role.id,
-            name: user.Role.name,
-            description: user.Role.description,
-          }
-        : null,
+      role: user.Role.name || null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }))
@@ -473,6 +479,7 @@ module.exports = {
   userBoard,
   adminBoard,
   librarianBoard,
+  getUserBarcode,
   createUser,
   getAllUsers,
   getUserById,

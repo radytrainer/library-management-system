@@ -1,24 +1,28 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-const api = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
+const instance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api',
+  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// 🔐 Add token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+instance.interceptors.request.use((config) => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (user.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
+      console.log('Token included in request:', user.token.substring(0, 10) + '...');
+    } else {
+      console.warn('No token found in user object for request:', config.url);
+    }
+  } else {
+    console.warn('No user object found in localStorage for request:', config.url);
   }
   return config;
 }, (error) => {
+  console.error('Axios request interceptor error:', error);
   return Promise.reject(error);
 });
 
-export default api;
+export default instance;
