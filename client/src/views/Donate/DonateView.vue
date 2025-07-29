@@ -25,7 +25,7 @@
       </div>
       <!-- Image at the End -->
       <div class="flex justify-end items-center p-6">
-        <img src="https://i.pinimg.com/736x/a7/7a/8b/a77a8b275f7c0894bcf0f8094fde7ad6.jpg" alt="Book Inventory Image"
+        <img src="https://i.pinimg.com/736x/7f/dd/cd/7fddcd3fbcac9e9eaeccba931387917c.jpg" alt="Book Inventory Image"
           class="w-40 h-40 object-cover rounded-xl shadow-md" />
       </div>
     </div>
