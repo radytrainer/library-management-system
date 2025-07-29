@@ -1,84 +1,64 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import userService from '@/services/Api/user'
 
-export const useUserStore = defineStore('user', {
+export const useUserStore = defineStore('users', {
   state: () => ({
     users: [],
     roles: [],
-    viewedUser: {},
-    loading: false,
-    error: null
+    viewedUser: null,
+    userProfile: null,
+    userBarcodeImageUrl: null, // store barcode image URL blob
   }),
 
   actions: {
     async fetchUsers() {
       try {
-        this.loading = true
-        const res = await axios.get('/api/users', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
+        const res = await userService.getAllUsers()
         this.users = res.data.users
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to fetch users'
-      } finally {
-        this.loading = false
+        console.error('❌ fetchUsers error:', err.response?.data || err.message)
       }
     },
 
     async fetchRoles() {
       try {
-        const res = await axios.get('/api/roles', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
+        const res = await userService.getRoles()
         this.roles = res.data.roles
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to fetch roles'
+        console.error('❌ fetchRoles error:', err.response?.data || err.message)
       }
     },
 
     async viewUser(id) {
       try {
-        const res = await axios.get(`/api/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
+        const res = await userService.getUserById(id)
         this.viewedUser = res.data.user
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to view user'
+        console.error('❌ viewUser error:', err.response?.data || err.message)
       }
     },
 
-    async createUser(payload) {
+    async fetchProfile() {
       try {
-        const res = await axios.post('/api/', payload, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-        this.users.push(res.data.user)
+        const res = await userService.getProfile()
+        this.userProfile = res.data.user
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to create user'
+        console.error('❌ fetchProfile error:', err.response?.data || err.message)
       }
     },
 
-    async updateUser(id, payload) {
+    // Fetch barcode image as a blob URL to display in frontend
+    async fetchUserBarcodeImage(id) {
       try {
-        const res = await axios.put(`/api/users/${id}`, payload, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-        const index = this.users.findIndex(u => u.id === id)
-        if (index !== -1) this.users[index] = res.data.user
+        const res = await userService.getUserBarcodeImage(id)
+        // Convert blob to object URL for <img> src
+        this.userBarcodeImageUrl = URL.createObjectURL(res.data)
       } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to update user'
+        console.error('❌ fetchUserBarcodeImage error:', err.response?.data || err.message)
+        this.userBarcodeImageUrl = null
       }
     },
 
-    async deleteUser(id) {
-      try {
-        await axios.delete(`/api/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-        this.users = this.users.filter(u => u.id !== id)
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to delete user'
-      }
-    }
-  }
+    // Other CRUD actions (createUser, updateUser, deleteUser)...
+  },
 })

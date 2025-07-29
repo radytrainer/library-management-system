@@ -1,30 +1,25 @@
-// app.js
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const db = require('./models');
-const routes = require('./routes');
-const authRoutes = require("./routes/authRoute");
-const userRoutes = require("./routes/userRoute");
-
-
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import db from "./models/index.js";
+import routes from "./routes/index.js";
+import authRoutes from "./routes/authRoute.js";
+import userRoutes from "./routes/userRoute.js";
 
 dotenv.config();
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("Uploads"));
 
-
-app.use('/api', routes);
-
-// Routes registration user
+app.use("/api", routes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-// Database sync (without starting server)
-db.sequelize.sync({ alter: true })
+
+db.sequelize
+  .sync({ alter: true })
   .then(() => console.log("Database synced"))
-  .catch(err => console.error("Failed to sync db:", err));
-module.exports = app;
+  .catch((err) => console.error("Failed to sync db:", err));
+
+export default app;

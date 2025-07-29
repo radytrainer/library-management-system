@@ -1,5 +1,7 @@
 const db = require("../models/index")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+const { v4: uuidv4 } = require("uuid") // For generating unique barcode
 const { User, Role } = db
 
 const allAccess = (req, res) => {
@@ -18,23 +20,43 @@ const librarianBoard = (req, res) => {
   res.status(200).json({ message: "Librarian Content." })
 }
 
-// Create a new user
 const createUser = async (req, res) => {
   try {
-    const { username, email, password, date_of_birth, phone, RoleId } = req.body
-    const profile_image = req.file ? req.file.filename : null
-
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "Username, email, and password are required!" })
+    if (!req.userRole || !["admin", "librarian"].includes(req.userRole)) {
+      return res.status(403).json({ message: "Only admins or librarians can create users!" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 8)
+    const { username, email, password, date_of_birth, phone, roleId } = req.body;
+    const profile_image = req.file ? req.file.filename : null;
 
-    // Check and assign role
-    let roleId = RoleId
-    if (!roleId) {
-      const defaultRole = await Role.findOne({ where: { name: "user" } })
-      roleId = defaultRole ? defaultRole.id : null
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Username, email, and password are required!" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    let assignedRoleId = roleId; // Use the provided roleId
+    if (!assignedRoleId) {
+      const defaultRole = await Role.findOne({ where: { name: "user" } });
+      assignedRoleId = defaultRole ? defaultRole.id : null;
+    } else {
+      const role = await Role.findByPk(assignedRoleId);
+      if (!role) {
+        return res.status(400).json({ message: "Invalid roleId!" });
+      }
+      if (role.name === "admin" && req.userRole !== "admin") {
+        return res.status(403).json({ message: "Only admins can create other admins!" });
+      }
+    }
+
+    console.log("Assigned RoleId:", assignedRoleId); // Debug log
+
+    let barcode;
+    let isUnique = false;
+    while (!isUnique) {
+      barcode = uuidv4().replace(/-/g, "").slice(0, 12);
+      const existingUser = await User.findOne({ where: { barcode } });
+      if (!existingUser) isUnique = true;
     }
 
     const user = await User.create({
@@ -44,10 +66,16 @@ const createUser = async (req, res) => {
       date_of_birth,
       phone,
       profile_image,
-      RoleId: roleId,
-    })
+      roleId: assignedRoleId, // Use lowercase roleId to match model
+      barcode,
+    });
 
-    // Fetch user with role
+    const token = jwt.sign(
+      { id: user.id, role: (await Role.findByPk(assignedRoleId)).name },
+      process.env.JWT_SECRET || "your_jwt_secret",
+      { expiresIn: "1h" }
+    );
+
     const userWithRole = await User.findByPk(user.id, {
       include: [
         {
@@ -64,11 +92,12 @@ const createUser = async (req, res) => {
         "date_of_birth",
         "profile_image",
         "phone",
-        "RoleId",
+        "roleId",
+        "barcode",
         "createdAt",
         "updatedAt",
       ],
-    })
+    });
 
     const formattedUser = {
       id: userWithRole.id,
@@ -77,6 +106,7 @@ const createUser = async (req, res) => {
       date_of_birth: userWithRole.date_of_birth,
       profile_image: userWithRole.profile_image,
       phone: userWithRole.phone,
+      barcode: userWithRole.barcode,
       role: userWithRole.Role
         ? {
             id: userWithRole.Role.id,
@@ -86,17 +116,18 @@ const createUser = async (req, res) => {
         : null,
       createdAt: userWithRole.createdAt,
       updatedAt: userWithRole.updatedAt,
-    }
+    };
 
     res.status(201).json({
       message: "User created successfully!",
       user: formattedUser,
-    })
+      token,
+    });
   } catch (error) {
-    console.error("Create user error:", error)
-    res.status(500).json({ message: error.message })
+    console.error("Create user error:", error);
+    res.status(500).json({ message: error.message });
   }
-}
+};
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -118,6 +149,7 @@ const getAllUsers = async (req, res) => {
         "profile_image",
         "phone",
         "RoleId",
+        "barcode", // Include barcode
         "createdAt",
         "updatedAt",
       ],
@@ -131,6 +163,7 @@ const getAllUsers = async (req, res) => {
       date_of_birth: user.date_of_birth,
       profile_image: user.profile_image,
       phone: user.phone,
+      barcode: user.barcode, // Include barcode
       role: user.Role
         ? {
             id: user.Role.id,
@@ -175,6 +208,7 @@ const getUserById = async (req, res) => {
         "profile_image",
         "phone",
         "RoleId",
+        "barcode", // Include barcode
         "createdAt",
         "updatedAt",
       ],
@@ -191,6 +225,7 @@ const getUserById = async (req, res) => {
       date_of_birth: user.date_of_birth,
       profile_image: user.profile_image,
       phone: user.phone,
+      barcode: user.barcode, // Include barcode
       role: user.Role
         ? {
             id: user.Role.id,
@@ -221,7 +256,7 @@ const getUserProfile = async (req, res) => {
       include: [
         {
           model: Role,
-          as: "Role", // Must match the alias defined in association
+          as: "Role",
           attributes: ["id", "name", "description"],
         },
       ],
@@ -232,7 +267,8 @@ const getUserProfile = async (req, res) => {
         "date_of_birth",
         "profile_image",
         "phone",
-        "roleId",
+        "RoleId",
+        "barcode", // Include barcode
         "createdAt",
         "updatedAt",
       ],
@@ -251,6 +287,7 @@ const getUserProfile = async (req, res) => {
         date_of_birth: user.date_of_birth,
         profile_image: user.profile_image,
         phone: user.phone,
+        barcode: user.barcode, // Include barcode
         role: user.Role
           ? {
               id: user.Role.id,
@@ -354,6 +391,7 @@ const updateUser = async (req, res) => {
         "profile_image",
         "phone",
         "RoleId",
+        "barcode", // Include barcode
         "createdAt",
         "updatedAt",
       ],
@@ -366,6 +404,7 @@ const updateUser = async (req, res) => {
       date_of_birth: updatedUser.date_of_birth,
       profile_image: updatedUser.profile_image,
       phone: updatedUser.phone,
+      barcode: updatedUser.barcode, // Include barcode
       role: updatedUser.Role
         ? {
             id: updatedUser.Role.id,
@@ -387,7 +426,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-
 // Delete user by specific ID
 const deleteUserById = async (req, res) => {
   try {
@@ -408,7 +446,6 @@ const deleteUserById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // Delete current user's account
 const deleteAccount = async (req, res) => {
