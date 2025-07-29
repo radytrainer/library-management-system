@@ -24,7 +24,7 @@ const routes = [
       const role = authStore.user?.role
       if (role === 'admin') return '/dashboard'
       if (role === 'librarian' || role === 'user') return '/books'
-      // return '/login'
+      return '/login'
     }
   },
 

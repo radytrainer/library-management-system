@@ -257,7 +257,7 @@ const pageTitle = computed(() => {
       </header>
 
       <!-- ✅ Page Content -->
-      <main class="p-6">
+      <main class="p-2">
         <RouterView />
       </main>
     </div>
