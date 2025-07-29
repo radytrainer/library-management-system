@@ -1,148 +1,136 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'// ✅ import your Pinia store
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+
+const language = ref('en')
+const searchQuery = ref('')
+const notifications = ref(3)
+const showNotifications = ref(false)
+const showProfileDropdown = ref(false)
+const isSidebarOpen = ref(true)
+const isOpen = ref(false)
+
+const navItems = [
+  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' }, roles: ['admin'] },
+  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' }, roles: ['admin', 'librarian'] },
+  { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' }, roles: ['admin'] }
+]
+
+// ✅ Filter navigation by role
+const filteredNav = computed(() => {
+  return navItems.filter(item => item.roles.includes(authStore.user?.role || ''))
+})
+
+
+// ✅ Language switch
+function selectLanguage(lang) {
+  language.value = lang
+  localStorage.setItem('language', language.value)
+  isOpen.value = false
+}
+
+function toggleNotifications() {
+  showNotifications.value = !showNotifications.value
+  showProfileDropdown.value = false
+}
+
+function clearNotifications() {
+  notifications.value = 0
+  showNotifications.value = false
+}
+
+function toggleProfileDropdown() {
+  showProfileDropdown.value = !showProfileDropdown.value
+  showNotifications.value = false
+}
+
+function toggleSidebar() {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+const user = ref({
+  name: '',
+  email: '',
+  role: '',
+  profile_image: ''
+})
+
+function logout() {
+  authStore.reset()
+  user.value = { name: '', email: '', role: '', profile_image: '' }
+  router.push('/login')
+}
+
+
+
+
+const profileInitial = computed(() => {
+  if (user.value.email) {
+    return user.value.email.charAt(0).toUpperCase()
+  }
+  return '?'
+})
+
+
+onMounted(() => {
+  language.value = localStorage.getItem('language') || 'en'
+  const savedUser = localStorage.getItem('user')
+  if (savedUser) {
+    const parsedUser = JSON.parse(savedUser)
+    user.value = parsedUser
+    authStore.user = parsedUser // ✅ Sync Pinia store
+  }
+})
+
+
+
+// ✅ Dynamic Page Title
+const pageTitle = computed(() => {
+  const map = {
+    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
+    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
+    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
+    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
+    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
+    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
+    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីសៀវភៅ' }
+  }
+  const key = route.name
+  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
+})
+</script>
+
 <template>
-  <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter ">
-    <!-- Sidebar (Left-aligned, Collapsible) -->
-    <aside :class="[
-      'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg',
-      isSidebarOpen ? 'w-64' : 'w-20'
-    ]">
-      <!-- Logo and Title (Shown only when open) -->
-      <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600 ">
+  <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
+    <!-- ✅ Sidebar -->
+    <aside
+      :class="['bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg', isSidebarOpen ? 'w-64' : 'w-20']">
+      <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
         <img src="/logo.png" alt="Library Logo" class="h-20 w-23" />
         <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
           {{ language === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ' }}
         </h2>
       </div>
 
-      <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto scrollbar-hide pr-1">
+      <nav class="flex-1 overflow-y-auto">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
-          <li>
-            <RouterLink to="/dashboard" :class="[
+          <li v-for="item in filteredNav" :key="item.path">
+            <RouterLink :to="item.path" :class="[
               'flex items-center p-3 rounded-lg transition-colors duration-200',
               isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/dashboard' ? 'bg-custom-hover-page shadow-sm' : ''
+              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : ''
             ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">dashboard</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Dashboard' : 'ផ្ទាំងគ្រប់គ្រង' }}
-              </span>
-            </RouterLink>
-          </li>
-          
-          <li>
-            <!-- Parent Menu -->
-            <div @click="toggleBookMenu" :class="[
-              'flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">menu_book</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Books' : 'សៀវភៅ' }}
-              </span>
-              <span v-if="isSidebarOpen" class="ml-auto material-icons text-sm">
-                {{ isBookMenuOpen ? 'expand_less' : 'expand_more' }}
-              </span>
-            </div>
-
-            <!-- Child Menu with vertical line -->
-            <ul v-if="isBookMenuOpen && isSidebarOpen" class="ml-8 mt-1 relative space-y-1"
-              style="border-left: 2px solid #065084; /* Tailwind blue-500 color */">
-              <li class="relative pl-4">
-                <!-- Horizontal line -->
-                <span class="absolute left-0 top-1/2 w-3 h-0.5 bg-blue-500 -translate-y-1/2"
-                  style="border-radius: 2px;"></span>
-
-                <RouterLink to="/books/list"
-                  class="block px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-custom-hover-page"
-                  :class="{ 'bg-custom-hover-page shadow-sm': $route.path === '/books/list' }">
-                  {{ language === 'en' ? 'List Books' : 'បញ្ជីសៀវភៅ' }}
-                </RouterLink>
-              </li>
-              <li class="relative pl-4">
-                <!-- Horizontal line -->
-                <span class="absolute left-0 top-1/2 w-3 h-0.5 bg-blue-500 -translate-y-1/2"
-                  style="border-radius: 2px;"></span>
-
-                <RouterLink to="/books/all"
-                  class="block px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-custom-hover-page"
-                  :class="{ 'bg-custom-hover-page shadow-sm': $route.path === '/books/all' }">
-                  {{ language === 'en' ? 'All Books' : 'សៀវភៅទាំងអស់' }}
-                </RouterLink>
-              </li>
-            </ul>
-          </li>
-
-
-          <li>
-            <RouterLink to="/borrows" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/borrows' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">autorenew</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Borrow' : 'ខ្ចី' }}
-              </span>
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/categories" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/categories' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">category</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Categories' : 'ប្រភេទ' }}
-              </span>
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/authors" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/authors' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">person</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Authors' : 'អ្នកនិពន្ធ' }}
-              </span>
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/donations" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/donations' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">volunteer_activism</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Donations' : 'ការបរិច្ចាគ' }}
-              </span>
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/history" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/history' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">history</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'History' : 'ប្រវត្តិ' }}
-              </span>
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/users" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/users' ? 'bg-custom-hover-page shadow-sm' : ''
-            ]">
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">people</span>
-              <span v-if="isSidebarOpen">
-                {{ language === 'en' ? 'Users' : 'អ្នកប្រើប្រាស់' }}
-              </span>
+              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">{{ item.icon }}</span>
+              <span v-if="isSidebarOpen">{{ item.label[language] }}</span>
             </RouterLink>
           </li>
           <li>
@@ -161,9 +149,10 @@
       </nav>
     </aside>
 
-    <!-- Main Content -->
+    <!-- ✅ Main Content -->
     <div class="flex-1 flex flex-col transition-all duration-300"
       :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
+      <!-- ✅ Header -->
       <!-- Top Navbar -->
       <header class="shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
@@ -239,137 +228,38 @@
 
           <!-- Profile -->
           <div class="relative">
-            <img src="https://i.pinimg.com/736x/4c/86/d3/4c86d30bd3fcfb2940545982b74ee2d4.jpg" alt="Profile"
-              class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
-              @click="toggleProfileDropdown" />
+            <div v-if="user.profile_image">
+              <img :src="user.profile_image" alt="Profile"
+                class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+                @click="toggleProfileDropdown" />
+            </div>
+
+            <!-- Fallback if no profile image -->
+            <div v-else
+              class="h-10 w-10 rounded-full cursor-pointer bg-indigo-600 text-white flex items-center justify-center font-bold border border-gray-200 hover:border-indigo-400"
+              @click="toggleProfileDropdown">
+              {{ profileInitial }}
+            </div>
+
             <div v-if="showProfileDropdown"
               class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
-              <p class="text-sm font-semibold">{{ user.name }}</p>
+              <p class="text-sm font-semibold">{{ user.name || 'Guest' }}</p>
               <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
               <button class="mt-3 w-full text-left text-sm text-red-600 hover:bg-red-50 rounded px-2 py-1"
                 @click="logout">
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
-              <RouterLink to="/register"
-                class="mt-2 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block">
-                {{ language === 'en' ? 'Register' : 'ចុះឈ្មោះ' }}
-              </RouterLink>
-              <RouterLink to="/login"
-                class="mt-1 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block">
-                {{ language === 'en' ? 'Login' : 'ចូលគណនី' }}
-              </RouterLink>
+
+
             </div>
           </div>
         </div>
       </header>
-      <!-- Page Content -->
-      <main>
+
+      <!-- ✅ Page Content -->
+      <main class="p-6">
         <RouterView />
       </main>
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-
-const router = useRouter()
-const route = useRoute()
-
-const language = ref('en')
-const searchQuery = ref('')
-const notifications = ref(3)
-const showNotifications = ref(false)
-const showProfileDropdown = ref(false)
-const isSidebarOpen = ref(true)
-const isOpen = ref(false)
-
-const isBookMenuOpen = ref(false)
-
-function toggleBookMenu() {
-  isBookMenuOpen.value = !isBookMenuOpen.value
-}
-
-const user = ref({
-  name: 'Admin User',
-  email: 'admin@library.com',
-})
-
-const navItems = [
-  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' } },
-  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' } },
-  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' } },
-  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' } },
-  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' } },
-  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' } },
-  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' } },
-]
-
-function switchLanguage() {
-  localStorage.setItem('language', language.value)
-  isOpen.value = false
-}
-
-function selectLanguage(lang) {
-  language.value = lang
-  switchLanguage()
-}
-
-function toggleNotifications() {
-  showNotifications.value = !showNotifications.value
-  showProfileDropdown.value = false
-}
-
-function clearNotifications() {
-  notifications.value = 0
-  showNotifications.value = false
-}
-
-function toggleProfileDropdown() {
-  showProfileDropdown.value = !showProfileDropdown.value
-  showNotifications.value = false
-}
-
-function toggleSidebar() {
-  isSidebarOpen.value = !isSidebarOpen.value
-}
-
-function logout() {
-  console.log('Logged out')
-  router.push('/login')
-}
-
-onMounted(() => {
-  language.value = localStorage.getItem('language') || 'en'
-})
-
-// ✅ Computed Page Title
-const pageTitle = computed(() => {
-  const map = {
-    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
-    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
-    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
-    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
-    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
-    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
-    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីសៀវភៅ' }
-  }
-  const key = route.name
-  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
-})
-</script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Khmer&display=swap');
-
-.font-inter {
-  font-family: 'Inter', sans-serif;
-}
-
-.font-khmer {
-  font-family: 'Khmer', sans-serif;
-}
-</style>

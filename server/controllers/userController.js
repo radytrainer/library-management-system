@@ -268,6 +268,15 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const getRoles = async (req, res) => {
+  try {
+    const roles = await Role.findAll({ attributes: ['id', 'name'] });
+    res.status(200).json({ message: "Roles retrieved successfully!", roles });
+  } catch (error) {
+    console.error("Get roles error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const updateUser = async (req, res) => {
   try {
@@ -431,6 +440,7 @@ module.exports = {
   getAllUsers,
   getUserById,
   getUserProfile,
+  getRoles,
   updateUser,
   deleteUserById,
   deleteAccount,

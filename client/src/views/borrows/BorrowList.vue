@@ -120,6 +120,14 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>Add Borrow
               </button>
+              <!-- Add Borrow scan -->
+              <button @click="showModalScan = true"
+                class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M3 3h3v18H3V3zm5 0h1v18H8V3zm3 0h1v18H11V3zm3 0h1v18H14V3zm3 0h1v18H17V3zm3 0h1v18H20V3z" />
+  </svg>Scan Borrow
+              </button>
             </div>
           </div>
         </div>
@@ -421,6 +429,92 @@
         </form>
       </div>
     </div>
+    <!-- Scan Borrow Modal -->
+<div v-if="showModalScan" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
+  @click.self="showModalScan = false">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+    <div class="flex justify-between items-center p-6 border-b border-gray-200">
+      <h3 class="text-2xl font-bold text-gray-900">Scan Borrow Record</h3>
+      <button @click="showModalScan = false" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <form @submit.prevent="submitScanBorrow" class="p-6 space-y-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Scan or Enter ISBN</label>
+        <div class="flex items-center gap-4">
+          <input v-model="scanForm.isbn" type="text" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Scan or enter ISBN" @input="handleIsbnInput" />
+          <button type="button" @click="simulateScan"
+            class="px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+        <p v-if="scanForm.bookTitle" class="mt-2 text-sm text-gray-600">Book: {{ scanForm.bookTitle }}</p>
+        <p v-if="scanForm.bookError" class="mt-2 text-sm text-red-600">{{ scanForm.bookError }}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">User Name</label>
+          <input v-model="scanForm.user_name" type="text" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Enter user name" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+          <input v-model.number="scanForm.quantity" type="number" min="1" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Librarian</label>
+          <input v-model="scanForm.librarian_name" type="text" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Enter librarian name" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Borrow Date</label>
+          <input v-model="scanForm.date_borrow" type="date" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Return Date</label>
+          <input v-model="scanForm.date_return" type="date" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+        <select v-model="scanForm.status" required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <option value="borrowed">Borrowed</option>
+          <option value="returned">Returned</option>
+        </select>
+      </div>
+      <div v-if="formError" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{{ formError }}</div>
+      <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
+        <button type="button" @click="showModalScan = false"
+          class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700">
+          Cancel
+        </button>
+        <button type="submit"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+          :disabled="!scanForm.bookTitle">
+          Add Borrow Record
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
     <!-- Update Borrow Modal -->
     <div v-if="showUpdateModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
       @click.self="closeUpdateModal">
@@ -538,6 +632,8 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getBorrows, createBorrow, updateBorrow, deleteBorrow } from "@/services/Api/borrow";
 import { getBooks, updateBook } from "@/services/Api/book";
+
+
 
 const router = useRouter();
 const borrowData = ref([]);
@@ -992,6 +1088,134 @@ async function handleConfirmReturn() {
   } finally {
     showConfirmModal.value = false;
   }
+}
+// Scan form data
+const showModalScan = ref(false);
+const scanForm = ref({
+  isbn: "",
+  bookTitle: "",
+  bookError: "",
+  user_name: "",
+  email_borrower: "",
+  quantity: 1,
+  librarian_name: "",
+  date_borrow: "",
+  date_return: "",
+  status: "borrowed",
+});
+
+// Handle ISBN input and validate book
+async function handleIsbnInput() {
+  scanForm.value.bookTitle = "";
+  scanForm.value.bookError = "";
+  const isbn = scanForm.value.isbn.trim();
+  if (!isbn) return;
+
+  try {
+    const book = await getBook(isbn, "isbn");
+    if (book) {
+      scanForm.value.bookTitle = book.title;
+      if (book.quantity < scanForm.value.quantity) {
+        scanForm.value.bookError = `Only ${book.quantity} copies available.`;
+      } else if (book.quantity === 1) {
+        scanForm.value.bookError = "Cannot borrow this book because only 1 copy is in stock.";
+      }
+    } else {
+      scanForm.value.bookError = "Book not found. Please enter a valid ISBN.";
+    }
+  } catch (error) {
+    console.error("Error validating ISBN:", error);
+    scanForm.value.bookError = "Failed to validate ISBN. Please try again.";
+  }
+}
+
+// Simulate barcode scan (placeholder for actual scanning logic)
+function simulateScan() {
+  // Placeholder: In a real app, this would trigger a barcode scanner (e.g., QuaggaJS or device camera)
+  // For now, it just logs a message
+  console.log("Simulating barcode scan...");
+  showToast("Barcode scanning not implemented. Enter ISBN manually.", "error");
+  // Example: scanForm.value.isbn = "1234567890123"; // Simulate scanned ISBN
+  // handleIsbnInput();
+}
+
+// Submit scan borrow form
+async function submitScanBorrow() {
+  try {
+    console.log("Submitting scan borrow with form data:", scanForm.value);
+    if (!booksData.value.length) {
+      console.warn("No books available in booksData. Cannot process borrow request.");
+      showToast("No books available in the database. Please try again later.", "error");
+      return;
+    }
+
+    // Validate ISBN and book
+    const book = await getBook(scanForm.value.isbn, "isbn");
+    if (!book) {
+      showToast("Book not found. Please enter a valid ISBN.", "error");
+      return;
+    }
+    if (book.quantity === 1) {
+      showToast("Cannot borrow this book because only 1 copy is in stock.", "error");
+      return;
+    }
+    if (book.quantity < scanForm.value.quantity) {
+      showToast(`Cannot borrow ${scanForm.value.quantity} copies. Only ${book.quantity} available.`, "error");
+      return;
+    }
+
+    // Prepare payload
+    const payload = {
+      ...scanForm.value,
+      book_id: book.id,
+      book_name: book.title,
+      isbn: book.isbn,
+    };
+    console.log("Creating scan borrow with payload:", payload);
+    await createBorrow(payload);
+    await fetchBorrowData();
+    await fetchBooksData();
+    showModalScan.value = false;
+    scanForm.value = {
+      isbn: "",
+      bookTitle: "",
+      bookError: "",
+      user_name: "",
+      quantity: 1,
+      librarian_name: "",
+      date_borrow: "",
+      date_return: "",
+      status: "borrowed",
+    };
+    showToast("Borrow record added successfully via scan.", "success");
+  } catch (error) {
+    console.error("Failed to add scan borrow record:", error);
+    showToast("Failed to add borrow record: " + error.message, "error");
+  }
+}
+
+// Update toast notification to support warning type
+watch(messageType, (newType) => {
+  if (newType === "warning") {
+    // Ensure warning type is styled appropriately
+    // Update the toast transition class in the template if needed
+  }
+});
+import Quagga from 'quagga';
+function startScanner() {
+  Quagga.init({
+    inputStream: { name: 'Live', type: 'LiveStream', target: document.querySelector('#scanner-container') },
+    decoder: { readers: ['ean_reader'] } // For ISBN-13
+  }, (err) => {
+    if (!err) {
+      Quagga.start();
+      Quagga.onDetected((data) => {
+        scanForm.value.isbn = data.codeResult.code;
+        handleIsbnInput();
+        Quagga.stop();
+      });
+    }
+  });
 }
 </script>
 
