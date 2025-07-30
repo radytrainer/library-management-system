@@ -41,7 +41,7 @@
           </div>
         </div>
       </div>
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-6 flex-1 flex flex-col overflow-hidden" novalidate>
+      <form class="p-6 space-y-6 flex-1 flex flex-col overflow-hidden" novalidate>
         <!-- Step 1: Borrower Information -->
         <div v-if="currentStep === 1" class="bg-gray-50 rounded-lg p-4 animate-step overflow-y-auto">
           <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -217,12 +217,12 @@
                 <div>
                   <label :for="'return-date-' + index" class="block text-sm font-medium text-gray-700 mb-2">Return Date</label>
                   <div class="relative">
-                    <input :id="'return-date-' + index" v-model="book.date_return" type="date" required :min="today"
+                    <input :id="'return-date-' + index" v-model="book.return_date" type="date" required :min="today"
                       @input="validateBook(index)"
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
-                      :class="{ 'border-red-500': book.dateError, 'border-green-500': !book.dateError && book.date_return }"
+                      :class="{ 'border-red-500': book.dateError, 'border-green-500': !book.dateError && book.return_date }"
                       :aria-describedby="'return-date-error-' + index" />
-                    <svg v-if="!book.dateError && book.date_return"
+                    <svg v-if="!book.dateError && book.return_date"
                       class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -272,7 +272,7 @@
               :disabled="!isStepValid(currentStep)" aria-label="Go to next step">
               Next
             </button>
-            <button v-if="currentStep === 3" type="submit"
+            <button v-if="currentStep === 3" type="button" @click="submitForm"
               class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
               :disabled="!isStepValid(3)" aria-label="Submit borrow record">
               Add Borrow Record
@@ -285,7 +285,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, ref, inject, onUnmounted } from "vue";
+import { reactive, watch, ref, inject, onUnmounted, nextTick } from "vue";
 import Quagga from "quagga";
 
 const props = defineProps({
@@ -294,9 +294,9 @@ const props = defineProps({
     default: () => ({
       borrowerType: "new",
       user_name: "",
-      email_borrower: "",
+      email_borrower: "", // Changed from borrower_email to match your previous JSON payloads
       user_id: "",
-      books: [{ isbn: "", book_name: "", date_return: "" }],
+      books: [{ isbn: "", book_name: "", return_date: "" }],
       librarian_name: "",
       date_borrow: "",
       status: "borrowed",
@@ -330,9 +330,15 @@ const showScanner = ref(false);
 watch(showModal, async (newVal) => {
   if (newVal && (!booksData.value || booksData.value.length === 0)) {
     loading.value = true;
-    await fetchBooksData();
-    loading.value = false;
-    console.log("Books data after fetch:", booksData.value); // Debug log
+    try {
+      await fetchBooksData();
+      console.log("Books data loaded:", booksData.value);
+    } catch (error) {
+      console.error("Failed to fetch books data:", error);
+      showToast("Failed to load books data.", "error");
+    } finally {
+      loading.value = false;
+    }
   }
 });
 
@@ -377,25 +383,31 @@ function validateBorrowDate() {
 
 async function validateBook(index) {
   const book = localForm.books[index];
-  console.log(`Validating book at index ${index}: isbn=${book.isbn}, book_name=${book.book_name}`); // Debug log
+  console.log(`Validating book at index ${index}: isbn=${book.isbn}`);
   const isbnRegex = /^(?:\d{10}|\d{13})$/;
   if (!book.isbn || !isbnRegex.test(book.isbn)) {
     book.bookError = "Valid 10 or 13-digit ISBN required";
     book.book_name = "";
     return;
   }
-  const foundBook = await getBook(book.isbn, "isbn");
-  if (foundBook) {
-    book.book_name = foundBook.title;
-    book.bookError = "";
-    console.log(`Book found for ISBN ${book.isbn}: ${book.book_name}`); // Debug log
-  } else {
+  try {
+    const foundBook = await getBook(book.isbn, "isbn");
+    if (foundBook) {
+      book.book_name = foundBook.title;
+      book.bookError = "";
+      console.log(`Book found for ISBN ${book.isbn}: ${book.book_name}`);
+    } else {
+      book.book_name = "";
+      book.bookError = `Book not found for ISBN: ${book.isbn}`;
+      console.log(`Book not found for ISBN: ${book.isbn}`);
+    }
+  } catch (error) {
+    console.error(`Error validating book ISBN ${book.isbn}:`, error);
+    book.bookError = "Error retrieving book details";
     book.book_name = "";
-    book.bookError = `Book not found for ISBN: ${book.isbn}`;
-    console.log(`Book not found for ISBN: ${book.isbn}`); // Debug log
   }
-  const returnDate = new Date(book.date_return);
-  book.dateError = book.date_return && returnDate >= new Date(today) ? "" : "Return date must be today or later";
+  const returnDate = new Date(book.return_date);
+  book.dateError = book.return_date && returnDate >= new Date(today) ? "" : "Return date must be today or later";
 }
 
 function isStepValid(step) {
@@ -408,7 +420,7 @@ function isStepValid(step) {
   } else if (step === 2) {
     return !localForm.dateBorrowError && localForm.date_borrow && localForm.librarian_name;
   } else if (step === 3) {
-    return localForm.books.every((book) => book.isbn && !book.bookError && !book.dateError && book.date_return);
+    return localForm.books.every((book) => book.isbn && !book.bookError && !book.dateError && book.return_date);
   }
   return false;
 }
@@ -425,6 +437,7 @@ function resetBorrowerFields() {
 function goToNextStep() {
   if (isStepValid(currentStep.value)) {
     currentStep.value++;
+    formError.value = "";
   } else {
     formError.value = "Please complete all required fields correctly.";
     setTimeout(() => (formError.value = ""), 3000);
@@ -433,11 +446,14 @@ function goToNextStep() {
 
 function goToPreviousStep() {
   currentStep.value--;
+  formError.value = "";
 }
 
 function addBook() {
   if (localForm.books.length < 3) {
-    localForm.books.push({ isbn: "", book_name: "", date_return: "", bookError: "", dateError: "" });
+    localForm.books.push({ isbn: "", book_name: "", return_date: "", bookError: "", dateError: "" });
+  } else {
+    showToast("Cannot add more than 3 books.", "error");
   }
 }
 
@@ -448,111 +464,128 @@ function removeBook(index) {
 function simulateUserScan() {
   localForm.user_id = "USER123456";
   validateUserId();
+  showToast("User barcode scanned successfully.", "success");
 }
 
 async function simulateBookScan(index) {
   if (loading.value || showScanner.value) {
-    showToast("Please wait, loading or scanning in progress...", "info");
+    showToast("Please wait, scanning or loading in progress...", "info");
     return;
   }
   if (!booksData.value || booksData.value.length === 0) {
     loading.value = true;
-    await fetchBooksData();
-    loading.value = false;
-    console.log("Books data after fetch in simulateBookScan:", booksData.value); // Debug log
-    if (!booksData.value || booksData.value.length === 0) {
-      showToast("No books available in the database. Please add books to continue.", "error");
+    try {
+      await fetchBooksData();
+      console.log("Books data after fetch in simulateBookScan:", booksData.value);
+    } catch (error) {
+      console.error("Failed to fetch books data:", error);
+      showToast("Failed to load books data.", "error");
+      loading.value = false;
       return;
     }
+    loading.value = false;
+  }
+  if (!booksData.value || booksData.value.length === 0) {
+    showToast("No books available in the database.", "error");
+    return;
   }
   showScanner.value = true;
-  Quagga.init({
-    inputStream: {
-      name: "Live",
-      type: "LiveStream",
-      target: document.querySelector("#barcode-scanner"),
-      constraints: { facingMode: "environment" },
-    },
-    decoder: { readers: ["ean_reader", "ean_8_reader", "upc_reader"] },
-  }, (err) => {
-    if (err) {
-      console.error("Quagga init error:", err); // Debug log
-      showToast("Failed to initialize barcode scanner.", "error");
-      showScanner.value = false;
-      return;
-    }
-    Quagga.start();
-  });
-  Quagga.onDetected(async (data) => {
-    const book = localForm.books[index];
-    book.isbn = data.codeResult.code;
-    console.log(`Scanned ISBN at index ${index}: ${book.isbn}`); // Debug log
-    await validateBook(index); // Validate immediately after scan
-    stopScanner();
-  });
+  await nextTick(); // Ensure DOM is updated
+  const scannerElement = document.querySelector("#barcode-scanner");
+  if (!scannerElement) {
+    console.error("Barcode scanner element not found");
+    showToast("Failed to initialize barcode scanner.", "error");
+    showScanner.value = false;
+    return;
+  }
+  try {
+    Quagga.init({
+      inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: scannerElement,
+        constraints: { facingMode: "environment" },
+      },
+      decoder: { readers: ["ean_reader", "ean_8_reader", "upc_reader"] },
+    }, (err) => {
+      if (err) {
+        console.error("Quagga init error:", err);
+        showToast(`Failed to initialize barcode scanner: ${err.message}`, "error");
+        showScanner.value = false;
+        return;
+      }
+      Quagga.start();
+    });
+    Quagga.onDetected(async (data) => {
+      const book = localForm.books[index];
+      book.isbn = data.codeResult.code;
+      console.log(`Scanned ISBN at index ${index}: ${book.isbn}`);
+      await validateBook(index);
+      stopScanner();
+    });
+  } catch (error) {
+    console.error("Error initializing Quagga:", error);
+    showToast("Error starting barcode scanner.", "error");
+    showScanner.value = false;
+  }
 }
 
 function stopScanner() {
-  Quagga.stop();
+  try {
+    Quagga.stop();
+  } catch (error) {
+    console.error("Error stopping Quagga:", error);
+  }
   showScanner.value = false;
 }
 
-async function handleSubmit() {
-  console.log("Submitting form, books:", localForm.books); // Debug log
+async function submitForm() {
+  console.log("Submitting form with data:", JSON.stringify(localForm, null, 2));
   if (!isStepValid(3)) {
-    formError.value = "Please complete all required fields correctly, including a valid ISBN for each book.";
+    formError.value = "Please complete all required fields correctly.";
+    console.error("Form validation failed for Step 3");
+    showToast("Please complete all book details.", "error");
     setTimeout(() => (formError.value = ""), 3000);
     return;
   }
-  // Final validation before submission
-  for (let i = 0; i < localForm.books.length; i++) {
-    await validateBook(i);
-    if (localForm.books[i].bookError || !localForm.books[i].isbn) {
-      formError.value = `Validation failed for book ${i + 1}: ${localForm.books[i].bookError || 'ISBN is missing'}`;
-      setTimeout(() => (formError.value = ""), 3000);
-      return;
-    }
+  // Ensure unique book ISBNs
+  const isbnSet = new Set(localForm.books.map((book) => book.isbn));
+  if (isbnSet.size !== localForm.books.length) {
+    formError.value = "Each book must have a unique ISBN.";
+    console.error("Duplicate ISBNs detected");
+    showToast("Each book must have a unique ISBN.", "error");
+    setTimeout(() => (formError.value = ""), 3000);
+    return;
   }
-  // Emit the submit event with a deep copy to prevent mutation issues
-  const submitData = JSON.parse(JSON.stringify(localForm));
-  console.log("Emitting submit with data:", submitData); // Debug log
-  emit("submit", submitData);
-  showModal.value = false;
+  try {
+    // Prepare submission data
+    const submitData = {
+      is_new_user: localForm.borrowerType === "new",
+      borrower_name: localForm.user_name,
+      email_borrower: localForm.email_borrower,
+      user_id: localForm.user_id,
+      librarian_name: localForm.librarian_name,
+      date_borrow: localForm.date_borrow,
+      books: localForm.books.map((book) => ({
+        isbn: book.isbn,
+        book_name: book.book_name,
+        return_date: book.return_date,
+      })),
+      status: localForm.status,
+    };
+    console.log("Emitting submit event with data:", JSON.stringify(submitData, null, 2));
+    emit("submit", submitData);
+    showToast("Borrow record submitted successfully.", "success");
+    showModal.value = false;
+  } catch (error) {
+    console.error("Error during form submission:", error);
+    formError.value = "Failed to submit borrow record.";
+    showToast("Failed to submit borrow record.", "error");
+    setTimeout(() => (formError.value = ""), 3000);
+  }
 }
 
 onUnmounted(() => {
   if (showScanner.value) stopScanner();
 });
 </script>
-
-<style scoped>
-.animate-step {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-in {
-  animation: scaleIn 0.3s ease-in-out;
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-</style>

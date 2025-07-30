@@ -153,7 +153,8 @@ exports.store = async (req, res) => {
     const {
       user_name,
       user_barcode,
-      email,
+      borrower_name,
+      borrower_email,
       is_new_user,
       book_name,
       isbn,
@@ -165,27 +166,31 @@ exports.store = async (req, res) => {
     } = req.body;
 
     let user = null;
-    let borrower_name = null;
-    let borrower_email = null;
+    let final_borrower_name = null;
+    let final_borrower_email = null;
 
     if (is_new_user) {
-      // Guest borrower: save name/email only (no user account)
-      borrower_name = user_name;
-      borrower_email = email;
+      // Guest borrower
+      final_borrower_name = borrower_name;
+      final_borrower_email = borrower_email;
     } else {
-      // Find existing user by barcode if provided, else by username
+      // Registered user
       if (user_barcode) {
         user = await User.findOne({ where: { barcode: user_barcode } });
       } else if (user_name) {
         user = await User.findOne({ where: { username: user_name } });
       }
 
-      if (!user) return res.status(404).json({ message: 'User not found.' });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
     }
 
-    // Find book by title and ISBN
+    // Find book
     const book = await Book.findOne({ where: { title: book_name, isbn } });
-    if (!book) return res.status(404).json({ message: 'Book not found.' });
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found.' });
+    }
 
     if (book.quantity < quantity) {
       return res.status(400).json({ message: 'Not enough copies available.' });
@@ -193,7 +198,9 @@ exports.store = async (req, res) => {
 
     // Find librarian
     const librarian = await User.findOne({ where: { username: librarian_name } });
-    if (!librarian) return res.status(404).json({ message: 'Librarian not found.' });
+    if (!librarian) {
+      return res.status(404).json({ message: 'Librarian not found.' });
+    }
 
     // Validate dates
     if (isNaN(new Date(date_borrow))) {
@@ -206,8 +213,8 @@ exports.store = async (req, res) => {
     // Create borrow record
     const newBorrow = await Borrow.create({
       user_id: user ? user.id : null,
-      borrower_name,
-      borrower_email,
+      borrower_name: final_borrower_name,
+      borrower_email: final_borrower_email,
       book_id: book.id,
       librarian_id: librarian.id,
       isbn,
@@ -224,7 +231,7 @@ exports.store = async (req, res) => {
       available: updatedQuantity > 0
     });
 
-    // Fetch result with associations
+    // Fetch borrow record with associations
     const borrowWithAssociations = await Borrow.findByPk(newBorrow.id, {
       include: [
         { model: User, as: 'user', attributes: ['username', 'email'] },
@@ -232,6 +239,20 @@ exports.store = async (req, res) => {
         { model: User, as: 'librarian', attributes: ['username'] }
       ]
     });
+
+    // Helper function to format response
+    const formatBorrow = (borrow) => ({
+  id: borrow.id,
+  user_name: borrow.user ? borrow.user.username : borrow.borrower_name,
+  email: borrow.user ? borrow.user.email : borrow.borrower_email,
+  book_name: borrow.book.title,
+  isbn: borrow.book.isbn,
+  quantity: borrow.borrowed_quantity,
+  librarian_name: borrow.librarian.username,
+  date_borrow: borrow.borrow_date ? new Date(borrow.borrow_date).toISOString().split('T')[0] : null,
+  date_return: borrow.return_date ? new Date(borrow.return_date).toISOString().split('T')[0] : null,
+  status: borrow.status
+});
 
     res.status(201).json({
       message: 'Book borrowed successfully.',
@@ -246,6 +267,7 @@ exports.store = async (req, res) => {
     });
   }
 };
+
 
 // PUT /api/borrows/:id
 exports.update = async (req, res) => {

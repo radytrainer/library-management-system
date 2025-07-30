@@ -30,10 +30,10 @@ export function useBorrowManagement() {
 
   const addForm = ref({
     borrowerType: "new",
-    user_name: "",
+    borrower_name: "",
     email_borrower: "",
     user_id: "",
-    books: [{ isbn: "", book_name: "", date_return: "" }],
+    books: [{ isbn: "", book_name: "", return_date: "" }],
     librarian_name: "",
     date_borrow: "",
     status: "borrowed",
@@ -42,18 +42,16 @@ export function useBorrowManagement() {
   const updateForm = ref({
     id: null,
     user_name: "",
-    email_borrower: "",
     book_name: "",
     return_date: "",
     status: "",
   });
 
   const statusOptions = ref([
-    { value: "return", label: "Return" },
+    { value: "Borrowed", label: "Borrowing" },
     { value: "returned", label: "Returned" },
   ]);
 
-  // Provide the composable's context to child components
   provide("borrowManagement", {
     getBook,
     showToast,
@@ -61,13 +59,11 @@ export function useBorrowManagement() {
     booksData,
   });
 
-  // Categories computed property
   const categories = computed(() => {
     const set = new Set(borrowData.value.map((item) => item.book.category));
     return Array.from(set).map((name, index) => ({ id: index + 1, name }));
   });
 
-  // Stats computed properties
   const borrowedCount = computed(() => {
     return borrowData.value.filter((item) => getItemStatus(item) === "borrowed").length;
   });
@@ -78,7 +74,6 @@ export function useBorrowManagement() {
     return borrowData.value.filter((item) => getItemStatus(item) === "overdue").length;
   });
 
-  // Filtering logic
   const filteredBorrowData = computed(() => {
     let filtered = borrowData.value;
     if (selectedCategory.value) {
@@ -120,7 +115,6 @@ export function useBorrowManagement() {
     return Math.max(1, Math.ceil(totalFilteredItems.value / limit.value));
   });
 
-  // Helper functions
   function getItemStatus(item) {
     if (item.status === "returned") return "returned";
     const today = new Date();
@@ -156,19 +150,18 @@ export function useBorrowManagement() {
     }, 3000);
   }
 
-  // API functions
   async function fetchBooksData() {
     try {
       loading.value = true;
       const response = await getBooks();
-      console.log("Raw API response for getBooks:", response); // Debug log
+      console.log("Raw API response for getBooks:", response);
       booksData.value = Array.isArray(response.data.books) ? response.data.books : [];
-      console.log("Books fetched:", booksData.value); // Debug log
+      console.log("Books fetched:", booksData.value);
       if (!booksData.value.length) {
         showToast("No books available in the database. Please add books to continue.", "error");
       }
     } catch (err) {
-      console.error("Error fetching books:", err.message, err.stack); // Detailed debug log
+      console.error("Error fetching books:", err.message, err.stack);
       showToast("Failed to load book data. Please check your connection or database.", "error");
     } finally {
       loading.value = false;
@@ -178,7 +171,7 @@ export function useBorrowManagement() {
   async function getBook(identifier, type = "isbn") {
     try {
       if (!identifier) throw new Error(`${type.toUpperCase()} is missing or invalid`);
-      console.log(`Looking for book with ${type}: ${identifier}`); // Debug log
+      console.log(`Looking for book with ${type}: ${identifier}`);
       let book;
       if (type === "isbn") {
         const normalizedIsbn = identifier.trim();
@@ -194,7 +187,7 @@ export function useBorrowManagement() {
       console.log("Book found:", book);
       return book;
     } catch (error) {
-      console.error("Error in getBook:", error.message, error.stack); // Debug log
+      console.error("Error in getBook:", error.message, error.stack);
       return null;
     }
   }
@@ -204,11 +197,11 @@ export function useBorrowManagement() {
     error.value = null;
     try {
       const response = await getBorrows();
-      console.log("Raw API response for getBorrows:", response); // Debug log
+      console.log("Raw API response for getBorrows:", response);
       borrowData.value = response.data;
-      console.log("Borrow data fetched:", borrowData.value); // Debug log
+      console.log("Borrow data fetched:", borrowData.value);
     } catch (err) {
-      console.error("Error fetching borrow data:", err.message, err.stack); // Debug log
+      console.error("Error fetching borrow data:", err.message, err.stack);
       error.value = "Failed to load borrow records.";
       showToast("Failed to load borrow records.", "error");
     } finally {
@@ -216,67 +209,138 @@ export function useBorrowManagement() {
     }
   }
 
-  async function submitAddBorrow(borrowData) {
-    console.log("submitAddBorrow called with borrowData:", borrowData); // Debug log
+  async function submitAddBorrow(formData) {
     try {
-      // Validate each book ISBN before submission
-      for (const book of borrowData.books) {
-        console.log("Validating book ISBN:", book.isbn); // Debug log
-        if (!book.isbn || !/^(?:\d{10}|\d{13})$/.test(book.isbn)) {
-          throw new Error(`Invalid ISBN: ${book.isbn}`);
+      console.log("Received formData in submitAddBorrow:", JSON.stringify(formData, null, 2));
+      if (!formData) {
+        throw new Error("No form data provided.");
+      }
+      if (formData.is_new_user) {
+        if (!formData.borrower_name || !formData.email_borrower || !formData.date_borrow) {
+          throw new Error("User name, email, and borrow date are required for new users.");
         }
-        const foundBook = await getBook(book.isbn, "isbn");
-        if (!foundBook) {
-          throw new Error(`Book not found for ISBN: ${book.isbn}`);
+      } else {
+        if (!formData.user_id || !formData.date_borrow) {
+          throw new Error("User ID and borrow date are required for registered users.");
         }
       }
-      // Proceed with API call using createBorrow
-      const response = await createBorrow(borrowData);
-      console.log("Response from createBorrow:", response); // Debug log
-      addForm.value = { ...addForm.value, books: [{ isbn: "", book_name: "", date_return: "" }] }; // Reset form
-      await fetchBorrowData(); // Refresh borrows list
-      showToast("Borrow record added successfully!", "success");
-      return response.data;
-    } catch (error) {
-      console.error("Error in submitAddBorrow:", error.message, error.stack); // Debug log
-      showToast(`Failed to add borrow record: ${error.message}`, "error");
-      throw error;
+      if (!formData.librarian_name) {
+        throw new Error("Librarian name is required.");
+      }
+      if (!formData.books || formData.books.length === 0) {
+        throw new Error("At least one book is required.");
+      }
+      if (formData.books.length > 1) {
+        throw new Error("Backend supports only one book per borrow. Please select one book.");
+      }
+      const book = formData.books[0];
+      if (!book.isbn) throw new Error("Book ISBN is required.");
+      if (!/^\d{10}$|^\d{13}$/.test(book.isbn)) throw new Error("Invalid ISBN.");
+      if (!book.return_date) throw new Error("Book return date is required.");
+      const foundBook = await getBook(book.isbn, "isbn");
+      if (!foundBook) throw new Error(`Book not found for ISBN ${book.isbn}.`);
+
+      loading.value = true;
+      error.value = null;
+      const payload = formData.is_new_user
+        ? {
+            is_new_user: true,
+            borrower_name: formData.borrower_name,
+            borrower_email: formData.email_borrower,
+            book_name: book.book_name,
+            isbn: book.isbn,
+            quantity: 1,
+            librarian_name: formData.librarian_name,
+            date_borrow: formData.date_borrow,
+            date_return: book.return_date,
+          }
+        : {
+            is_new_user: false,
+            user_name: formData.borrower_name || formData.user_id,
+            book_name: book.book_name,
+            isbn: book.isbn,
+            quantity: 1,
+            librarian_name: formData.librarian_name,
+            date_borrow: formData.date_borrow,
+            date_return: book.return_date,
+          };
+      console.log("Sending payload to createBorrow:", JSON.stringify(payload, null, 2));
+      const response = await createBorrow(payload);
+      console.log("createBorrow response:", response);
+      await fetchBorrowData();
+      addForm.value = {
+        borrowerType: "new",
+        borrower_name: "",
+        email_borrower: "",
+        user_id: "",
+        books: [{ isbn: "", book_name: "", return_date: "" }],
+        librarian_name: "",
+        date_borrow: "",
+        status: "borrowed",
+      };
+      showModal.value = false;
+      showToast("Borrow record created successfully.", "success");
+      return response;
+    } catch (err) {
+      console.error("submitAddBorrow error:", err.message, err.response?.data || err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to create borrow record due to a server error.";
+      error.value = errorMessage;
+      showToast(errorMessage, "error");
+      throw new Error(errorMessage);
+    } finally {
+      loading.value = false;
     }
   }
 
   async function submitUpdate(formData) {
-    try {
-      const payload = {
-        user_name: formData.user_name,
-        email_borrower: formData.email_borrower,
-        book_name: formData.book_name,
-        return_date: formData.return_date,
-        status: formData.status,
-      };
-      console.log("Submitting update payload:", payload); // Debug log
-      await updateBorrow(formData.id, payload);
-      Object.assign(updateForm.value, formData);
-      showUpdateModal.value = false;
-      formError.value = "";
-      showToast("Borrow record updated successfully.");
-      await fetchBorrowData();
-      await fetchBooksData();
-    } catch (err) {
-      console.error("Error in submitUpdate:", err.message, err.stack); // Debug log
-      formError.value = "Failed to update borrow record.";
+  try {
+    console.log("Received formData in submitUpdate:", JSON.stringify(formData, null, 2));
+    if (!formData.id) {
+      throw new Error("Borrow record ID is missing.");
     }
-  }
+    if (!formData.return_date) {
+      throw new Error("Return date is required.");
+    }
+    if (!formData.status) {
+      throw new Error("Status is required.");
+    }
 
+    // Verify borrow record exists locally
+    const borrowRecord = borrowData.value.find((item) => item.id === formData.id);
+    if (!borrowRecord) {
+      throw new Error(`Borrow record with ID ${formData.id} not found in local data.`);
+    }
+    console.log("Found borrow record:", JSON.stringify(borrowRecord, null, 2));
+
+    const payload = {
+      return_date: formData.return_date,
+      status: formData.status,
+    };
+    console.log("Update payload to /borrow/:id:", JSON.stringify(payload, null, 2));
+    const response = await updateBorrow(formData.id, payload);
+    console.log("updateBorrow response:", JSON.stringify(response, null, 2));
+    showUpdateModal.value = false;
+    formError.value = "";
+    await fetchBorrowData();
+    showToast("Borrow record updated successfully", "success");
+  } catch (err) {
+    console.error("Update error:", err.message, err.response?.data || err);
+    const errorMessage = err.response?.data?.message || err.message || "Failed to update borrow record.";
+    formError.value = errorMessage;
+    showToast(`Update failed: ${errorMessage}`, "error");
+    throw new Error(errorMessage);
+  }
+}
   async function handleDelete(id) {
     try {
-      console.log("Deleting borrow record with ID:", id); // Debug log
+      if (!id) throw new Error("No ID provided for deletion");
+      console.log("Deleting borrow record with ID:", id);
       await deleteBorrow(id);
       await fetchBorrowData();
-      await fetchBooksData();
-      showToast("Borrow record deleted successfully.", "success");
-    } catch (error) {
-      console.error("Error in handleDelete:", error.message, error.stack); // Debug log
-      showToast("Failed to delete record: " + error.message, "error");
+      showToast("Borrow record deleted.", "success");
+    } catch (err) {
+      console.error("Delete error:", err.message);
+      showToast("Failed to delete: " + err.message, "error");
     }
   }
 
@@ -289,7 +353,7 @@ export function useBorrowManagement() {
       if (!borrowRecord) {
         throw new Error(`Borrow record with ID ${returnId.value} not found`);
       }
-      console.log("Returning borrow record:", borrowRecord); // Debug log
+      console.log("Returning borrow record:", borrowRecord);
       await updateBorrow(returnId.value, {
         status: "returned",
         return_date: new Date().toISOString().slice(0, 10),
@@ -306,7 +370,7 @@ export function useBorrowManagement() {
       await fetchBooksData();
       showToast("Book marked as returned and quantity updated successfully.", "success");
     } catch (error) {
-      console.error("Error in handleConfirmReturn:", error.message, error.stack); // Debug log
+      console.error("Error in handleConfirmReturn:", error.message, error.stack);
       showToast(`Failed to mark as returned or update quantity: ${error.message}`, "error");
     } finally {
       showConfirmModal.value = false;
