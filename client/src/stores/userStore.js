@@ -115,16 +115,24 @@ export const useUserStore = defineStore('users', {
       this.error = '';
       try {
         const res = await user.createUser(data);
-        this.users.push(res.data.user);
-        return { success: true };
+        if (res?.data?.user) {
+          this.users.push(res.data.user);
+          return { success: true };
+        } else {
+          this.error = 'Unexpected response format';
+          return { success: false, error: this.error };
+        }
       } catch (err) {
-        this.error = err.response?.status === 403 ? 'Authentication failed: Please log in again' : err.message;
-        console.error('❌ createUser error:', err.message);
+        this.error = err.response?.status === 403
+          ? 'Authentication failed: Please log in again'
+          : err.response?.data?.message || err.message || 'An error occurred';
+        console.error('❌ createUser error:', err);
         return { success: false, error: this.error };
       } finally {
         this.loading = false;
       }
     },
+
 
     async updateUser(id, data) {
       this.loading = true;

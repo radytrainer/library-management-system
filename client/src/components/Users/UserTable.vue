@@ -10,6 +10,7 @@
           <th class="px-4 py-3 font-medium text-gray-600">Role</th>
           <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
           <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
+          <th class="px-4 py-3 font-medium text-gray-600">Barcode_image</th>
           <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
         </tr>
       </thead>
@@ -20,8 +21,7 @@
             <div class="flex items-center space-x-3">
               <img
                 :src="user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`"
-                class="w-9 h-9 rounded-full border object-cover"
-              />
+                class="w-9 h-9 rounded-full border object-cover" />
               <span class="font-medium text-gray-900">{{ user.name }}</span>
             </div>
           </td>
@@ -32,11 +32,16 @@
               {{ user.role }}
             </span>
           </td>
-          <td class="px-4 py-3 text-gray-600">{{ user.birthday || '-' }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ user.date_of_birth || '-' }}</td>
           <td class="px-4 py-3 text-gray-600">{{ user.barcode || '-' }}</td>
           <td class="px-4 py-3 text-right">
             <slot name="actions" :user="user"></slot>
           </td>
+          <td>
+            <img v-if="user.barcode_image" :src="user.barcode_image" alt="Barcode" class="h-12 w-auto" />
+            <span v-else>-</span>
+          </td>
+
         </tr>
       </tbody>
     </table>
@@ -46,7 +51,8 @@
 <style scoped>
 .min-w-full th,
 .min-w-full td {
-  min-width: 120px; /* Adjust as needed */
+  min-width: 120px;
+  /* Adjust as needed */
 }
 </style>
 

@@ -15,7 +15,7 @@
           placeholder="Avatar URL"
           class="w-full p-2 border rounded mb-2"
         />
-        <select v-model="form.RoleId" class="w-full p-2 border rounded mb-2" required>
+        <select v-model="form.roleId" class="w-full p-2 border rounded mb-2" required>
           <option disabled value="">Select role</option>
           <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
         </select>
@@ -40,7 +40,7 @@ const props = defineProps({
   isEditing: Boolean,
   form: {
     type: Object,
-    default: () => ({ username: '', email: '', password: '', phone: '', RoleId: '', avatar: '' })
+    default: () => ({ username: '', email: '', password: '', phone: '', roleId: '', avatar: '' })
   },
   roles: Array
 });
@@ -48,7 +48,7 @@ const emit = defineEmits(['close', 'submit']);
 const localError = ref('');
 
 function handleSubmit() {
-  if (!props.form.username || !props.form.email || (!props.isEditing && !props.form.password) || !props.form.RoleId) {
+  if (!props.form.username || !props.form.email || (!props.isEditing && !props.form.password) || !props.form.roleId) {
     localError.value = 'Please fill in all required fields';
     return;
   }
