@@ -82,18 +82,15 @@ const routes = [
       { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
-      { path: 'website', name: 'website', component: Website },
-      { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+      { path: 'donations', name: 'donations', component: () => import('@/views/Donate/DonateView.vue') },
       { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
       { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
-
-      // Add more routes like books, members, etc.
-      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') },
     ],
   },
-
-  // Fallback
-  { path: '/:pathMatch(.*)*', redirect: '/login' },
+  { path: '/website', name: 'website', component: Website }, // ← Moved outside of AppLayout
+  { path: '/login', component: Login },
+  { path: '/register', component: Register },
 ]
 
 const router = createRouter({
