@@ -41,6 +41,7 @@ router.get("/librarian", [authJwt.verifyToken, authJwt.isLibrarian], userControl
 // ✅ Barcode route (must be above :id route)
 router.get("/:id/barcode", [authJwt.verifyToken], userController.getUserBarcode);
 router.get("/roles", [authJwt.verifyToken], userController.getRoles);
+// router.get('/users/barcodes/excel', exportUsersWithImages);
 
 // ✅ User management (RESTful)
 router.post("/create", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], uploadOptional, userController.createUser);

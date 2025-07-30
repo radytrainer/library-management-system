@@ -3,16 +3,18 @@
     <h1 class="text-2xl font-bold mb-4">User Management</h1>
     <div v-if="userStore.loading" class="mb-4">Loading users...</div>
     <div v-else-if="userStore.error" class="text-red-500 mb-4">{{ userStore.error }}</div>
-    <button @click="showForm = true" class="mb-4 px-4 py-2 bg-green-500 text-white rounded" :disabled="userStore.loading">Add User</button>
+    <div class="">
+      <a class="border p-2 rounded-md bg-blue-500 text-white" href="http://localhost:5000/api/users/barcodes/excel"
+        target="_blank">
+        Download Excel with Profile & Barcode
+      </a>
+
+      <button @click="showForm = true" class="mb-4 px-4 py-2 bg-green-500 text-white rounded"
+        :disabled="userStore.loading">Add User</button>
+    </div>
     <UserTable :users="userStore.users" @edit="editUser" @delete="deleteUser" />
-    <UserForm
-      :show="showForm"
-      :is-editing="isEditing"
-      :form="form"
-      :roles="userStore.roles"
-      @close="closeForm"
-      @submit="submitForm"
-    />
+    <UserForm :show="showForm" :is-editing="isEditing" :form="form" :roles="userStore.roles" @close="closeForm"
+      @submit="submitForm" />
     <UserViewModal :show="showViewModal" :user="userStore.viewedUser" @close="showViewModal = false" />
   </div>
 </template>

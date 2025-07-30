@@ -20,7 +20,7 @@
           <td class="px-4 py-3">
             <div class="flex items-center space-x-3">
               <img
-                :src="user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`"
+                :src="user.profile_image"
                 class="w-9 h-9 rounded-full border object-cover" />
               <span class="font-medium text-gray-900">{{ user.name }}</span>
             </div>
@@ -34,14 +34,16 @@
           </td>
           <td class="px-4 py-3 text-gray-600">{{ user.date_of_birth || '-' }}</td>
           <td class="px-4 py-3 text-gray-600">{{ user.barcode || '-' }}</td>
-          <td class="px-4 py-3 text-right">
-            <slot name="actions" :user="user"></slot>
-          </td>
+        
           <td>
-            <img v-if="user.barcode_image" :src="user.barcode_image" alt="Barcode" class="h-12 w-auto" />
+            <img v-if="user.barcode_image" :src="user.barcode_image" alt="Barcode" class="h-12 w-auto align-center" />
             <span v-else>-</span>
           </td>
-
+            <td class="px-4 py-3 text-right">
+            <slot name="actions" :user="user">
+              <span>HEllo</span>
+            </slot>
+          </td>
         </tr>
       </tbody>
     </table>

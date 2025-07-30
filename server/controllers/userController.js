@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken")
 const JsBarcode = require('jsbarcode');
 const path = require("path");
 const fs = require("fs");
+const ExcelJS = require('exceljs');
 const { createCanvas } = require('canvas');
 const { v4: uuidv4 } = require("uuid") // For generating unique barcode
 const { User, Role } = db
@@ -517,12 +518,85 @@ const deleteAccount = async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 }
+const exportUsersWithImages = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'email', 'profile_image', 'barcode', 'barcode_image']
+    });
 
+    if (!users.length) return res.status(404).json({ message: 'No users found' });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Users & Barcodes');
+
+    // ✅ Define column widths (images will go in columns)
+    sheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Username', key: 'username', width: 25 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Profile Image', key: 'profile_image', width: 20 },
+      { header: 'Barcode Value', key: 'barcode', width: 25 },
+      { header: 'Barcode Image', key: 'barcode_image', width: 20 }
+    ];
+
+    for (const user of users) {
+      const row = sheet.addRow({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        barcode: user.barcode
+      });
+
+      const rowIndex = row.number;
+
+      // ✅ Add profile image if exists
+      if (user.profile_image) {
+        const profilePath = path.join(process.cwd(), 'uploads', user.profile_image);
+        if (fs.existsSync(profilePath)) {
+          const profileImg = workbook.addImage({
+            filename: profilePath,
+            extension: 'png' // or jpg depending on your files
+          });
+          sheet.addImage(profileImg, {
+            tl: { col: 3, row: rowIndex - 1 }, // Column D (index 3)
+            ext: { width: 60, height: 60 }
+          });
+        }
+      }
+
+      // ✅ Add barcode image if exists
+      if (user.barcode_image) {
+        const barcodePath = path.join(process.cwd(), 'uploads', 'barcodes', `barcode_${user.id}.png`);
+        if (fs.existsSync(barcodePath)) {
+          const barcodeImg = workbook.addImage({
+            filename: barcodePath,
+            extension: 'png'
+          });
+          sheet.addImage(barcodeImg, {
+            tl: { col: 5, row: rowIndex - 1 }, // Column F (index 5)
+            ext: { width: 150, height: 60 }
+          });
+        }
+      }
+    }
+
+    // ✅ Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="users_with_barcodes.xlsx"');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Export Excel error:', err);
+    res.status(500).json({ message: 'Error exporting Excel file' });
+  }
+};
 module.exports = {
   allAccess,
   userBoard,
   adminBoard,
   librarianBoard,
+  exportUsersWithImages,
   getUserBarcode,
   createUser,
   getAllUsers,

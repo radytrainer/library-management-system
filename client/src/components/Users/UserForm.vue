@@ -10,11 +10,13 @@
         <input v-if="!isEditing" v-model="form.password" type="password" placeholder="Password" class="w-full p-2 border rounded mb-2" required />
         <input v-model="form.phone" placeholder="Phone" class="w-full p-2 border rounded mb-2" />
         <input
-          v-model="form.avatar"
+          v-model="form.proflil_image"
           type="text"
-          placeholder="Avatar URL"
+          placeholder="upload image"
           class="w-full p-2 border rounded mb-2"
         />
+          <input v-model="form.date_of_birth" type="date" placeholder="Date Of birth" class="w-full p-2 border rounded mb-2" />
+
         <select v-model="form.roleId" class="w-full p-2 border rounded mb-2" required>
           <option disabled value="">Select role</option>
           <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
@@ -40,7 +42,7 @@ const props = defineProps({
   isEditing: Boolean,
   form: {
     type: Object,
-    default: () => ({ username: '', email: '', password: '', phone: '', roleId: '', avatar: '' })
+    default: () => ({ username: '', email: '', password: '', phone: '', roleId: '', proflil_image: '' })
   },
   roles: Array
 });
