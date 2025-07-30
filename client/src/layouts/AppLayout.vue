@@ -1,13 +1,119 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'// ✅ import your Pinia store
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+
+const language = ref('en')
+const searchQuery = ref('')
+const notifications = ref(3)
+const showNotifications = ref(false)
+const showProfileDropdown = ref(false)
+const isSidebarOpen = ref(true)
+const isOpen = ref(false)
+
+const navItems = [
+  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' }, roles: ['admin'] },
+  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' }, roles: ['admin', 'librarian', 'user'] },
+  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' }, roles: ['admin', 'librarian'] },
+  { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' }, roles: ['admin'] }
+]
+
+// ✅ Filter navigation by role
+const filteredNav = computed(() => {
+  return navItems.filter(item => item.roles.includes(authStore.user?.role || ''))
+})
+
+
+// ✅ Language switch
+function selectLanguage(lang) {
+  language.value = lang
+  localStorage.setItem('language', language.value)
+  isOpen.value = false
+}
+
+function toggleNotifications() {
+  showNotifications.value = !showNotifications.value
+  showProfileDropdown.value = false
+}
+
+function clearNotifications() {
+  notifications.value = 0
+  showNotifications.value = false
+}
+
+function toggleProfileDropdown() {
+  showProfileDropdown.value = !showProfileDropdown.value
+  showNotifications.value = false
+}
+
+function toggleSidebar() {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+const user = ref({
+  name: '',
+  email: '',
+  role: '',
+  profile_image: ''
+})
+
+function logout() {
+  authStore.reset()
+  user.value = { name: '', email: '', role: '', profile_image: '' }
+  router.push('/login')
+}
+
+
+
+
+const profileInitial = computed(() => {
+  if (user.value.email) {
+    return user.value.email.charAt(0).toUpperCase()
+  }
+  return '?'
+})
+
+
+onMounted(() => {
+  language.value = localStorage.getItem('language') || 'en'
+  const savedUser = localStorage.getItem('user')
+  if (savedUser) {
+    const parsedUser = JSON.parse(savedUser)
+    user.value = parsedUser
+    authStore.user = parsedUser // ✅ Sync Pinia store
+  }
+})
+
+
+
+// ✅ Dynamic Page Title
+const pageTitle = computed(() => {
+  const map = {
+    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
+    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
+    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
+    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
+    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
+    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
+    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីសៀវភៅ' }
+  }
+  const key = route.name
+  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
+})
+</script>
+
 <template>
   <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
-    <!-- Sidebar (Left-aligned, Collapsible) -->
+    <!-- ✅ Sidebar -->
     <aside
-      :class="[
-        'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg overflow-hidden',
-        isSidebarOpen ? 'w-64' : 'w-20'
-      ]"
-    >
-      <!-- Logo and Title (Shown only when open) -->
+      :class="['bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg', isSidebarOpen ? 'w-64' : 'w-20']">
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
         <img src="/logo.png" alt="Library Logo" class="h-20 w-23" />
         <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
@@ -15,31 +121,38 @@
         </h2>
       </div>
 
-      <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto scrollbar-hide pr-1">
+      <nav class="flex-1 overflow-y-auto">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
-          <li v-for="item in navItems" :key="item.path">
-            <RouterLink
-              :to="item.path"
-              class="flex items-center p-3 rounded-lg transition-colors duration-200 hover:bg-custom-hover-page"
-              :class="[
-                !isSidebarOpen ? 'justify-center' : '',
-                isActiveRoute(item.path) ? 'bg-custom-hover-page shadow-sm' : ''
-              ]"
-            >
+          <li v-for="item in filteredNav" :key="item.path">
+            <RouterLink :to="item.path" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : ''
+            ]">
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">{{ item.icon }}</span>
-              <span v-if="isSidebarOpen">{{ language === 'en' ? item.label.en : item.label.kh }}</span>
+              <span v-if="isSidebarOpen">{{ item.label[language] }}</span>
+            </RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/website" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : ''
+            ]">
+              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">public</span>
+              <span v-if="isSidebarOpen">
+                {{ language === 'en' ? 'Website' : 'គេហទំព័រ' }}
+              </span>
             </RouterLink>
           </li>
         </ul>
       </nav>
     </aside>
 
-    <!-- Main Content -->
-    <div
-      class="flex-1 flex flex-col transition-all duration-300"
-      :class="{ 'ml-64': isSidebarOpen, 'ml-20': !isSidebarOpen }"
-    >
+    <!-- ✅ Main Content -->
+    <div class="flex-1 flex flex-col transition-all duration-300"
+      :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
+      <!-- ✅ Header -->
       <!-- Top Navbar -->
       <header class="sticky top-0 z-40 bg-white shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
@@ -161,22 +274,22 @@
 
           <!-- Profile -->
           <div class="relative">
-            <img
-              src="https://i.pinimg.com/736x/4c/86/d3/4c86d30bd3fcfb2940545982b74ee2d4.jpg"
-              alt="Profile"
-              class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
-              @click="toggleProfileDropdown"
-              aria-haspopup="true"
-              :aria-expanded="showProfileDropdown.toString()"
-              tabindex="0"
-            />
-            <div
-              v-if="showProfileDropdown"
-              class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100"
-              role="menu"
-              tabindex="-1"
-            >
-              <p class="text-sm font-semibold">{{ user.name }}</p>
+            <div v-if="user.profile_image">
+              <img :src="user.profile_image" alt="Profile"
+                class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+                @click="toggleProfileDropdown" />
+            </div>
+
+            <!-- Fallback if no profile image -->
+            <div v-else
+              class="h-10 w-10 rounded-full cursor-pointer bg-indigo-600 text-white flex items-center justify-center font-bold border border-gray-200 hover:border-indigo-400"
+              @click="toggleProfileDropdown">
+              {{ profileInitial }}
+            </div>
+
+            <div v-if="showProfileDropdown"
+              class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
+              <p class="text-sm font-semibold">{{ user.name || 'Guest' }}</p>
               <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
               <button
                 class="mt-3 w-full text-left text-sm text-red-600 hover:bg-red-50 rounded px-2 py-1"
@@ -185,154 +298,17 @@
               >
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
-              <RouterLink
-                to="/register"
-                class="mt-2 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
-                role="menuitem"
-              >
-                {{ language === 'en' ? 'Register' : 'ចុះឈ្មោះ' }}
-              </RouterLink>
-              <RouterLink
-                to="/login"
-                class="mt-1 w-full text-left text-sm text-indigo-600 hover:bg-indigo-50 rounded px-2 py-1 block"
-                role="menuitem"
-              >
-                {{ language === 'en' ? 'Login' : 'ចូលគណនី' }}
-              </RouterLink>
+
+
             </div>
           </div>
         </div>
       </header>
 
-      <!-- Page Content -->
-      <main class="flex-1 overflow-auto">
+      <!-- ✅ Page Content -->
+      <main class="p-2">
         <RouterView />
       </main>
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-
-const router = useRouter()
-const route = useRoute()
-
-const language = ref('en')
-const searchQuery = ref('')
-const notifications = ref(3)
-const showNotifications = ref(false)
-const showProfileDropdown = ref(false)
-const isSidebarOpen = ref(true)
-const isOpen = ref(false)
-
-const user = ref({
-  name: 'Admin User',
-  email: 'admin@library.com',
-})
-
-const navItems = [
-  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' } },
-  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' } },
-  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' } },
-  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' } },
-  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' } },
-  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' } },
-  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' } },
-  { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' } },
-]
-
-function isActiveRoute(path) {
-  // Checks if current route starts with path (to handle sub-routes)
-  return route.path === path || route.path.startsWith(path + '/')
-}
-
-function switchLanguage() {
-  localStorage.setItem('language', language.value)
-  isOpen.value = false
-}
-
-function selectLanguage(lang) {
-  language.value = lang
-  switchLanguage()
-}
-
-function toggleNotifications() {
-  showNotifications.value = !showNotifications.value
-  showProfileDropdown.value = false
-}
-
-function clearNotifications() {
-  notifications.value = 0
-  showNotifications.value = false
-}
-
-function toggleProfileDropdown() {
-  showProfileDropdown.value = !showProfileDropdown.value
-  showNotifications.value = false
-}
-
-function toggleSidebar() {
-  isSidebarOpen.value = !isSidebarOpen.value
-}
-
-function logout() {
-  console.log('Logged out')
-  router.push('/login')
-}
-
-onMounted(() => {
-  language.value = localStorage.getItem('language') || 'en'
-})
-
-// Computed page title based on route name
-const pageTitle = computed(() => {
-  const map = {
-    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
-    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
-    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
-    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
-    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
-    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
-    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីសៀវភៅ' },
-  }
-  const key = route.name
-  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
-})
-
-
-</script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Khmer&display=swap');
-
-.font-inter {
-  font-family: 'Inter', sans-serif;
-}
-
-.font-khmer {
-  font-family: 'Khmer', serif;
-}
-
-/* Hide scrollbar for overflow-y */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Custom background color for your layout */
-.bg-custom-gray {
-  background-color: #f9fafb;
-}
-
-/* Hover background for sidebar active links */
-.bg-custom-hover-page {
-  background-color: rgba(99, 102, 241, 0.15); /* indigo-500 at 15% opacity */
-}
-</style>

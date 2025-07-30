@@ -1,94 +1,92 @@
 <template>
-  <div class="space-y-4 p-10">
-    <!-- Header -->
-    <div class="mb-10 flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold text-gray-800">Author Management</h2>
-        <p class="text-gray-500">Manage your authors efficiently</p>
+  <div class="space-y-6 p-8">
+    <div class="bg-sky-600/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/20">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <!-- Left -->
+        <div>
+          <h2 class="text-3xl font-bold text-white">Author Management</h2>
+          <p class="text-white/90 mt-1 max-w-2xl leading-relaxed">
+            Manage author profiles in a sleek, modern dashboard designed for efficiency and clarity.
+          </p>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-3">
+          <select v-model="selectedNationality"
+            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50">
+            <option value="" class="bg-black text-white">Nationality</option>
+            <option v-for="nation in nationalities" :key="nation" :value="nation" class="bg-black text-white">
+              {{ nation }}
+            </option>
+          </select>
+
+          <select v-model="limit"
+            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50">
+            <option value="" class="bg-black text-white">Authors</option>
+            <option v-for="n in [10, 20, 50]" :key="n" :value="n" class="bg-black text-white">
+              Show {{ n }}
+            </option>
+          </select>
+
+        </div>
       </div>
 
-      <div class="flex gap-4">
-        <!-- Nationality Filter -->
-        <select v-model="selectedNationality" class="text-gray border rounded px-4 py-2">
-          <option value="">Nationality</option>
-          <option v-for="nation in nationalities" :key="nation" :value="nation">
-            {{ nation }}
-          </option>
-        </select>
-
-        <!-- Limit -->
-        <select v-model="limit" class="border rounded px-4 py-2">
-          <option value="">Authors</option>
-          <option v-for="n in [10, 20, 50]" :key="n" :value="n">Show {{ n }}</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="flex justify-between items-center mb-4">
-      <input v-model="search" type="text" placeholder="Search Author Name..." class="border rounded px-4 py-2 w-1/3" />
-
-      <div class="flex items-center gap-4">
-        <button @click="openAddDialog" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+      <!-- Search and Add -->
+      <div class="mt-6 flex flex-col md:flex-row justify-between gap-4">
+        <input v-model="search" type="text" placeholder=" Search Author Name..."
+          class="border border-white/40 bg-white/30 text-white placeholder-white/70 rounded-lg px-4 py-2 w-full md:w-1/3 focus:ring-2 focus:ring-white/50">
+        <button @click="openAddDialog" class="bg-white text-sky-700 px-4 py-2 rounded-lg hover:bg-sky-100 transition">
           + Add Author
         </button>
       </div>
     </div>
 
-    <!-- Authors Table -->
-    <div class="bg-white border border-gray-200 rounded-lg">
-      <table class="min-w-full divide-y divide-gray-200 text-sm">
-        <thead class="bg-gray-50 text-left">
+    <div class="bg-white shadow rounded-2xl">
+      <table class="min-w-full text-sm">
+        <thead class="bg-sky-50 text-sky-700">
           <tr>
-            <th class="px-4 py-3 font-medium text-gray-600">ID</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Profile</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Birth Date</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Nationality</th>
-            <th class="px-4 py-3 font-medium text-gray-600">Living</th>
-            <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
+            <th class="px-4 py-3 text-left font-semibold">ID</th>
+            <th class="px-4 py-3 text-left font-semibold">Profile</th>
+            <th class="px-4 py-3 text-left font-semibold">Birth Date</th>
+            <th class="px-4 py-3 text-left font-semibold">Nationality</th>
+            <th class="px-4 py-3 text-left font-semibold">Living</th>
+            <th class="px-4 py-3 text-right font-semibold">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="(author, index) in filteredAuthors" :key="author.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 text-gray-600">{{ index + 1 }}</td>
+          <tr v-for="(author, index) in filteredAuthors" :key="author.id"
+            class="hover:bg-sky-50 transition-shadow hover:shadow-sm">
+            <td class="px-4 py-3 text-gray-700 font-medium">{{ index + 1 }}</td>
             <td class="px-4 py-3">
-              <div class="flex items-center space-x-3">
-                <img :src="author.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  author.name
-                )}&background=random`" class="w-9 h-9 rounded-full border object-cover" alt="Author" />
-                <span class="font-medium text-gray-900">{{ author.name }}</span>
+              <div class="flex items-center gap-3">
+                <img
+                  :src="author.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=random`"
+                  class="w-10 h-10 rounded-full object-cover border border-sky-200" alt="Author" />
+                <span class="font-semibold text-gray-900">{{ author.name }}</span>
               </div>
             </td>
             <td class="px-4 py-3 text-gray-700">{{ formatDate(author.birth_date) }}</td>
             <td class="px-4 py-3 text-gray-700">{{ author.nationality }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-1 rounded-full text-xs font-medium"
-                :class="author.isLiving ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+              <span class="px-3 py-1 rounded-full text-xs font-medium"
+                :class="author.isLiving ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
                 {{ author.isLiving ? 'Yes' : 'No' }}
               </span>
             </td>
             <td class="px-4 py-3 text-right">
-              <div class="relative inline-block text-left">
-                <button @click="toggleActionMenu(author.id)" aria-label="Actions menu">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="currentColor"
-                    viewBox="0 0 20 20">
-                    <path
-                      d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm0 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
-                  </svg>
+              <div class="relative">
+                <button @click="toggleActionMenu(author.id)" class="text-2xl hover:text-sky-600 transition p-2">
+                  ⋮
                 </button>
+
                 <div v-if="activeActionMenu === author.id"
-                  class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-10 py-1">
+                  class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg ring-1 ring-black/10 z-10 py-1">
                   <button @click="viewAuthor(author)"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    View
-                  </button>
+                    class="block w-full text-left px-4 py-2 hover:bg-sky-50">View</button>
                   <button @click="editAuthor(author)"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Edit
-                  </button>
+                    class="block w-full text-left px-4 py-2 hover:bg-sky-50">Edit</button>
                   <button @click="handleDeleteAuthor(author.id)"
-                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                    Delete
-                  </button>
+                    class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">Delete</button>
                 </div>
               </div>
             </td>
@@ -96,6 +94,7 @@
         </tbody>
       </table>
     </div>
+
 
     <!-- Add/Edit Author Modal -->
     <div v-if="showAddEditModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -112,11 +111,27 @@
             <span>Is Living?</span>
           </label>
           <textarea v-model="currentAuthor.biography" placeholder="Biography"
-            class="w-full p-2 border rounded resize-none" rows="4"></textarea>
-          <input type="file" accept="image/*" @change="handleProfileImage" class="w-full p-2 border rounded" />
-          <div v-if="currentAuthor.profile_preview" class="flex justify-center">
-            <img :src="currentAuthor.profile_preview" alt="Preview" class="w-24 h-24 rounded-full object-cover mt-2" />
+            class="w-full p-2 border rounded resize-none" rows="2"></textarea>
+          <div
+            class="flex flex-col items-center border-2 border-dashed border-sky-300 rounded-xl p-1 cursor-pointer hover:bg-sky-50 transition">
+            <label class="flex flex-col items-center cursor-pointer">
+              <!-- Upload Icon -->
+              <svg class="w-10 h-10 text-sky-500 mb-2" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4-4m0 0l-4 4m4-4v12"></path>
+              </svg>
+              <span class="text-sky-600 font-medium">Click to upload</span>
+              <input type="file" accept="image/*" @change="handleProfileImage" class="hidden" />
+            </label>
+
+            <!-- Square Preview -->
+            <div v-if="currentAuthor.profile_preview" class="flex justify-center mt-4">
+              <img :src="currentAuthor.profile_preview" alt="Preview"
+                class="w-24 h-24 object-cover border-2 border-sky-300 shadow rounded-lg" />
+            </div>
           </div>
+
           <div class="flex justify-end gap-2 mt-4">
             <button type="button" @click="closeAddEditDialog" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -236,6 +251,7 @@ import { getAuthors, createAuthor, updateAuthor, deleteAuthor } from '@/services
 
 const authors = ref([])
 const activeActionMenu = ref(null)
+const closeMenuTimeout = ref(null)
 
 const selectedNationality = ref('')
 const limit = ref('')
@@ -259,7 +275,6 @@ const selectedAuthorDetails = ref({})
 const currentPage = ref(1)
 const rowsPerPage = 10
 
-// Unique nationalities for filter dropdown
 const nationalities = computed(() => {
   const set = new Set()
   authors.value.forEach(author => {
@@ -271,25 +286,20 @@ const nationalities = computed(() => {
 const filteredAuthors = computed(() => {
   let result = authors.value
 
-  // Filter by nationality
   if (selectedNationality.value) {
     result = result.filter(author => author.nationality === selectedNationality.value)
   }
 
-  // Filter by search
   if (search.value.trim()) {
     const keyword = search.value.toLowerCase()
     result = result.filter(author => author.name.toLowerCase().includes(keyword))
   }
 
-  // Sort by newest first (descending by id)
   result = result.sort((a, b) => b.id - a.id)
 
-  // Pagination: calculate start and end indexes
   const start = (currentPage.value - 1) * rowsPerPage
   const end = start + rowsPerPage
 
-  // Return paginated results
   return result.slice(start, end)
 })
 
@@ -326,8 +336,6 @@ const prevPage = () => {
   }
 }
 
-
-
 const fetchAuthors = async () => {
   try {
     const res = await getAuthors()
@@ -338,7 +346,16 @@ const fetchAuthors = async () => {
 }
 
 const toggleActionMenu = (id) => {
-  activeActionMenu.value = activeActionMenu.value === id ? null : id
+  if (activeActionMenu.value === id) {
+    activeActionMenu.value = null
+    if (closeMenuTimeout.value) clearTimeout(closeMenuTimeout.value)
+  } else {
+    activeActionMenu.value = id
+    if (closeMenuTimeout.value) clearTimeout(closeMenuTimeout.value)
+    closeMenuTimeout.value = setTimeout(() => {
+      activeActionMenu.value = null
+    }, 3000)
+  }
 }
 
 const openAddDialog = () => {

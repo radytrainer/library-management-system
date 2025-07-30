@@ -16,6 +16,7 @@ const upload = require("../middlewares/upload");
 router.post("/signup", upload.single("profile_image"),signup);
 
 // Public routes
+
 router.post("/signup", [checkDuplicateUsernameOrEmail, checkRolesExisted], signup);
 router.post("/signin", signin);
 
