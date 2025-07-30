@@ -17,6 +17,7 @@ db.Author = require("./author")(sequelize, Sequelize.DataTypes);
 db.Borrow = require("./borrow")(sequelize, Sequelize.DataTypes);
 db.Language = require("./languageBook")(sequelize, Sequelize.DataTypes);
 db.Donation = require("./donation")(sequelize, Sequelize.DataTypes);
+db.History = require("./history")(sequelize, Sequelize.DataTypes);
 
 //
 // ========== ASSOCIATIONS ==========
@@ -60,5 +61,9 @@ db.Book.hasMany(db.Borrow, { foreignKey: 'book_id' });
 // 9. User -> Donation
 db.User.hasMany(db.Donation, { foreignKey: 'user_id', as: 'donations' });
 db.Donation.belongsTo(db.User, { foreignKey: 'user_id', as: 'user' });
+
+// 10. Borrow -> History
+db.Borrow.hasMany(db.History, { foreignKey: 'borrow_id', as: 'histories' });
+db.History.belongsTo(db.Borrow, { foreignKey: 'borrow_id', as: 'borrow' });
 
 module.exports = db;

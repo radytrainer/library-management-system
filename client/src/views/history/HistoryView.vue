@@ -42,26 +42,17 @@
 
         <!-- Book Rows -->
         <div>
-          <div
-            v-for="(book, index) in books"
-            :key="book.id"
-            :class="[
-              'transition-all duration-200 cursor-pointer hover:bg-gray-50',
-              index !== books.length - 1 ? 'border-b border-gray-100' : ''
-            ]"
-            @click="openBookDetails(book)"
-          >
+          <div v-for="(book, index) in books" :key="book.id" :class="[
+            'transition-all duration-200 cursor-pointer hover:bg-gray-50',
+            index !== books.length - 1 ? 'border-b border-gray-100' : ''
+          ]" @click="openBookDetails(book)">
             <!-- Main Book Row -->
             <div class="px-6 py-4">
               <div class="grid grid-cols-12 gap-4 items-center">
                 <!-- Book Cover -->
                 <div class="col-span-1">
                   <div class="w-12 h-16 rounded border overflow-hidden">
-                    <img
-                      :src="book.cover"
-                      :alt="book.title"
-                      class="w-full h-full object-cover"
-                    />
+                    <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover" />
                   </div>
                 </div>
 
@@ -73,12 +64,10 @@
 
                 <!-- Category -->
                 <div class="col-span-2">
-                  <span 
-                    :class="[
-                      'inline-block px-2 py-1 rounded-full text-xs',
-                      getCategoryStyle(book.category)
-                    ]"
-                  >
+                  <span :class="[
+                    'inline-block px-2 py-1 rounded-full text-xs',
+                    getCategoryStyle(book.category)
+                  ]">
                     {{ book.category }}
                   </span>
                 </div>
@@ -91,20 +80,16 @@
                 <!-- Status -->
                 <div class="col-span-2 text-right">
                   <div class="flex items-center justify-end">
-                    <span
-                      :class="[
-                        'inline-flex items-center px-2 py-1 rounded-full text-xs',
-                        book.isAvailable 
-                          ? 'bg-green-50 text-green-700' 
-                          : 'bg-red-50 text-red-700'
-                      ]"
-                    >
-                      <span 
-                        :class="[
-                          'w-1.5 h-1.5 rounded-full mr-1',
-                          book.isAvailable ? 'bg-green-500' : 'bg-red-500'
-                        ]"
-                      ></span>
+                    <span :class="[
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs',
+                      book.isAvailable
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-red-50 text-red-700'
+                    ]">
+                      <span :class="[
+                        'w-1.5 h-1.5 rounded-full mr-1',
+                        book.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                      ]"></span>
                       {{ book.isAvailable ? 'Available' : 'Borrowed' }}
                     </span>
                   </div>
@@ -117,22 +102,13 @@
     </div>
 
     <!-- Book Details Modal - Simplified and Clean -->
-    <div
-      v-if="selectedBook"
-      class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50"
-      @click="closeBookDetails"
-    >
-      <div
-        class="bg-white rounded-lg shadow-lg max-w-2xl w-full"
-        @click.stop
-      >
+    <div v-if="selectedBook" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50"
+      @click="closeBookDetails">
+      <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full" @click.stop>
         <!-- Modal Header -->
         <div class="flex items-center justify-between p-4 border-b">
           <h2 class="text-lg font-semibold text-gray-900">Book Details</h2>
-          <button
-            @click="closeBookDetails"
-            class="text-gray-400 hover:text-gray-600"
-          >
+          <button @click="closeBookDetails" class="text-gray-400 hover:text-gray-600">
             <X class="w-5 h-5" />
           </button>
         </div>
@@ -142,26 +118,19 @@
           <div class="flex flex-col md:flex-row gap-6">
             <!-- Book Cover -->
             <div class="flex-shrink-0">
-              <img
-                :src="selectedBook.cover"
-                :alt="selectedBook.title"
-                class="w-32 h-44 object-cover rounded border mx-auto md:mx-0"
-              />
+              <img :src="selectedBook.cover" :alt="selectedBook.title"
+                class="w-32 h-44 object-cover rounded border mx-auto md:mx-0" />
               <div class="mt-3 text-center md:text-left">
-                <span
-                  :class="[
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs',
-                    selectedBook.isAvailable 
-                      ? 'bg-green-50 text-green-700' 
-                      : 'bg-red-50 text-red-700'
-                  ]"
-                >
-                  <span 
-                    :class="[
-                      'w-1.5 h-1.5 rounded-full mr-1',
-                      selectedBook.isAvailable ? 'bg-green-500' : 'bg-red-500'
-                    ]"
-                  ></span>
+                <span :class="[
+                  'inline-flex items-center px-2 py-1 rounded-full text-xs',
+                  selectedBook.isAvailable
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-700'
+                ]">
+                  <span :class="[
+                    'w-1.5 h-1.5 rounded-full mr-1',
+                    selectedBook.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                  ]"></span>
                   {{ selectedBook.isAvailable ? 'Available' : 'Currently Borrowed' }}
                 </span>
               </div>
@@ -171,18 +140,16 @@
             <div class="flex-1">
               <h1 class="text-xl font-bold text-gray-900 mb-1">{{ selectedBook.title }}</h1>
               <p class="text-sm text-gray-600 mb-2">by {{ selectedBook.author }}</p>
-              
+
               <div class="mb-4">
-                <span 
-                  :class="[
-                    'inline-block px-2 py-1 rounded-full text-xs',
-                    getCategoryStyle(selectedBook.category)
-                  ]"
-                >
+                <span :class="[
+                  'inline-block px-2 py-1 rounded-full text-xs',
+                  getCategoryStyle(selectedBook.category)
+                ]">
                   {{ selectedBook.category }}
                 </span>
               </div>
-              
+
               <div class="mb-4">
                 <h3 class="text-sm font-medium text-gray-900 mb-1">Description</h3>
                 <p class="text-sm text-gray-700">{{ selectedBook.description }}</p>
@@ -208,10 +175,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                  <tr
-                    v-for="(record, index) in selectedBook.borrowHistory"
-                    :key="index"
-                  >
+                  <tr v-for="(record, index) in selectedBook.borrowHistory" :key="index">
                     <td class="px-3 py-2 text-xs">
                       {{ record.borrower }}
                     </td>
@@ -222,14 +186,12 @@
                       {{ record.returnedOn ? formatDate(record.returnedOn) : '—' }}
                     </td>
                     <td class="px-3 py-2">
-                      <span
-                        :class="[
-                          'inline-block px-2 py-0.5 rounded-full text-xs',
-                          record.returnedOn
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-yellow-50 text-yellow-700'
-                        ]"
-                      >
+                      <span :class="[
+                        'inline-block px-2 py-0.5 rounded-full text-xs',
+                        record.returnedOn
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-yellow-50 text-yellow-700'
+                      ]">
                         {{ record.returnedOn ? 'Returned' : 'Not Returned' }}
                       </span>
                     </td>
@@ -246,22 +208,15 @@
 
         <!-- Modal Footer -->
         <div class="px-6 py-3 bg-gray-50 border-t flex justify-end">
-          <button
-            v-if="selectedBook.isAvailable"
-            class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 mr-2"
-          >
+          <button v-if="selectedBook.isAvailable"
+            class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 mr-2">
             Borrow Book
           </button>
-          <button
-            v-else
-            class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 mr-2"
-          >
+          <button v-else class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 mr-2">
             Return Book
           </button>
-          <button
-            @click="closeBookDetails"
-            class="px-3 py-1.5 text-gray-700 bg-white border border-gray-300 text-sm rounded hover:bg-gray-50"
-          >
+          <button @click="closeBookDetails"
+            class="px-3 py-1.5 text-gray-700 bg-white border border-gray-300 text-sm rounded hover:bg-gray-50">
             Close
           </button>
         </div>
@@ -360,7 +315,7 @@ const formatDate = (dateString) => {
 }
 
 const getCategoryStyle = (category) => {
-  switch(category.toLowerCase()) {
+  switch (category.toLowerCase()) {
     case 'programming':
       return 'bg-blue-50 text-blue-700'
     case 'fiction':
