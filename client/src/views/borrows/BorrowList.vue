@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-2 py-2">
+  <div class="">
+    <div class="p-6">
       <HeaderSection v-model:search="search" />
       <StatsCards :borrow-data="borrowData" :get-item-status="getItemStatus" />
       <BorrowTable :filtered-borrow-data="filteredBorrowData" :categories="categories" :current-page="currentPage"
@@ -83,11 +83,11 @@ const {
 
 onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
-  console.log("Initial booksData:", booksData.value); // Debug log
+  console.log("Initial booksData at", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }), ":", booksData.value);
 });
 
 watch(booksData, (newBooksData) => {
-  console.log("booksData updated:", newBooksData); // Debug log
+  console.log("booksData updated at", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }), ":", newBooksData);
 });
 
 watch([selectedCategory, selectedStatus, search, limit], () => {
@@ -97,8 +97,19 @@ watch([selectedCategory, selectedStatus, search, limit], () => {
 watch(totalPages, (newTotal) => {
   if (currentPage.value > newTotal) currentPage.value = newTotal;
 });
-</script>
 
-<style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
-</style>
+// Handle submit event from AddBorrowModal
+async function handleSubmitAddBorrow(formData) {
+  const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
+  console.log(`Handling submit event at ${now} with data:`, JSON.stringify(formData, null, 2));
+  try {
+    const responses = await submitAddBorrow(formData);
+    console.log(`submitAddBorrow returned at ${now}:`, JSON.stringify(responses, null, 2));
+    await fetchBorrowData(); // Refresh data after successful submit
+    return responses; // Return responses to AddBorrowModal
+  } catch (err) {
+    console.error(`Parent handleSubmitAddBorrow error at ${now}:`, err.message, err.stack);
+    throw err; // Propagate error to AddBorrowModal
+  }
+}
+</script>

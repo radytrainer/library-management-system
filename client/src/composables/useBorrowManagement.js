@@ -48,7 +48,7 @@ export function useBorrowManagement() {
   });
 
   const statusOptions = ref([
-    { value: "Borrowed", label: "Borrowing" },
+    { value: "borrowed", label: "Borrowing" },
     { value: "returned", label: "Returned" },
   ]);
 
@@ -210,88 +210,99 @@ export function useBorrowManagement() {
   }
 
   async function submitAddBorrow(formData) {
-    try {
-      console.log("Received formData in submitAddBorrow:", JSON.stringify(formData, null, 2));
-      if (!formData) {
-        throw new Error("No form data provided.");
-      }
-      if (formData.is_new_user) {
-        if (!formData.borrower_name || !formData.email_borrower || !formData.date_borrow) {
-          throw new Error("User name, email, and borrow date are required for new users.");
-        }
-      } else {
-        if (!formData.user_id || !formData.date_borrow) {
-          throw new Error("User ID and borrow date are required for registered users.");
-        }
-      }
-      if (!formData.librarian_name) {
-        throw new Error("Librarian name is required.");
-      }
-      if (!formData.books || formData.books.length === 0) {
-        throw new Error("At least one book is required.");
-      }
-      if (formData.books.length > 1) {
-        throw new Error("Backend supports only one book per borrow. Please select one book.");
-      }
-      const book = formData.books[0];
+  try {
+    const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
+    console.log(`Received formData in submitAddBorrow at ${now}:`, JSON.stringify(formData, null, 2));
+    if (!formData) throw new Error("No form data provided.");
+    if (formData.is_new_user) {
+      if (!formData.borrower_name || !formData.email_borrower || !formData.date_borrow)
+        throw new Error("User name, email, and borrow date are required for new users.");
+    } else if (!formData.user_id || !formData.date_borrow)
+      throw new Error("User ID and borrow date are required for existing users.");
+    if (!formData.librarian_name) throw new Error("Librarian name is required.");
+    if (!formData.books || formData.books.length === 0) throw new Error("At least one book is required.");
+    if (formData.books.length > 3) throw new Error("Cannot borrow more than three books at a time.");
+
+    for (const book of formData.books) {
       if (!book.isbn) throw new Error("Book ISBN is required.");
-      if (!/^\d{10}$|^\d{13}$/.test(book.isbn)) throw new Error("Invalid ISBN.");
-      if (!book.return_date) throw new Error("Book return date is required.");
+      if (!/^\d{10}$|^\d{13}$/.test(book.isbn)) throw new Error(`Invalid ISBN: ${book.isbn}`);
+      if (!book.date_return) throw new Error("Book return date is required.");
+      if (!book.name) throw new Error("Book name is required.");
       const foundBook = await getBook(book.isbn, "isbn");
       if (!foundBook) throw new Error(`Book not found for ISBN ${book.isbn}.`);
-
-      loading.value = true;
-      error.value = null;
-      const payload = formData.is_new_user
-        ? {
-            is_new_user: true,
-            borrower_name: formData.borrower_name,
-            borrower_email: formData.email_borrower,
-            book_name: book.book_name,
-            isbn: book.isbn,
-            quantity: 1,
-            librarian_name: formData.librarian_name,
-            date_borrow: formData.date_borrow,
-            date_return: book.return_date,
-          }
-        : {
-            is_new_user: false,
-            user_name: formData.borrower_name || formData.user_id,
-            book_name: book.book_name,
-            isbn: book.isbn,
-            quantity: 1,
-            librarian_name: formData.librarian_name,
-            date_borrow: formData.date_borrow,
-            date_return: book.return_date,
-          };
-      console.log("Sending payload to createBorrow:", JSON.stringify(payload, null, 2));
-      const response = await createBorrow(payload);
-      console.log("createBorrow response:", response);
-      await fetchBorrowData();
-      addForm.value = {
-        borrowerType: "new",
-        borrower_name: "",
-        email_borrower: "",
-        user_id: "",
-        books: [{ isbn: "", book_name: "", return_date: "" }],
-        librarian_name: "",
-        date_borrow: "",
-        status: "borrowed",
-      };
-      showModal.value = false;
-      showToast("Borrow record created successfully.", "success");
-      return response;
-    } catch (err) {
-      console.error("submitAddBorrow error:", err.message, err.response?.data || err);
-      const errorMessage = err.response?.data?.message || err.message || "Failed to create borrow record due to a server error.";
-      error.value = errorMessage;
-      showToast(errorMessage, "error");
-      throw new Error(errorMessage);
-    } finally {
-      loading.value = false;
+      if (foundBook.quantity < (formData.quantity || 1))
+        throw new Error(`Book ${book.name} has insufficient stock (available: ${foundBook.quantity}).`);
     }
-  }
 
+    loading.value = true;
+    error.value = null;
+
+    const responses = [];
+    const updatedBooks = [];
+    try {
+      const payload = {
+        is_new_user: formData.is_new_user,
+        borrower_name: formData.borrower_name,
+        email_borrower: formData.email_borrower,
+        user_id: formData.user_id,
+        librarian_name: formData.librarian_name,
+        date_borrow: formData.date_borrow,
+        books: formData.books,
+        quantity: formData.quantity || 1,
+        status: formData.status,
+      };
+      console.log(`Sending payload to createBorrow at ${now}:`, JSON.stringify(payload, null, 2));
+      const response = await createBorrow(payload); // Single call with books array
+      console.log(`createBorrow response at ${now}:`, JSON.stringify(response, null, 2));
+      if (!response || (response.status && response.status >= 400)) {
+        throw new Error(response?.data?.message || "Failed to create borrow records");
+      }
+      responses.push(response);
+
+      // Update quantities for all books
+      for (const book of formData.books) {
+        const foundBook = await getBook(book.isbn, "isbn");
+        if (foundBook) {
+          await updateBook(foundBook.id, { quantity: foundBook.quantity - (formData.quantity || 1) });
+          updatedBooks.push({ id: foundBook.id, quantity: foundBook.quantity });
+        }
+      }
+    } catch (err) {
+      for (const book of updatedBooks) {
+        await updateBook(book.id, { quantity: book.quantity });
+      }
+      throw err;
+    }
+
+    selectedCategory.value = "";
+    selectedStatus.value = "";
+    search.value = "";
+    currentPage.value = 1;
+    await fetchBorrowData();
+    await fetchBooksData();
+    addForm.value = {
+      borrowerType: "new",
+      borrower_name: "",
+      email_borrower: "",
+      user_id: "",
+      books: [{ isbn: "", book_name: "", return_date: "" }],
+      librarian_name: "",
+      date_borrow: "",
+      status: "borrowed",
+    };
+    showModal.value = false;
+    showToast("Borrow record(s) created successfully.", "success");
+    return responses;
+  } catch (err) {
+    const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
+    console.error(`submitAddBorrow error at ${now}:`, err.message, err.response?.data || err);
+    error.value = err.message || "Failed to create borrow records.";
+    showToast(error.value, "error");
+    return [];
+  } finally {
+    loading.value = false;
+  }
+}
   async function submitUpdate(formData) {
   try {
     console.log("Received formData in submitUpdate:", JSON.stringify(formData, null, 2));
