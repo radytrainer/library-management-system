@@ -5,6 +5,9 @@ exports.index = async (req, res) => {
   try {
     const donations = await Donation.findAll();
 
+    // Log to help debug
+    console.log('Donations found:', donations.length);
+
     const donationsWithImageUrl = donations.map(donation => {
       const data = donation.toJSON();
       data.cover_image_url = data.cover_image
@@ -70,7 +73,7 @@ exports.store = async (req, res) => {
       language,
       cover_image,
       author,
-      status: 'pending',
+      status: 'pending', // default status
       available,
       user_id: user_id || null,
     });
