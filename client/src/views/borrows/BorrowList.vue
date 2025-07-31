@@ -83,11 +83,11 @@ const {
 
 onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
-  console.log("Initial booksData at", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }), ":", booksData.value);
+  console.log("Initial booksData:", booksData.value); // Debug log
 });
 
 watch(booksData, (newBooksData) => {
-  console.log("booksData updated at", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }), ":", newBooksData);
+  console.log("booksData updated:", newBooksData); // Debug log
 });
 
 watch([selectedCategory, selectedStatus, search, limit], () => {
@@ -97,18 +97,8 @@ watch([selectedCategory, selectedStatus, search, limit], () => {
 watch(totalPages, (newTotal) => {
   if (currentPage.value > newTotal) currentPage.value = newTotal;
 });
-
-async function handleSubmitAddBorrow(formData) {
-  const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
-  console.log(`Handling submit event at ${now} with data:`, JSON.stringify(formData, null, 2));
-  try {
-    const responses = await submitAddBorrow(formData);
-    console.log(`submitAddBorrow returned at ${now}:`, JSON.stringify(responses, null, 2));
-    await fetchBorrowData(); 
-    return responses; 
-  } catch (err) {
-    console.error(`Parent handleSubmitAddBorrow error at ${now}:`, err.message, err.stack);
-    throw err; 
-  }
-}
 </script>
+
+<style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
+</style>

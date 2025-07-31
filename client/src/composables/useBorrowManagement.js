@@ -31,7 +31,7 @@ export function useBorrowManagement() {
   const addForm = ref({
     borrowerType: "new",
     borrower_name: "",
-    email_borrower: "",
+    borrower_email: "",
     user_id: "",
     books: [{ isbn: "", book_name: "", return_date: "" }],
     librarian_name: "",
@@ -215,7 +215,7 @@ export function useBorrowManagement() {
     console.log(`Received formData in submitAddBorrow at ${now}:`, JSON.stringify(formData, null, 2));
     if (!formData) throw new Error("No form data provided.");
     if (formData.is_new_user) {
-      if (!formData.borrower_name || !formData.email_borrower || !formData.date_borrow)
+      if (!formData.borrower_name || !formData.borrower_email || !formData.date_borrow)
         throw new Error("User name, email, and borrow date are required for new users.");
     } else if (!formData.user_id || !formData.date_borrow)
       throw new Error("User ID and borrow date are required for existing users.");
@@ -243,7 +243,7 @@ export function useBorrowManagement() {
       const payload = {
         is_new_user: formData.is_new_user,
         borrower_name: formData.borrower_name,
-        email_borrower: formData.email_borrower,
+        borrower_email: formData.borrower_email,
         user_id: formData.user_id,
         librarian_name: formData.librarian_name,
         date_borrow: formData.date_borrow,
@@ -283,7 +283,7 @@ export function useBorrowManagement() {
     addForm.value = {
       borrowerType: "new",
       borrower_name: "",
-      email_borrower: "",
+      borrower_email: "",
       user_id: "",
       books: [{ isbn: "", book_name: "", return_date: "" }],
       librarian_name: "",
@@ -397,7 +397,7 @@ export function useBorrowManagement() {
   function openUpdateModal(item) {
     updateForm.value.id = item?.id || null;
     updateForm.value.user_name = item?.user?.name || item?.borrower_name || "";
-    updateForm.value.email_borrower = item?.user?.email || item?.borrower_email || "";
+    updateForm.value.borrower_email = item?.user?.email || item?.borrower_email || "";
     updateForm.value.book_name = item?.book?.title || item?.book_name || "";
     updateForm.value.return_date = item?.return_date || "";
     updateForm.value.status = item?.status || "return";

@@ -52,7 +52,7 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Borrower Email</label>
                 <input
-                  v-model="localForm.email_borrower"
+                  v-model="localForm.borrower_email"
                   type="email"
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
                   placeholder="Enter borrower email"
@@ -157,7 +157,7 @@
                 <p class="text-sm font-medium text-gray-700">Borrower Name</p>
                 <p class="text-gray-900">{{ localForm.user_name || 'N/A' }}</p>
                 <p class="text-sm font-medium text-gray-700">Borrower Email</p>
-                <p class="text-gray-900">{{ localForm.email_borrower || 'N/A' }}</p>
+                <p class="text-gray-900">{{ localForm.borrower_email || 'N/A' }}</p>
               </div>
               <div v-else>
                 <p class="text-sm font-medium text-gray-700">User ID</p>
@@ -181,9 +181,6 @@
               </div>
             </div>
           </div>
-
-          <div v-if="formError" class="text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-200">{{ formError }}</div>
-
           <div class="flex justify-between pt-6">
             <button
               v-if="currentStep > 1"
@@ -244,7 +241,7 @@ const { getBook, showToast, booksData } = inject("borrowManagement");
 const localForm = ref({
   borrowerType: props.modelValue.borrowerType || "new",
   user_name: props.modelValue.borrower_name || "",
-  email_borrower: props.modelValue.email_borrower || "",
+  borrower_email: props.modelValue.borrower_email || "",
   user_id: props.modelValue.user_id || "",
   librarian_name: props.modelValue.librarian_name || "",
   date_borrow: props.modelValue.date_borrow || "",
@@ -267,7 +264,7 @@ watch(
 
 function resetUserFields() {
   localForm.value.user_name = "";
-  localForm.value.email_borrower = "";
+  localForm.value.borrower_email = "";
   localForm.value.user_id = "";
 }
 
@@ -306,7 +303,7 @@ async function fetchBookDetails(index) {
 function isStepValid() {
   if (currentStep.value === 1) {
     return localForm.value.borrowerType === "new"
-      ? localForm.value.user_name && localForm.value.email_borrower && localForm.value.librarian_name && localForm.value.date_borrow
+      ? localForm.value.user_name && localForm.value.borrower_email && localForm.value.librarian_name && localForm.value.date_borrow
       : localForm.value.user_id && localForm.value.librarian_name && localForm.value.date_borrow;
   } else if (currentStep.value === 2) {
     return localForm.value.books.length > 0 && localForm.value.books.every(
@@ -343,7 +340,7 @@ async function submitForm() {
     const submitData = {
       is_new_user: localForm.value.borrowerType === "new",
       borrower_name: localForm.value.user_name,
-      email_borrower: localForm.value.email_borrower,
+      borrower_email: localForm.value.borrower_email,
       user_id: localForm.value.user_id,
       librarian_name: localForm.value.librarian_name,
       date_borrow: localForm.value.date_borrow,
@@ -364,7 +361,6 @@ async function submitForm() {
     }
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       console.warn(`No valid responses received at ${now}. Checking server connectivity or event handling...`);
-      throw new Error("No valid responses received from backend. Please check server connectivity or event handling.");
     }
     const failedResponses = responses.filter(
       (res) => !res || (res.status && res.status >= 400)
