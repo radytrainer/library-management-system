@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="w-full bg-sky-500 rounded-xl shadow-md p-12 flex flex-col md:flex-row md:justify-between justify-center gap-12 py-5">
       <div class="flex flex-col gap-4 pr-4 md:pr-12">
-        <h1 class="text-4xl font-bold text-white mt-8">📚 Book Inventory</h1>
+        <h1 class="text-4xl font-bold text-white mt-8">📚 Welcome and Thank You for Your Kindness</h1>
         <p class="text-sm text-white mt-3">
           We sincerely welcome you to our book donation program. Your generous support helps us grow a meaningful library for the community. Every book you donate is a gift of knowledge, and we truly appreciate your contribution.
         </p>
