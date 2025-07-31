@@ -10,7 +10,7 @@
       </div>
       <div class="flex justify-end items-center p-6">
         <div class="relative w-40 h-40 overflow-hidden rounded-xl shadow-md">
-          <img src="https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg" class="w-full h-full object-cover" alt="Book Image" />
+          <img src="https://media.gq.com/photos/5ad64204c8be07604e8b5f2f/1:1/w_1332,h_1332,c_limit/21-books-GQ-April-2018-041718-3x2.jpg" class="w-full h-full object-cover" alt="Book Image" />
         </div>
       </div>
     </div>
