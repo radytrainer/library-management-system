@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     date_of_birth: { type: DataTypes.DATEONLY },
     phone: { type: DataTypes.STRING },
     profile_image: { type: DataTypes.STRING },
+    barcode: { type: DataTypes.STRING },
     roleId: {  // <-- only one foreign key column here
       type: DataTypes.INTEGER,
       references: {
