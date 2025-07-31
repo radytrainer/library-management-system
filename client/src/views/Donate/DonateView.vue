@@ -5,7 +5,7 @@
       <div class="flex flex-col gap-4 pr-4 md:pr-12">
         <h1 class="text-4xl font-bold text-white mt-8">📚 Book Inventory</h1>
         <p class="text-sm text-white mt-3">
-          Easily explore and manage all the books in our library collection...
+          We sincerely welcome you to our book donation program. Your generous support helps us grow a meaningful library for the community. Every book you donate is a gift of knowledge, and we truly appreciate your contribution.
         </p>
       </div>
       <div class="flex justify-end items-center p-6">
