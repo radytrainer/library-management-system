@@ -98,18 +98,17 @@ watch(totalPages, (newTotal) => {
   if (currentPage.value > newTotal) currentPage.value = newTotal;
 });
 
-// Handle submit event from AddBorrowModal
 async function handleSubmitAddBorrow(formData) {
   const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
   console.log(`Handling submit event at ${now} with data:`, JSON.stringify(formData, null, 2));
   try {
     const responses = await submitAddBorrow(formData);
     console.log(`submitAddBorrow returned at ${now}:`, JSON.stringify(responses, null, 2));
-    await fetchBorrowData(); // Refresh data after successful submit
-    return responses; // Return responses to AddBorrowModal
+    await fetchBorrowData(); 
+    return responses; 
   } catch (err) {
     console.error(`Parent handleSubmitAddBorrow error at ${now}:`, err.message, err.stack);
-    throw err; // Propagate error to AddBorrowModal
+    throw err; 
   }
 }
 </script>
