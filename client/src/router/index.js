@@ -10,6 +10,7 @@ import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
 import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
+import DonateView from '@/views/Donate/DonateView.vue'
 
 const routes = [
   // Public routes
@@ -46,12 +47,12 @@ const routes = [
         component: () => import('@/views/User/UserListView.vue'),
         meta: { roles: ['admin', 'librarian'] },
       },
-      // {
-      //   path: 'donation',
-      //   name: 'donation',
-      //   component: () => import('@/views/Donation/DonationView.vue'),
-      //   meta: { roles: ['admin', 'librarian'] },
-      // },
+      {
+        path: 'donation',
+        name: 'donation',
+        component: DonateView,
+        meta: { roles: ['admin', 'librarian'] },
+      },
       {
         path: 'books',
         name: 'books',
@@ -93,7 +94,7 @@ const routes = [
   },
 
   // Fallback
-  // { path: '/:pathMatch(.*)*', redirect: '/login' },
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -116,9 +117,9 @@ router.beforeEach((to, from, next) => {
   }
 
   // Require login for protected routes
-  // if (to.meta.requiresAuth && !isLoggedIn) {
-  //   return next('/login')
-  // }
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    return next('/login')
+  }
 
   // Role check
   // if (to.meta.roles && !to.meta.roles.includes(userRole)) {

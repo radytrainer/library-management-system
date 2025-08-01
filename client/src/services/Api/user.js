@@ -1,57 +1,32 @@
-import axios from '../axios';
+// src/services/Api/user.js
+import api from '@/services/axios'
 
-// Fetch all users
-export const getAllUsers = () => axios.get('user/users').catch((err) => {
-  console.error('getAllUsers error:', {
-    status: err.response?.status,
-    data: err.response?.data,
-    message: err.message,
-    config: err.config,
-  });
-  throw new Error(err.response?.data?.message || 'Failed to fetch users');
+// ✅ Create User (multipart form)
+export function createUser(formData) {
+  return api.post('user/create', formData);
+}
+
+// ✅ Get All Users
+export const getAllUsers = () => api.get('user/users')
+
+// ✅ Get Roles
+export const getRoles = () => api.get('user/roles')
+
+// ✅ Get User by ID
+export const getUserById = (id) => api.get(`/users/${id}`)
+
+// ✅ Update User
+export const updateUser = (id, formData) => axios.put(`${API_URL}/users/${id}`, formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
 });
 
-// Fetch roles
-export const getRoles = () => axios.get('user/roles').catch((err) => {
-  console.error('getRoles error:', {
-    status: err.response?.status,
-    data: err.response?.data,
-    message: err.message,
-  });
-  throw new Error(err.response?.data?.message || 'Failed to fetch roles');
-});
+// ✅ Delete User
+export const deleteUser = (id) => api.delete(`/user/${id}`)
 
-// Get user by ID
-export const getUserById = (id) => axios.get(`/users/${id}`).catch((err) => {
-  throw new Error(err.response?.data?.message || `Failed to fetch user with ID ${id}`);
-});
+// ✅ Get Profile
+export const getProfile = () => api.get('/users/profile')
 
-// Create user
-export const createUser = (data) => axios.post('user/create', data).catch((err) => {
-  throw new Error(err.response?.data?.message || 'Failed to create user');
-});
-
-// Update user
-export const updateUser = (id, data) => axios.put(`/users/${id}`, data).catch((err) => {
-  throw new Error(err.response?.data?.message || `Failed to update user with ID ${id}`);
-});
-
-// Delete user
-export const deleteUser = (id) => axios.delete(`/users/${id}`).catch((err) => {
-  throw new Error(err.response?.data?.message || `Failed to delete user with ID ${id}`);
-});
-
-// Get profile
-export const getProfile = () => axios.get('/profile').catch((err) => {
-  throw new Error(err.response?.data?.message || 'Failed to fetch profile');
-});
-
-// Delete profile
-export const deleteProfile = () => axios.delete('/profile').catch((err) => {
-  throw new Error(err.response?.data?.message || 'Failed to delete profile');
-});
-
-// Get user barcode image (returns image/png)
-export const getUserBarcodeImage = (id) => axios.get(`/users/${id}/barcode`, { responseType: 'blob' }).catch((err) => {
-  throw new Error(err.response?.data?.message || `Failed to fetch barcode for user with ID ${id}`);
-});
+// ✅ Get User Barcode Image
+export const getUserBarcodeImage = (id) => api.get(`/users/${id}/barcode`, {
+  responseType: 'blob'
+})

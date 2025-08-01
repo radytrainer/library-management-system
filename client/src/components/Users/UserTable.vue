@@ -1,3 +1,20 @@
+<script setup>
+import { ref } from 'vue'
+
+const props = defineProps({
+  users: Array,
+  roles: Array
+})
+
+const emits = defineEmits(['edit-user', 'delete-user', 'view-user'])
+
+const openMenuId = ref(null)
+
+const toggleMenu = (id) => {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+</script>
+
 <template>
   <div class="bg-white border border-gray-200 rounded-lg">
     <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -10,59 +27,43 @@
           <th class="px-4 py-3 font-medium text-gray-600">Role</th>
           <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
           <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
-          <th class="px-4 py-3 font-medium text-gray-600">Barcode_image</th>
+          <th class="px-4 py-3 font-medium text-gray-600">Barcode Image</th>
           <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
         <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
-          <td class="px-4 py-3 text-gray-600">{{ user.id }}</td>
-          <td class="px-4 py-3">
-            <div class="flex items-center space-x-3">
-              <img
-                :src="user.profile_image"
-                class="w-9 h-9 rounded-full border object-cover" />
-              <span class="font-medium text-gray-900">{{ user.name }}</span>
-            </div>
+          <td class="px-4 py-3">{{ user.id }}</td>
+          <td class="px-4 py-3 flex items-center space-x-3">
+            <img v-if="user.profile_image" :src="user.profile_image" class="w-9 h-9 rounded-full border object-cover" />
+            <div v-else class="w-9 h-9 rounded-full bg-gray-200"></div>
+            <span>{{ user.username }}</span>
           </td>
-          <td class="px-4 py-3 text-gray-700">{{ user.email }}</td>
-          <td class="px-4 py-3 text-gray-700">{{ user.phone || '-' }}</td>
+          <td class="px-4 py-3">{{ user.email }}</td>
+          <td class="px-4 py-3">{{ user.phone || '-' }}</td>
           <td class="px-4 py-3">
-            <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {{ user.role }}
+            <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+              {{ user.role || 'User' }}
             </span>
           </td>
-          <td class="px-4 py-3 text-gray-600">{{ user.date_of_birth || '-' }}</td>
-          <td class="px-4 py-3 text-gray-600">{{ user.barcode || '-' }}</td>
-        
-          <td>
-            <img v-if="user.barcode_image" :src="user.barcode_image" alt="Barcode" class="h-12 w-auto align-center" />
+          <td class="px-4 py-3">{{ user.date_of_birth || '-' }}</td>
+          <td class="px-4 py-3">{{ user.barcode || '-' }}</td>
+          <td class="px-4 py-3">
+            <img v-if="user.barcode_image" :src="user.barcode_image" class="h-12 w-auto" />
             <span v-else>-</span>
           </td>
-            <td class="px-4 py-3 text-right">
-            <slot name="actions" :user="user">
-              <span>HEllo</span>
-            </slot>
+          <td class="px-4 py-3 text-right relative">
+            <button @click="toggleMenu(user.id)" class="p-2 hover:bg-gray-100 rounded">
+              <span class="material-symbols-outlined">more_vert</span>
+            </button>
+            <div v-if="openMenuId === user.id" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow-md z-50">
+              <button @click="$emit('view-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-500">View</button>
+              <button @click="$emit('edit-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-green-500">Edit</button>
+              <button @click="$emit('delete-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">Delete</button>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
-
-<style scoped>
-.min-w-full th,
-.min-w-full td {
-  min-width: 120px;
-  /* Adjust as needed */
-}
-</style>
-
-<script setup>
-defineProps({
-  users: {
-    type: Array,
-    default: () => []
-  }
-})
-</script>
