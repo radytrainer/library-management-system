@@ -1,4 +1,6 @@
 const { Book, Category, Author, Language } = require('../models');
+const fs = require('fs').promises;
+const path = require('path');
 
 // GET all books
 exports.index = async (req, res) => {
@@ -117,6 +119,7 @@ exports.store = async (req, res) => {
 
 
 // PUT update a book by ID
+// PUT update a book by ID
 exports.update = async (req, res) => {
   try {
     const bookId = req.params.id;
@@ -137,7 +140,6 @@ exports.update = async (req, res) => {
     const book = await Book.findByPk(bookId);
     if (!book) return res.status(404).json({ message: 'Book not found.' });
 
-    // If language_id not provided but language name is, find language_id
     if (!language_id && language) {
       const lang = await Language.findOne({ where: { name: language } });
       if (!lang) {
@@ -146,12 +148,29 @@ exports.update = async (req, res) => {
       language_id = lang.id;
     }
 
-    const cover_image = req.file ? req.file.filename : null;
+    const cover_image = req.file ? req.file.filename : book.cover_image;
+
+    // Verify image file exists if a new file was uploaded
+    if (req.file) {
+      const imagePath = path.join(__dirname, '../Uploads/books', cover_image);
+      await fs.access(imagePath);
+      console.log(`Image verified for update: ${imagePath}`);
+    } else if (cover_image) {
+      // Verify existing image file
+      const imagePath = path.join(__dirname, '../Uploads/books', cover_image);
+      try {
+        await fs.access(imagePath);
+        console.log(`Existing image verified: ${imagePath}`);
+      } catch (error) {
+        console.warn(`Existing image not found: ${imagePath}, setting cover_image to null`);
+        cover_image = null; // Reset if the file doesn't exist
+      }
+    }
 
     book.title = title;
     book.isbn = isbn;
     book.quantity = quantity;
-    book.cover_image = cover_image || book.cover_image;
+    book.cover_image = cover_image;
     book.donated_by = donated_by;
     book.public_year = public_year;
     book.description = description;
@@ -162,7 +181,21 @@ exports.update = async (req, res) => {
 
     await book.save();
 
-    res.json({ message: 'Book updated successfully.', book });
+    const imageUrl = cover_image
+      ? `${req.protocol}://${req.get('host')}/uploads/books/${cover_image}?t=${Date.now()}`
+      : null;
+
+    const bookData = {
+      ...book.toJSON(),
+      cover_image_url: imageUrl,
+    };
+
+    console.log('Update response sent:', bookData); // Debug log
+
+    res.json({
+      message: 'Book updated successfully.',
+      book: bookData,
+    });
   } catch (error) {
     console.error('Error updating book:', error);
     res.status(500).json({ message: 'Failed to update book.' });

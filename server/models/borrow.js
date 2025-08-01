@@ -2,7 +2,15 @@ module.exports = (sequelize, DataTypes) => {
   const Borrow = sequelize.define("Borrow", {
     user_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true, // ✅ allow null for guest borrows
+    },
+    borrower_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    borrower_email: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     book_id: {
       type: DataTypes.INTEGER,
@@ -34,8 +42,6 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: "borrowed",
     },
   });
-
-
 
   return Borrow;
 };

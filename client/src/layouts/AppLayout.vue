@@ -154,50 +154,80 @@ const pageTitle = computed(() => {
       :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
       <!-- ✅ Header -->
       <!-- Top Navbar -->
-      <header class="shadow-sm p-4 flex justify-between items-center">
+      <header class="sticky top-0 z-40 bg-white shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
           <!-- Sidebar Toggle Button -->
-          <button @click="toggleSidebar"
-            class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100">
-            <span class="material-icons text-2xl">
-              {{
-                isSidebarOpen ? 'menu_open' : 'menu'
-              }}</span>
+          <button
+            @click="toggleSidebar"
+            class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100"
+            aria-label="Toggle sidebar"
+          >
+            <span class="material-icons text-2xl">{{ isSidebarOpen ? 'menu_open' : 'menu' }}</span>
           </button>
           <h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
             {{ pageTitle }}
           </h1>
-
         </div>
 
         <div class="flex items-center space-x-3">
           <!-- Search -->
           <div class="relative">
-            <input type="text" v-model="searchQuery"
+            <input
+              type="text"
+              v-model="searchQuery"
               :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }" />
-            <span
-              class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">search</span>
+              :class="{ 'font-khmer': language === 'kh' }"
+              aria-label="Search"
+            />
+            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+              search
+            </span>
           </div>
 
           <!-- Language Switch -->
           <div class="relative inline-block text-left">
-            <button @click="isOpen = !isOpen"
+            <button
+              @click="isOpen = !isOpen"
               class="border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
-              :class="{ 'font-khmer': language === 'kh' }">
-              <img :src="language === 'en' ? 'https://flagcdn.com/w40/us.png' : 'https://flagcdn.com/w40/kh.png'"
-                class="w-5 h-4 mr-2" :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'" />
+              :class="{ 'font-khmer': language === 'kh' }"
+              aria-haspopup="true"
+              :aria-expanded="isOpen.toString()"
+              aria-label="Select language"
+              type="button"
+            >
+              <img
+                :src="language === 'en' ? 'https://flagcdn.com/w40/us.png' : 'https://flagcdn.com/w40/kh.png'"
+                class="w-5 h-4 mr-2"
+                :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'"
+              />
               {{ language === 'en' ? 'English' : 'ភាសាខ្មែរ' }}
               <span class="ml-2 material-icons">arrow_drop_down</span>
             </button>
-            <div v-if="isOpen"
-              class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm">
+            <div
+              v-if="isOpen"
+              class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+              role="menu"
+              aria-orientation="vertical"
+              tabindex="-1"
+            >
+              <a
+                href="#"
+                @click.prevent="selectLanguage('en')"
+                class="flex items-center p-2 hover:bg-gray-100 text-sm"
+                role="menuitem"
+                tabindex="0"
+              >
                 <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
                 English
               </a>
-              <a href="#" @click.prevent="selectLanguage('kh')" class="flex items-center p-2 hover:bg-gray-100 text-sm">
+              <a
+                href="#"
+                @click.prevent="selectLanguage('kh')"
+                class="flex items-center p-2 hover:bg-gray-100 text-sm"
+                role="menuitem"
+                tabindex="0"
+              >
                 <img src="https://flagcdn.com/w40/kh.png" class="w-5 h-4 mr-2" alt="Cambodia Flag" />
                 ភាសាខ្មែរ
               </a>
@@ -206,21 +236,37 @@ const pageTitle = computed(() => {
 
           <!-- Notification -->
           <div class="relative">
-            <span
+            <button
+              @click="toggleNotifications"
               class="material-icons text-gray-600 cursor-pointer hover:text-indigo-600 p-2 rounded-full hover:bg-gray-100"
-              @click="toggleNotifications">notifications</span>
-            <span v-if="notifications > 0"
-              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              aria-label="Toggle notifications"
+              aria-expanded="showNotifications.toString()"
+            >
+              notifications
+            </button>
+            <span
+              v-if="notifications > 0"
+              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+              aria-label="You have new notifications"
+            >
               {{ notifications }}
             </span>
             <!-- Notification Dropdown -->
-            <div v-if="showNotifications"
-              class="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
+            <div
+              v-if="showNotifications"
+              class="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100"
+              role="region"
+              aria-live="polite"
+            >
               <p class="text-sm text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
-                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }} {{ language === 'en' ?
-                  'newnotifications' : 'ការជូនដំណឹងថ្មី' }}
+                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }}
+                {{ language === 'en' ? 'new notifications' : 'ការជូនដំណឹងថ្មី' }}
               </p>
-              <button class="mt-3 text-sm text-indigo-600 hover:underline" @click="clearNotifications">
+              <button
+                class="mt-3 text-sm text-indigo-600 hover:underline"
+                @click="clearNotifications"
+                aria-label="Clear all notifications"
+              >
                 {{ language === 'en' ? 'Clear All' : 'លុបទាំងអស់' }}
               </button>
             </div>
@@ -245,8 +291,11 @@ const pageTitle = computed(() => {
               class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
               <p class="text-sm font-semibold">{{ user.username }}</p>
               <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
-              <button class="mt-3 w-full text-left text-sm text-red-600 hover:bg-red-50 rounded px-2 py-1"
-                @click="logout">
+              <button
+                class="mt-3 w-full text-left text-sm text-red-600 hover:bg-red-50 rounded px-2 py-1"
+                @click="logout"
+                role="menuitem"
+              >
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
 
@@ -257,7 +306,7 @@ const pageTitle = computed(() => {
       </header>
 
       <!-- ✅ Page Content -->
-      <main class="p-6">
+      <main class="p-2">
         <RouterView />
       </main>
     </div>
