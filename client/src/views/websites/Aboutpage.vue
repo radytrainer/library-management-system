@@ -139,7 +139,40 @@
             </section>
 
             <!-- Divider -->
-            
+          
+<div class="border-t border-gray-200 my-16"></div>
+
+            <!-- Services Section -->
+            <section id="services" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Our Services</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="service in services" :key="service.title"
+                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
+                        <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" />
+                        <h3 class="text-xl font-semibold mb-2">{{ service.title }}</h3>
+                        <p class="text-gray-600">{{ service.description }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Divider -->
+            <div class="border-t border-gray-200 my-16"></div>
+
+            <!-- Staff Section -->
+            <section class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Meet Our Team</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div v-for="member in staff" :key="member.name"
+                        class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
+                        <img :src="member.image" :alt="member.name"
+                            class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-sky-100" />
+                        <h3 class="text-xl font-semibold mb-1">{{ member.name }}</h3>
+                        <p class="text-sky-600 font-medium mb-3">{{ member.role }}</p>
+                        <p class="text-sm text-gray-600">{{ member.bio }}</p>
+                    </div>
+                </div>
+            </section>
+
         </div>
 
     </div>
