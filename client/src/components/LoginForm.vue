@@ -82,7 +82,7 @@ const handleLogin = async () => {
     if (user.role === 'admin') {
       router.push('/dashboard')
     } else {
-      router.push('/borrows')
+      router.push('/books')
     }
 
   } catch (err) {

@@ -5,7 +5,7 @@ const authConfig = require("../config/auth.config");
 
 const signup = async (req, res) => {
   try {
-    const { username, email, password, date_of_birth, phone, RoleId } = req.body;
+    const { username, email, password, date_of_birth, phone, roleId } = req.body;
     const profile_image = req.file ? req.file.filename : null;
 
     if (!username || !email || !password) {
@@ -50,13 +50,13 @@ const signup = async (req, res) => {
       date_of_birth: dob,
       phone,
       profile_image,
-      roleId: RoleId || null,
+      roleId: roleId || null,
     });
 
-    // ✅ Assign default role if RoleId not provided
+    // ✅ Assign default role if roleId not provided
     let role = null;
-    if (RoleId) {
-      role = await Role.findByPk(RoleId);
+    if (roleId) {
+      role = await Role.findByPk(roleId);
     } else {
       role = await Role.findOne({ where: { name: "user" } });
     }

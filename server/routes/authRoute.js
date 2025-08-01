@@ -17,7 +17,7 @@ router.post("/signup", upload.single("profile_image"),signup);
 
 // Public routes
 
-router.post("/signup", [checkDuplicateUsernameOrEmail, checkRolesExisted], signup);
+router.post("/signup", [checkDuplicateUsernameOrEmail, checkRolesExisted,verifyToken], signup);
 router.post("/signin", signin);
 
 

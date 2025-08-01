@@ -1,5 +1,12 @@
 const db = require("../models/index")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+const JsBarcode = require('jsbarcode');
+const path = require("path");
+const fs = require("fs");
+const ExcelJS = require('exceljs');
+const { createCanvas } = require('canvas');
+const { v4: uuidv4 } = require("uuid") // For generating unique barcode
 const { User, Role } = db
 
 const allAccess = (req, res) => {
@@ -18,199 +25,112 @@ const librarianBoard = (req, res) => {
   res.status(200).json({ message: "Librarian Content." })
 }
 
-// Create a new user
-const createUser = async (req, res) => {
+
+const getUserBarcode = async (req, res) => {
   try {
-    const { username, email, password, date_of_birth, phone, RoleId } = req.body
-    const profile_image = req.file ? req.file.filename : null
+    const userId = req.params.id;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "Username, email, and password are required!" })
-    }
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const hashedPassword = await bcrypt.hash(password, 8)
+    // ✅ Create canvas with size
+    const canvas = createCanvas(300, 100); // width x height
 
-    // Check and assign role
-    let roleId = RoleId
-    if (!roleId) {
-      const defaultRole = await Role.findOne({ where: { name: "user" } })
-      roleId = defaultRole ? defaultRole.id : null
-    }
+    // ✅ Generate barcode
+    JsBarcode(canvas, user.id.toString(), {
+      format: 'CODE128',
+      displayValue: true,
+      fontSize: 18,
+      margin: 10,
+    });
 
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      date_of_birth,
-      phone,
-      profile_image,
-      RoleId: roleId,
-    })
+    // ✅ Return as PNG
+    res.setHeader('Content-Type', 'image/png');
+    canvas.createPNGStream().pipe(res);
 
-    // Fetch user with role
-    const userWithRole = await User.findByPk(user.id, {
-      include: [
-        {
-          model: Role,
-          as: "Role",
-          attributes: ["id", "name", "description"],
-          required: false,
-        },
-      ],
-      attributes: [
-        "id",
-        "username",
-        "email",
-        "date_of_birth",
-        "profile_image",
-        "phone",
-        "RoleId",
-        "createdAt",
-        "updatedAt",
-      ],
-    })
-
-    const formattedUser = {
-      id: userWithRole.id,
-      username: userWithRole.username,
-      email: userWithRole.email,
-      date_of_birth: userWithRole.date_of_birth,
-      profile_image: userWithRole.profile_image,
-      phone: userWithRole.phone,
-      role: userWithRole.Role
-        ? {
-            id: userWithRole.Role.id,
-            name: userWithRole.Role.name,
-            description: userWithRole.Role.description,
-          }
-        : null,
-      createdAt: userWithRole.createdAt,
-      updatedAt: userWithRole.updatedAt,
-    }
-
-    res.status(201).json({
-      message: "User created successfully!",
-      user: formattedUser,
-    })
-  } catch (error) {
-    console.error("Create user error:", error)
-    res.status(500).json({ message: error.message })
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error generating barcode' });
   }
-}
+};
+
+//create user by admin or librarian
 
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      include: [
-        {
-          model: Role,
-          as: "Role",
-          attributes: ["id", "name", "description"],
-          required: false,
-        },
-      ],
-      attributes: [
-        "id",
-        "username",
-        "email",
-        "date_of_birth",
-        "profile_image",
-        "phone",
-        "RoleId",
-        "createdAt",
-        "updatedAt",
-      ],
-      order: [["createdAt", "DESC"]],
-    })
+      include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"], required: false }],
+      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
+      order: [["createdAt", "ASC"]],
+    });
 
     const formattedUsers = users.map((user) => ({
       id: user.id,
       username: user.username,
       email: user.email,
       date_of_birth: user.date_of_birth,
-      profile_image: user.profile_image,
+      profile_image: getProfileImageUrl(req, user.profile_image),
       phone: user.phone,
-      role: user.Role
-        ? {
-            id: user.Role.id,
-            name: user.Role.name,
-            description: user.Role.description,
-          }
-        : null,
+      barcode: user.barcode,
+      barcode_image: user.barcode_image, // already full URL
+      role: user.Role ? user.Role.name : null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-    }))
+    }));
 
     res.status(200).json({
       message: "Users retrieved successfully!",
       users: formattedUsers,
       total: formattedUsers.length,
-    })
+    });
   } catch (error) {
-    console.error("Get all users error:", error)
-    res.status(500).json({ message: error.message })
+    console.error("Get all users error:", error);
+    res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 // Get user by specific ID
 const getUserById = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const user = await User.findByPk(id, {
-      include: [
-        {
-          model: Role,
-          as: "Role",
-          attributes: ["id", "name", "description"],
-          required: false,
-        },
-      ],
-      attributes: [
-        "id",
-        "username",
-        "email",
-        "date_of_birth",
-        "profile_image",
-        "phone",
-        "RoleId",
-        "createdAt",
-        "updatedAt",
-      ],
-    })
+      include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"], required: false }],
+      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
+    });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" })
-    }
-
-    const formattedUser = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      date_of_birth: user.date_of_birth,
-      profile_image: user.profile_image,
-      phone: user.phone,
-      role: user.Role
-        ? {
-            id: user.Role.id,
-            name: user.Role.name,
-            description: user.Role.description,
-          }
-        : null,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }
+    if (!user) return res.status(404).json({ message: "User not found!" });
 
     res.status(200).json({
       message: "User retrieved successfully!",
-      user: formattedUser,
-    })
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        date_of_birth: user.date_of_birth,
+        profile_image: getProfileImageUrl(req, user.profile_image),
+        phone: user.phone,
+        barcode: user.barcode,
+        barcode_image: user.barcode_image, // assuming this is already a full URL
+        role: user.Role
+          ? {
+              id: user.Role.id,
+              name: user.Role.name,
+              description: user.Role.description,
+            }
+          : null,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
   } catch (error) {
-    console.error("Get user by ID error:", error)
-    res.status(500).json({ message: error.message })
+    console.error("Get user by ID error:", error);
+    res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 // Get current user's profile
 const getUserProfile = async (req, res) => {
@@ -218,29 +138,11 @@ const getUserProfile = async (req, res) => {
     const userId = req.userId;
 
     const user = await User.findByPk(userId, {
-      include: [
-        {
-          model: Role,
-          as: "Role", // Must match the alias defined in association
-          attributes: ["id", "name", "description"],
-        },
-      ],
-      attributes: [
-        "id",
-        "username",
-        "email",
-        "date_of_birth",
-        "profile_image",
-        "phone",
-        "roleId",
-        "createdAt",
-        "updatedAt",
-      ],
+      include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"] }],
+      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found!" });
 
     res.status(200).json({
       message: "Profile retrieved successfully!",
@@ -249,8 +151,10 @@ const getUserProfile = async (req, res) => {
         username: user.username,
         email: user.email,
         date_of_birth: user.date_of_birth,
-        profile_image: user.profile_image,
+        profile_image: getProfileImageUrl(req, user.profile_image),
         phone: user.phone,
+        barcode: user.barcode,
+        barcode_image: user.barcode_image,
         role: user.Role
           ? {
               id: user.Role.id,
@@ -268,6 +172,7 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+
 const getRoles = async (req, res) => {
   try {
     const roles = await Role.findAll({ attributes: ['id', 'name'] });
@@ -280,131 +185,135 @@ const getRoles = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const targetUserId = req.params.id || req.userId;
-    const isSelfUpdate = !req.params.id || req.params.id == req.userId;
+    const userId = req.params.id;
+    const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
+    const profile_image = req.file ? req.file.filename : null;
 
-    if (!isSelfUpdate && req.userRole !== "admin") {
-      return res.status(403).json({ message: "You are not authorized to update this user." });
-    }
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "User not found!" });
 
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: "Request body is missing!" });
-    }
+    // ✅ Role update rules
+    if (roleId) {
+      const targetRole = await Role.findByPk(roleId);
+      if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
 
-    const {
-      username,
-      email,
-      date_of_birth,
-      profile_image,
-      phone,
-      RoleId,
-      password,
-    } = req.body;
-
-    const user = await User.findByPk(targetUserId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" });
-    }
-
-    if (email && email !== user.email) {
-      const existing = await User.findOne({ where: { email } });
-      if (existing && existing.id !== user.id) {
-        return res.status(400).json({ message: "Email is already in use!" });
+      // Librarians cannot update to Admin or Librarian
+      if (req.userRole === "librarian" && targetRole.name !== "user") {
+        return res.status(403).json({ message: "Librarians can only set user role!" });
       }
-    }
 
-    if (phone && phone !== user.phone) {
-      const existing = await User.findOne({ where: { phone } });
-      if (existing && existing.id !== user.id) {
-        return res.status(400).json({ message: "Phone number is already in use!" });
+      // Only Admin can assign Admin role
+      if (targetRole.name === "admin" && req.userRole !== "admin") {
+        return res.status(403).json({ message: "Only admins can assign admin role!" });
       }
+
+      user.roleId = roleId;
     }
 
-    if (RoleId && !isSelfUpdate) {
-      const role = await Role.findByPk(RoleId);
-      if (!role) {
-        return res.status(400).json({ message: "Invalid role ID!" });
-      }
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (date_of_birth) user.date_of_birth = date_of_birth;
+    if (profile_image) user.profile_image = profile_image;
+
+    if (password) {
+      user.password = await bcrypt.hash(password, 8);
     }
 
-    const updateData = {};
-    if (username) updateData.username = username;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
-    if (profile_image) updateData.profile_image = profile_image;
-    if (date_of_birth) updateData.date_of_birth = date_of_birth;
-    if (RoleId && !isSelfUpdate) updateData.RoleId = RoleId;
-    if (password) updateData.password = bcrypt.hashSync(password, 8);
+    let regenerateBarcode = false;
 
-    await user.update(updateData);
+    // ✅ If barcode is updated, regenerate image
+    if (barcode && barcode !== user.barcode) {
+      user.barcode = barcode;
+      regenerateBarcode = true;
+    }
 
-    const updatedUser = await User.findByPk(user.id, {
-      include: [
-        {
-          model: Role,
-          as: "Role",
-          attributes: ["id", "name", "description"],
-        },
-      ],
-      attributes: [
-        "id",
-        "username",
-        "email",
-        "date_of_birth",
-        "profile_image",
-        "phone",
-        "RoleId",
-        "createdAt",
-        "updatedAt",
-      ],
-    });
+    await user.save();
 
-    const formatted = {
-      id: updatedUser.id,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      date_of_birth: updatedUser.date_of_birth,
-      profile_image: updatedUser.profile_image,
-      phone: updatedUser.phone,
-      role: updatedUser.Role
-        ? {
-            id: updatedUser.Role.id,
-            name: updatedUser.Role.name,
-            description: updatedUser.Role.description,
-          }
-        : null,
-      createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt,
-    };
+    // ✅ Regenerate barcode image if needed
+    if (regenerateBarcode) {
+      const canvas = createCanvas(400, 150);
+      const ctx = canvas.getContext('2d');
+
+      JsBarcode(canvas, user.barcode, {
+        format: 'CODE128',
+        displayValue: true,
+        fontSize: 18,
+        margin: 20,
+      });
+
+      ctx.font = '18px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#000';
+      ctx.fillText(user.username, canvas.width / 2, 140);
+
+      const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
+      if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
+
+      const barcodeFilename = `barcode_${user.id}.png`;
+      const barcodePath = path.join(barcodeDir, barcodeFilename);
+      const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
+
+      const out = fs.createWriteStream(barcodePath);
+      canvas.createPNGStream().pipe(out);
+      await new Promise((resolve) => out.on('finish', resolve));
+
+      user.barcode_image = barcodeImageUrl;
+      await user.save();
+    }
 
     res.status(200).json({
-      message: isSelfUpdate ? "Profile updated successfully!" : "User updated successfully!",
-      user: formatted,
+      message: "User updated successfully!",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        date_of_birth: user.date_of_birth,
+        profile_image: user.profile_image,
+        barcode: user.barcode,
+        barcode_image: user.barcode_image,
+        roleId: user.roleId,
+        updatedAt: user.updatedAt,
+      }
     });
   } catch (error) {
-    console.error("Flexible update error:", error);
-    res.status(500).json({ message: "Server error while updating user." });
+    console.error("Update user error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
-
 
 // Delete user by specific ID
 const deleteUserById = async (req, res) => {
   try {
-    const { User } = db;
+    console.log("➡️ DELETE called with ID:", req.params.id); // ✅ Debug log
+
     const userId = req.params.id;
+    const user = await User.findByPk(userId);
 
-    const deleted = await User.destroy({ where: { id: userId } });
-
-    if (deleted === 0) {
+    if (!user) {
+      console.log("❌ User not found with ID:", userId);
       return res.status(404).json({ message: "User not found!" });
     }
 
-    res.status(200).json({
-      message: `User with ID ${userId} deleted successfully!`,
-    });
+    // ✅ Delete barcode image
+    if (user.barcode_image) {
+      const filename = path.basename(user.barcode_image);
+      const filePath = path.join(process.cwd(), 'uploads', 'barcodes', filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    // ✅ Delete profile image
+    if (user.profile_image) {
+      const profilePath = path.join(process.cwd(), 'uploads', 'profiles', user.profile_image);
+      if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
+    }
+
+    await user.destroy();
+
+    res.status(200).json({ message: "User deleted successfully!" });
   } catch (error) {
-    console.error("Delete user error:", error);
+    console.error("❌ Delete user error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -430,18 +339,209 @@ const deleteAccount = async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 }
+const exportUsersWithImages = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'email', 'profile_image', 'barcode', 'barcode_image']
+    });
 
+    if (!users.length) return res.status(404).json({ message: 'No users found' });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Users & Barcodes');
+
+    // ✅ Define column widths (images will go in columns)
+    sheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Username', key: 'username', width: 25 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Profile Image', key: 'profile_image', width: 20 },
+      { header: 'Barcode Value', key: 'barcode', width: 25 },
+      { header: 'Barcode Image', key: 'barcode_image', width: 20 }
+    ];
+
+    for (const user of users) {
+      const row = sheet.addRow({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        barcode: user.barcode
+      });
+
+      const rowIndex = row.number;
+
+      // ✅ Add profile image if exists
+      if (user.profile_image) {
+        const profilePath = path.join(process.cwd(), 'uploads', user.profile_image);
+        if (fs.existsSync(profilePath)) {
+          const profileImg = workbook.addImage({
+            filename: profilePath,
+            extension: 'png' // or jpg depending on your files
+          });
+          sheet.addImage(profileImg, {
+            tl: { col: 3, row: rowIndex - 1 }, // Column D (index 3)
+            ext: { width: 60, height: 60 }
+          });
+        }
+      }
+
+      // ✅ Add barcode image if exists
+      if (user.barcode_image) {
+        const barcodePath = path.join(process.cwd(), 'uploads', 'barcodes', `barcode_${user.id}.png`);
+        if (fs.existsSync(barcodePath)) {
+          const barcodeImg = workbook.addImage({
+            filename: barcodePath,
+            extension: 'png'
+          });
+          sheet.addImage(barcodeImg, {
+            tl: { col: 5, row: rowIndex - 1 }, // Column F (index 5)
+            ext: { width: 150, height: 60 }
+          });
+        }
+      }
+    }
+
+    // ✅ Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="users_with_barcodes.xlsx"');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Export Excel error:', err);
+    res.status(500).json({ message: 'Error exporting Excel file' });
+  }
+};
+const getProfileImageUrl = (req, filename) => {
+  if (!filename) return null;
+  return `${req.protocol}://${req.get("host")}/uploads/users/${filename}`;
+};
+const createUser = async (req, res) => {
+  try {
+    // ✅ Role check
+    if (!req.userRole || !["admin", "librarian"].includes(req.userRole)) {
+      return res.status(403).json({ message: "Only admins or librarians can create users!" });
+    }
+
+    const { username, email, password, date_of_birth, phone, roleId } = req.body;
+    const file = req.file; // profile image file
+    const profile_image = file ? file.filename : null;
+
+    // ✅ Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Username, email, and password are required!" });
+    }
+
+    // ✅ Email uniqueness
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) return res.status(400).json({ message: "Email already exists!" });
+
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // ✅ Validate role
+    const targetRole = await Role.findByPk(roleId);
+    if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
+
+    if (req.userRole === "librarian" && targetRole.name !== "user") {
+      return res.status(403).json({ message: "Librarians can only create normal users!" });
+    }
+
+    if (targetRole.name === "admin" && req.userRole !== "admin") {
+      return res.status(403).json({ message: "Only admins can create other admins!" });
+    }
+
+    // ✅ Generate unique barcode
+    let barcode, isUnique = false;
+    while (!isUnique) {
+      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+      const existingUser = await User.findOne({ where: { barcode } });
+      if (!existingUser) isUnique = true;
+    }
+
+    // ✅ Create user record
+    const user = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+      date_of_birth,
+      phone,
+      profile_image, // from file upload
+      roleId,
+      barcode,
+      barcode_image: null
+    });
+
+    // ✅ Generate barcode image
+    const canvas = createCanvas(400, 150);
+    const ctx = canvas.getContext('2d');
+
+    JsBarcode(canvas, barcode, {
+      format: 'CODE128',
+      displayValue: true,
+      fontSize: 18,
+      margin: 20,
+    });
+
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.fillText(username, canvas.width / 2, 140);
+
+    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
+    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
+
+    const barcodeFilename = `barcode_${user.id}.png`;
+    const barcodePath = path.join(barcodeDir, barcodeFilename);
+    const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
+
+    const out = fs.createWriteStream(barcodePath);
+    canvas.createPNGStream().pipe(out);
+    await new Promise((resolve) => out.on('finish', resolve));
+
+    user.barcode_image = barcodeFilename;
+    await user.save();
+
+    // ✅ Build full URLs for Vue
+    const profileImageUrl = profile_image
+      ? `${req.protocol}://${req.get('host')}/uploads/users/${profile_image}`
+      : null;
+
+    res.status(201).json({
+      message: "User created successfully!",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        date_of_birth: user.date_of_birth,
+        phone: user.phone,
+        profile_image: profileImageUrl,   // full URL
+        barcode: user.barcode,
+        barcode_image: barcodeImageUrl,   // full URL
+        role: targetRole.name,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      }
+    });
+
+  } catch (error) {
+    console.error("Create user error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 module.exports = {
   allAccess,
   userBoard,
   adminBoard,
   librarianBoard,
-  createUser,
+  exportUsersWithImages,
+  getUserBarcode,
   getAllUsers,
   getUserById,
+  createUser,
   getUserProfile,
   getRoles,
   updateUser,
   deleteUserById,
   deleteAccount,
+ 
 }
