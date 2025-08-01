@@ -6,6 +6,8 @@ import {
   deleteBorrow,
 } from "@/services/Api/borrow";
 import { getBooks, updateBook } from "@/services/Api/book";
+import { exportToExcel } from "@/utils/exportToExcel";
+import { exportToPDF } from "@/utils/exportToPDF";
 
 export function useBorrowManagement() {
   const borrowData = ref([]);
@@ -213,6 +215,7 @@ export function useBorrowManagement() {
   try {
     const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
     console.log(`Received formData in submitAddBorrow at ${now}:`, JSON.stringify(formData, null, 2));
+
     if (!formData) throw new Error("No form data provided.");
     if (formData.is_new_user) {
       if (!formData.borrower_name || !formData.borrower_email || !formData.date_borrow)
@@ -222,16 +225,23 @@ export function useBorrowManagement() {
     if (!formData.librarian_name) throw new Error("Librarian name is required.");
     if (!formData.books || formData.books.length === 0) throw new Error("At least one book is required.");
     if (formData.books.length > 3) throw new Error("Cannot borrow more than three books at a time.");
-
     for (const book of formData.books) {
       if (!book.isbn) throw new Error("Book ISBN is required.");
       if (!/^\d{10}$|^\d{13}$/.test(book.isbn)) throw new Error(`Invalid ISBN: ${book.isbn}`);
       if (!book.date_return) throw new Error("Book return date is required.");
       if (!book.name) throw new Error("Book name is required.");
+
       const foundBook = await getBook(book.isbn, "isbn");
       if (!foundBook) throw new Error(`Book not found for ISBN ${book.isbn}.`);
-      if (foundBook.quantity < (formData.quantity || 1))
-        throw new Error(`Book ${book.name} has insufficient stock (available: ${foundBook.quantity}).`);
+
+      // ✅ Condition 1: If only one copy left, block borrowing
+      if (foundBook.quantity <= 1) {
+        throw new Error(`Book "${book.name}" has only one and cannot be borrowed.`);
+      }
+
+      if (foundBook.quantity < (formData.quantity || 1)) {
+        throw new Error(`Book "${book.name}" has insufficient stock (available: ${foundBook.quantity}).`);
+      }
     }
 
     loading.value = true;
@@ -251,15 +261,15 @@ export function useBorrowManagement() {
         quantity: formData.quantity || 1,
         status: formData.status,
       };
+
       console.log(`Sending payload to createBorrow at ${now}:`, JSON.stringify(payload, null, 2));
-      const response = await createBorrow(payload); // Single call with books array
+      const response = await createBorrow(payload);
       console.log(`createBorrow response at ${now}:`, JSON.stringify(response, null, 2));
       if (!response || (response.status && response.status >= 400)) {
         throw new Error(response?.data?.message || "Failed to create borrow records");
       }
       responses.push(response);
 
-      // Update quantities for all books
       for (const book of formData.books) {
         const foundBook = await getBook(book.isbn, "isbn");
         if (foundBook) {
@@ -303,6 +313,7 @@ export function useBorrowManagement() {
     loading.value = false;
   }
 }
+
   async function submitUpdate(formData) {
   try {
     console.log("Received formData in submitUpdate:", JSON.stringify(formData, null, 2));
@@ -414,6 +425,47 @@ export function useBorrowManagement() {
     showConfirmModal.value = true;
   }
 
+function exportBorrowDataToExcel() {
+  if (!borrowData.value.length) {
+    showToast("No borrow data to export", "error");
+    return;
+  }
+  const flatData = borrowData.value.map((item) => ({
+    ID: item.id,
+    "Book Title": item.book.title,
+    "Book Author": item.book.author,
+    "Book Category": item.book.category,
+    "User Name": item.user.name,
+    "User Email": item.user.email,
+    Quantity: item.borrowed_quantity,
+    Status: item.status,
+    "Borrow Date": item.borrow_date,
+    "Return Date": item.return_date,
+    "Librarian Name": item.librarian.name,
+  }));
+  exportToExcel(flatData, "BorrowRecords");
+}
+function exportBorrowDataToPDF() {
+  if (!borrowData.value.length) {
+    showToast("No borrow data to export", "error");
+    return;
+  }
+  const flatData = borrowData.value.map((item) => ({
+    "Book Title": item.book.title,
+    "Book Author": item.book.author,
+    "Book Category": item.book.category,
+    "User Name": item.user.name,
+    "User Email": item.user.email,
+    Quantity: item.borrowed_quantity,
+    Status: item.status,
+    "Borrow Date": item.borrow_date,
+    "Return Date": item.return_date,
+    "Librarian Name": item.librarian.name,
+  }));
+  exportToPDF(flatData, "BorrowRecords.pdf");
+}
+
+
   return {
     borrowData,
     booksData,
@@ -458,5 +510,7 @@ export function useBorrowManagement() {
     confirmReturn,
     handleConfirmReturn,
     showToast,
+    exportBorrowDataToExcel,
+    exportBorrowDataToPDF,
   };
 }
