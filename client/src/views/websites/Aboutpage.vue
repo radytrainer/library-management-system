@@ -51,13 +51,13 @@
             <div class="absolute inset-0 bg-cover bg-center"
                 style="background-image: url('https://www.passerellesnumeriques.org/wp-content/uploads/2024/07/About-us-banner.png');">
             </div>
-            
+
             <!-- Sky Blue Half Overlay -->
             <div class="absolute inset-0 bg-gradient-to-r from-sky-400/100 via-sky-800/40 to-transparent"></div>
-            
+
             <!-- Additional Dark Overlay for Better Text Readability -->
             <div class="absolute inset-0 bg-black/10"></div>
-            
+
             <!-- Decorative Floating Icons -->
             <div class="absolute top-10 left-10 animate-bounce">
                 <BookOpenIcon class="w-8 h-8 text-white/80" />
@@ -65,7 +65,7 @@
             <div class="absolute bottom-12 right-12 animate-bounce" style="animation-delay: 1s;">
                 <HeartIcon class="w-8 h-8 text-white/80" />
             </div>
-            
+
             <!-- Content -->
             <div class="relative container mx-auto py-10 md:py-20 text-center mb-20">
                 <h1 class="text-4xl md:text-6xl font-extrabold mb-6 animate-fade-in text-white drop-shadow-lg">
@@ -99,8 +99,49 @@
                 </a>
             </div>
         </section>
+        <div class="container mx-auto px-4 py-16">
+            <!-- Mission Section -->
+            <section class="mb-16">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h2 class="text-3xl font-bold mb-8 text-gray-800">Our Mission</h2>
+                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                        Our mission is to make reading and learning easy and enjoyable for everyone. We provide
+                        access to books, resources, and programs that inspire curiosity and support lifelong
+                        education in a welcoming community.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400">
+                            <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Knowledge</h3>
+                            <p class="text-gray-600">
+                                Providing access to vast collections of books, digital resources, and information
+                            </p>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400">
+                            <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Community</h3>
+                            <p class="text-gray-600">
+                                Creating spaces for connection, collaboration, and cultural exchange
+                            </p>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400">
+                            <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Learning</h3>
+                            <p class="text-gray-600">
+                                Supporting education and personal growth through programs and resources
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        
+            <!-- Divider -->
+            
+        </div>
+
     </div>
 </template>
 
@@ -195,6 +236,7 @@ const hours = ref([
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -222,17 +264,26 @@ const hours = ref([
 }
 
 @keyframes bounce {
-    0%, 20%, 53%, 80%, 100% {
-        transform: translate3d(0,0,0);
+
+    0%,
+    20%,
+    53%,
+    80%,
+    100% {
+        transform: translate3d(0, 0, 0);
     }
-    40%, 43% {
-        transform: translate3d(0,-15px,0);
+
+    40%,
+    43% {
+        transform: translate3d(0, -15px, 0);
     }
+
     70% {
-        transform: translate3d(0,-7px,0);
+        transform: translate3d(0, -7px, 0);
     }
+
     90% {
-        transform: translate3d(0,-2px,0);
+        transform: translate3d(0, -2px, 0);
     }
 }
 </style>
