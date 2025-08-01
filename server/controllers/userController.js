@@ -54,7 +54,6 @@ const getUserBarcode = async (req, res) => {
   }
 };
 
-//create user by admin or librarian
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -185,6 +184,11 @@ const getRoles = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    console.log("Incoming PUT /user/:id request");
+    console.log("Params:", req.params);
+    console.log("Body:", req.body);
+    console.log("File:", req.file);
+
     const userId = req.params.id;
     const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
     const profile_image = req.file ? req.file.filename : null;
@@ -197,12 +201,9 @@ const updateUser = async (req, res) => {
       const targetRole = await Role.findByPk(roleId);
       if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
 
-      // Librarians cannot update to Admin or Librarian
       if (req.userRole === "librarian" && targetRole.name !== "user") {
         return res.status(403).json({ message: "Librarians can only set user role!" });
       }
-
-      // Only Admin can assign Admin role
       if (targetRole.name === "admin" && req.userRole !== "admin") {
         return res.status(403).json({ message: "Only admins can assign admin role!" });
       }
@@ -222,7 +223,6 @@ const updateUser = async (req, res) => {
 
     let regenerateBarcode = false;
 
-    // ✅ If barcode is updated, regenerate image
     if (barcode && barcode !== user.barcode) {
       user.barcode = barcode;
       regenerateBarcode = true;
@@ -230,7 +230,7 @@ const updateUser = async (req, res) => {
 
     await user.save();
 
-    // ✅ Regenerate barcode image if needed
+    // ✅ Regenerate barcode if needed
     if (regenerateBarcode) {
       const canvas = createCanvas(400, 150);
       const ctx = canvas.getContext('2d');
@@ -279,9 +279,10 @@ const updateUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Update user error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 };
+
 
 // Delete user by specific ID
 const deleteUserById = async (req, res) => {

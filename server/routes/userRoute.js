@@ -8,7 +8,7 @@ const path = require("path");
 const fs = require("fs");
 
 // ✅ Upload config
-const uploadDir = path.join(__dirname, "../Uploads/user");
+const uploadDir = path.join(__dirname, "../Uploads/users");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -51,7 +51,9 @@ router.get('/barcodes/excel',userController.exportUsersWithImages);
 router.post("/create", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], uploadOptional, userController.createUser);
 router.get("/users", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getAllUsers); // ✅ FIXED (no /users)
 router.get("/:id", [authJwt.verifyToken, authJwt.isLibrarianOrAdmin], userController.getUserById);
-router.put("/:id", [authJwt.verifyToken], userController.updateUser);
+// router.put("/users/:id", [authJwt.verifyToken, upload.single('profile_image')], userController.updateUser);
+router.put("/:id", [authJwt.verifyToken, upload.single('profile_image')], userController.updateUser);
+
 router.delete("/:id", [authJwt.verifyToken, authJwt.isAdmin], userController.deleteUserById);
 router.post('/create', upload.single('profile_image'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded!' });
