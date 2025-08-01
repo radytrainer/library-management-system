@@ -10,6 +10,7 @@ import BorrowList from '@/views/borrows/BorrowList.vue'
 
 import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
+import Aboutpage from '@/views/websites/Aboutpage.vue'
 
 const routes = [
   // Public routes
@@ -85,10 +86,11 @@ const routes = [
       { path: 'donations', name: 'donations', component: () => import('@/views/Donate/DonateView.vue') },
       { path: 'books/list', name: 'books/list', component: () => import('@/views/books/ListBook.vue') },
       { path: 'books/all', name: 'books/all', component: () => import('@/views/books/AllBook.vue') },
-      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') },
     ],
   },
-  { path: '/website', name: 'website', component: Website }, // ← Moved outside of AppLayout
+  { path: '/website', name: 'website', component: Website },
+  { path: '/aboutPage', name: 'aboutPage', component: Aboutpage },
+   // ← Moved outside of AppLayout
   { path: '/login', component: Login },
   { path: '/register', component: Register },
 ]

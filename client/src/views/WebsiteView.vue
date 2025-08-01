@@ -7,7 +7,7 @@
           <!-- Left Navigation Links -->
           <div class="flex space-x-8">
             <a href="#" class="text-gray-900 hover:text-gray-700 px-3 py-2 text-sm font-medium">HOME</a>
-            <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">ABOUT</a>
+            <router-link to="/aboutPage" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">ABOUT</router-link>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">BOOK</a>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">DONATE</a>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">HISTORY</a>
