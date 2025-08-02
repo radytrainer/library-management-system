@@ -99,8 +99,48 @@
                 </a>
             </div>
         </section>
-        
+        <div class="container mx-auto px-4 py-16">
+            <!-- Mission Section -->
+            <section class="mb-16">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h2 class="text-3xl font-bold mb-8 text-gray-800">Our Mission</h2>
+                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                        Our mission is to make reading and learning easy and enjoyable for everyone. We provide
+                        access to books, resources, and programs that inspire curiosity and support lifelong
+                        education in a welcoming community.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400">
+                            <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Knowledge</h3>
+                            <p class="text-gray-600">
+                                Providing access to vast collections of books, digital resources, and information
+                            </p>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400">
+                            <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Community</h3>
+                            <p class="text-gray-600">
+                                Creating spaces for connection, collaboration, and cultural exchange
+                            </p>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400">
 
+
+                            <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" />
+                            <h3 class="text-xl font-semibold mb-2">Learning</h3>
+                            <p class="text-gray-600">
+                                Supporting education and personal growth through programs and resources
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
     </div>
 </template>
 
