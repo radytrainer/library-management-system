@@ -121,7 +121,7 @@ async function submitForm() {
     if (props.isEditing) {
       result = await userStore.updateUserWithFile(props.userId, formData);
     } else {
-      result = await userStore.createUserWithFile(formData);
+      result = await userStore.createUser(formData);
     }
   } else {
     // No file upload, send regular JSON data

@@ -56,6 +56,7 @@ const getUserBarcode = async (req, res) => {
 
 
 // Get all users
+// userController.js example snippet
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
@@ -63,31 +64,14 @@ const getAllUsers = async (req, res) => {
       attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
       order: [["createdAt", "ASC"]],
     });
-
-    const formattedUsers = users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      date_of_birth: user.date_of_birth,
-      profile_image: getProfileImageUrl(req, user.profile_image),
-      phone: user.phone,
-      barcode: user.barcode,
-      barcode_image: user.barcode_image, // already full URL
-      role: user.Role ? user.Role.name : null,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
-
-    res.status(200).json({
-      message: "Users retrieved successfully!",
-      users: formattedUsers,
-      total: formattedUsers.length,
-    });
+    res.status(200).json({ users });
   } catch (error) {
-    console.error("Get all users error:", error);
-    res.status(500).json({ message: error.message });
+    console.error('Error in getAllUsers:', error);
+    res.status(500).json({ message: 'Failed to fetch users', error: error.message });
   }
 };
+
+
 
 
 // Get user by specific ID
@@ -425,7 +409,7 @@ const createUser = async (req, res) => {
     }
 
     const { username, email, password, date_of_birth, phone, roleId } = req.body;
-    const file = req.file; // profile image file
+    const file = req.file; // profile image from multer
     const profile_image = file ? file.filename : null;
 
     // ✅ Validate required fields
@@ -451,7 +435,7 @@ const createUser = async (req, res) => {
       return res.status(403).json({ message: "Only admins can create other admins!" });
     }
 
-    // ✅ Generate unique barcode
+    // ✅ Generate unique 12-digit barcode
     let barcode, isUnique = false;
     while (!isUnique) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
@@ -466,7 +450,7 @@ const createUser = async (req, res) => {
       password: hashedPassword,
       date_of_birth,
       phone,
-      profile_image, // from file upload
+      profile_image,
       roleId,
       barcode,
       barcode_image: null
@@ -488,7 +472,7 @@ const createUser = async (req, res) => {
     ctx.fillStyle = '#000';
     ctx.fillText(username, canvas.width / 2, 140);
 
-    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
+    const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
     const barcodeFilename = `barcode_${user.id}.png`;
@@ -504,7 +488,7 @@ const createUser = async (req, res) => {
 
     // ✅ Build full URLs for Vue
     const profileImageUrl = profile_image
-      ? `${req.protocol}://${req.get('host')}/uploads/users/${profile_image}`
+      ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
       : null;
 
     res.status(201).json({
