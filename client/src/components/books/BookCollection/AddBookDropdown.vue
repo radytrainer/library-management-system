@@ -1,4 +1,3 @@
-<!-- AddBookDropdown.vue -->
 <template>
   <div class="relative">
     <button @click="toggle" class="bg-gradient-to-r bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">

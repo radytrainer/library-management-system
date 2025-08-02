@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Books -->
       <div
-        class="bg-indigo-50 rounded-2xl border border-indigo-100 shadow-md p-6 transition-all duration-300 hover:shadow-lg">
+        class="bg-indigo-50 rounded-2xl hover:shadow-lg transition-all duration-300 border border-indigo-100 shadow-md p-6 transition-all duration-300 hover:shadow-lg">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-3xl font-bold text-indigo-700">{{ totalBooks }}</div>
@@ -19,7 +19,7 @@
       </div>
 
       <!-- Available Books -->
-      <div class="bg-indigo-50 shadow rounded-2xl p-6 text-indigo-800 border border-indigo-100">
+      <div class="bg-indigo-50 shadow hover:shadow-lg transition-all duration-300 rounded-2xl p-6 text-indigo-800 border border-indigo-100">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-2xl font-bold text-indigo-700">{{ availableBooks }}</div>
@@ -34,7 +34,7 @@
       </div>
 
       <!-- Categories -->
-      <div class="bg-indigo-50 shadow rounded-2xl p-6 text-indigo-800 border border-indigo-100">
+      <div class="bg-indigo-50 shadow hover:shadow-lg transition-all duration-300 rounded-2xl p-6 text-indigo-800 border border-indigo-100">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-2xl font-bold text-indigo-700">{{ categories.length }}</div>
@@ -50,7 +50,7 @@
       </div>
 
       <!-- Languages -->
-      <div class="bg-indigo-50 shadow rounded-2xl p-6 text-indigo-800 border border-indigo-100">
+      <div class="bg-indigo-50 shadow hover:shadow-lg transition-all duration-300 rounded-2xl p-6 text-indigo-800 border border-indigo-100">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-2xl font-bold">{{ languages.length }}</div>

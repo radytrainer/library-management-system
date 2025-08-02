@@ -12,3 +12,17 @@ export const deleteBook = (id) => ApiService.delete(`/books/${id}`);
 export const getAuthors = () => ApiService.get('/authors');
 export const getCategories = () => ApiService.get('/categories');
 export const getLanguages = () => ApiService.get('/language');
+export const importBooks = (formData) => {
+  return ApiService.post('/books/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 30000, // 30 seconds timeout
+    onUploadProgress: (progressEvent) => {
+      const percentCompleted = Math.round(
+        (progressEvent.loaded * 100) / progressEvent.total
+      );
+      console.log(`Upload progress: ${percentCompleted}%`);
+    }
+  });
+};
