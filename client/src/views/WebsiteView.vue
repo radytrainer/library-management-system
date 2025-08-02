@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Navigation -->
@@ -8,7 +7,7 @@
           <!-- Left Navigation Links -->
           <div class="flex space-x-8">
             <a href="#" class="text-gray-900 hover:text-gray-700 px-3 py-2 text-sm font-medium">HOME</a>
-            <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">ABOUT</a>
+            <a href="aboutpage" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">ABOUT</a>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">BOOK</a>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">DONATE</a>
             <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">HISTORY</a>
@@ -16,9 +15,13 @@
 
           <!-- Right Buttons -->
           <div class="flex space-x-4 items-center">
-            <router-link to="/login" class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Login</router-link>
-            <router-link to="/register" class="text-green-600 hover:text-green-800 border border-green-600 hover:border-green-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Register</router-link>
-            <router-link to="/dashboard" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">Admin Dashboard</router-link>
+            <router-link to="/login"
+              class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Login</router-link>
+            <router-link to="/register"
+              class="text-green-600 hover:text-green-800 border border-green-600 hover:border-green-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Register</router-link>
+            <router-link to="/dashboard"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">Admin
+              Dashboard</router-link>
           </div>
         </div>
       </div>
@@ -33,7 +36,10 @@
             📚 Welcome to Our Online Library!
           </h1>
           <p class="text-gray-600 text-lg leading-relaxed max-w-md">
-            Discover a world of knowledge and imagination at your fingertips. Our digital library offers a wide selection of books across various categories, available anytime, anywhere. Whether you’re looking to learn, explore, or simply enjoy a good story, our collection is here to support your journey. Start reading today and be part of a growing community of passionate learners and readers.
+            Discover a world of knowledge and imagination at your fingertips. Our digital library offers a wide
+            selection of books across various categories, available anytime, anywhere. Whether you’re looking to learn,
+            explore, or simply enjoy a good story, our collection is here to support your journey. Start reading today
+            and be part of a growing community of passionate learners and readers.
           </p>
         </div>
 
@@ -41,51 +47,36 @@
         <div class="relative flex justify-center items-center">
           <div class="relative w-full max-w-[400px] h-[500px] rounded-lg overflow-hidden shadow-xl">
             <!-- Slideshow Images -->
-            <div
-              v-for="(image, index) in slideshowImages"
-              :key="index"
+            <div v-for="(image, index) in slideshowImages" :key="index"
               class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-              :class="{ 'opacity-100': currentImageIndex === index, 'opacity-0': currentImageIndex !== index }"
-            >
-              <img
-                :src="image"
-                :alt="'Slide ' + (index + 1)"
-                class="w-full h-full object-cover"
-              />
+              :class="{ 'opacity-100': currentImageIndex === index, 'opacity-0': currentImageIndex !== index }">
+              <img :src="image" :alt="'Slide ' + (index + 1)" class="w-full h-full object-cover" />
               <!-- Caption Overlay -->
               <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
                 <p class="text-sm font-medium">{{ slideCaptions[index] }}</p>
               </div>
             </div>
             <!-- Navigation Arrows -->
-            <button
-              @click="prevSlide"
+            <button @click="prevSlide"
               class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all duration-200"
-              aria-label="Previous slide"
-            >
+              aria-label="Previous slide">
               <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <button
-              @click="nextSlide"
+            <button @click="nextSlide"
               class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all duration-200"
-              aria-label="Next slide"
-            >
+              aria-label="Next slide">
               <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
             <!-- Dots Navigation -->
             <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-              <button
-                v-for="(image, index) in slideshowImages"
-                :key="index"
-                @click="currentImageIndex = index"
+              <button v-for="(image, index) in slideshowImages" :key="index" @click="currentImageIndex = index"
                 class="w-3 h-3 rounded-full transition-all duration-200"
                 :class="currentImageIndex === index ? 'bg-white scale-125' : 'bg-gray-400 bg-opacity-50'"
-                :aria-label="'Go to slide ' + (index + 1)"
-              ></button>
+                :aria-label="'Go to slide ' + (index + 1)"></button>
             </div>
           </div>
         </div>
@@ -264,4 +255,3 @@ button:focus {
   }
 }
 </style>
-```
