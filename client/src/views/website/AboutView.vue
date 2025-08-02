@@ -174,7 +174,71 @@
                     </div>
                 </div>
             </section>
-           
+            <!-- Divider -->
+            <div class="border-t border-gray-200 my-16"></div>
+
+
+
+            <!-- Contact & Hours Section -->
+            <section>
+                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Contact Us</h2>
+                <div class="grid md:grid-cols-2 gap-12">
+                    <!-- Contact Information -->
+                    <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
+                        <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                            <MapPinIcon class="w-5 h-5 text-sky-600" />
+                            Contact Information
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <MapPinIcon class="w-5 h-5 text-sky-500 mt-0.5" />
+                                <div>
+                                    <p class="font-medium">Address</p>
+                                    <p class="text-gray-600">
+                                        St. 371 Phum Tropeang Chhuk (Borey Sorla),<br> Sangkat Tek Thla, Khan Sen
+                                        Sok
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <PhoneIcon class="w-5 h-5 text-sky-500" />
+                                <div>
+                                    <p class="font-medium">Phone</p>
+                                    <p class="text-gray-600">0973893597</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <MailIcon class="w-5 h-5 text-sky-500" />
+                                <div>
+                                    <p class="font-medium">Email</p>
+                                    <p class="text-gray-600">library@passerellesnumeriques.org</p>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                    <!-- Hours -->
+                    <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
+                        <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                            <ClockIcon class="w-5 h-5 text-sky-600" />
+                            Hours of Operation
+                        </h3>
+                        <div class="space-y-3">
+                            <div v-for="schedule in hours" :key="schedule.day"
+                                class="flex justify-between items-center">
+                                <span class="font-medium">{{ schedule.day }}</span>
+                                <span class="text-gray-600">{{ schedule.hours }}</span>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 my-4"></div>
+                        <p class="text-sm text-gray-600">
+                            Closed on major holidays. Special hours may apply during holiday seasons.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
         </div>
 
     </div>
