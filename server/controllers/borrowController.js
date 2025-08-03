@@ -1,7 +1,10 @@
-const db = require('../models');
+const db = require("../models");
 const Borrow = db.Borrow;
 const Book = db.Book;
 const User = db.User;
+const { Op } = require("sequelize");
+const nodemailer = require("nodemailer");
+const { transporter } = require("../utils/mailer");
 
 // Format borrow record output
 const formatBorrow = (borrow) => ({
@@ -23,43 +26,45 @@ exports.index = async (req, res) => {
       include: [
         {
           model: db.User,
-          as: 'user',
-          attributes: ['username', 'email']
+          as: "user",
+          attributes: ["username", "email"],
         },
         {
           model: db.User,
-          as: 'librarian',
-          attributes: ['username']
+          as: "librarian",
+          attributes: ["username"],
         },
         {
           model: db.Book,
-          as: 'book',
-          attributes: ['title', 'cover_image'],
+          as: "book",
+          attributes: ["title", "cover_image"],
           include: [
             {
               model: db.Author,
-              as: 'author',
-              attributes: ['name']
+              as: "author",
+              attributes: ["name"],
             },
             {
               model: db.Category,
-              as: 'category',
-              attributes: ['name']
-            }
-          ]
-        }
-      ]
+              as: "category",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
     });
 
-    const formatted = borrows.map(borrow => ({
+    const formatted = borrows.map((borrow) => ({
       id: borrow.id,
       book: {
         title: borrow.book?.title || null,
         author: borrow.book?.author?.name || null,
         category: borrow.book?.category?.name || null,
         cover_image: borrow.book?.cover_image
-          ? `${req.protocol}://${req.get('host')}/uploads/books/${borrow.book.cover_image}`
-          : null
+          ? `${req.protocol}://${req.get("host")}/uploads/books/${
+              borrow.book.cover_image
+            }`
+          : null,
       },
       user: {
         name: borrow.user?.username || borrow.borrower_name || null,
@@ -70,14 +75,19 @@ exports.index = async (req, res) => {
       borrow_date: borrow.borrow_date,
       return_date: borrow.return_date,
       librarian: {
-        name: borrow.librarian?.username || null
-      }
+        name: borrow.librarian?.username || null,
+      },
     }));
 
     res.status(200).json(formatted);
   } catch (error) {
-    console.error('[BorrowController] Error fetching borrow records:', error);
-    res.status(500).json({ message: 'Failed to fetch borrow records.', error: error.message });
+    console.error("[BorrowController] Error fetching borrow records:", error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch borrow records.",
+        error: error.message,
+      });
   }
 };
 
@@ -87,36 +97,36 @@ exports.show = async (req, res) => {
       include: [
         {
           model: db.User,
-          as: 'user',
-          attributes: ['username', 'email']
+          as: "user",
+          attributes: ["username", "email"],
         },
         {
           model: db.User,
-          as: 'librarian',
-          attributes: ['username']
+          as: "librarian",
+          attributes: ["username"],
         },
         {
           model: db.Book,
-          as: 'book',
-          attributes: ['title', 'cover_image'],
+          as: "book",
+          attributes: ["title", "cover_image"],
           include: [
             {
               model: db.Author,
-              as: 'author',
-              attributes: ['name']
+              as: "author",
+              attributes: ["name"],
             },
             {
               model: db.Category,
-              as: 'category',
-              attributes: ['name']
-            }
-          ]
-        }
-      ]
+              as: "category",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
     });
 
     if (!borrow) {
-      return res.status(404).json({ message: 'Borrow record not found.' });
+      return res.status(404).json({ message: "Borrow record not found." });
     }
 
     const formatted = {
@@ -125,25 +135,30 @@ exports.show = async (req, res) => {
         title: borrow.book?.title || null,
         author: borrow.book?.author?.name || null,
         category: borrow.book?.category?.name || null,
-        cover_image: borrow.book?.cover_image || null
+        cover_image: borrow.book?.cover_image || null,
       },
       user: {
         name: borrow.user?.username || borrow.borrower_name || null,
         email: borrow.user?.email || borrow.borrower_email || null,
       },
       librarian: {
-        name: borrow.librarian?.username || null
+        name: borrow.librarian?.username || null,
       },
       borrowed_quantity: borrow.borrowed_quantity,
       status: borrow.status,
       borrow_date: borrow.borrow_date,
-      return_date: borrow.return_date
+      return_date: borrow.return_date,
     };
 
     res.status(200).json(formatted);
   } catch (error) {
-    console.error('[BorrowController] Error fetching borrow record:', error);
-    res.status(500).json({ message: 'Failed to fetch borrow record.', error: error.message });
+    console.error("[BorrowController] Error fetching borrow record:", error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch borrow record.",
+        error: error.message,
+      });
   }
 };
 
@@ -160,7 +175,7 @@ exports.store = async (req, res) => {
       quantity,
       librarian_name,
       date_borrow,
-      status
+      status,
     } = req.body;
 
     let user = null;
@@ -176,16 +191,19 @@ exports.store = async (req, res) => {
         ? await User.findOne({ where: { barcode: user_barcode } })
         : await User.findOne({ where: { username: user_name } });
 
-      if (!user) return res.status(404).json({ message: 'User not found.' });
+      if (!user) return res.status(404).json({ message: "User not found." });
     }
 
     // Find librarian
-    const librarian = await User.findOne({ where: { username: librarian_name } });
-    if (!librarian) return res.status(404).json({ message: 'Librarian not found.' });
+    const librarian = await User.findOne({
+      where: { username: librarian_name },
+    });
+    if (!librarian)
+      return res.status(404).json({ message: "Librarian not found." });
 
     // Validate borrow date
     if (isNaN(new Date(date_borrow))) {
-      return res.status(400).json({ message: 'Invalid borrow date.' });
+      return res.status(400).json({ message: "Invalid borrow date." });
     }
 
     const borrowRecords = [];
@@ -194,7 +212,9 @@ exports.store = async (req, res) => {
       const { name, isbn, date_return } = bookData;
 
       if (date_return && isNaN(new Date(date_return))) {
-        return res.status(400).json({ message: `Invalid return date for book "${name}".` });
+        return res
+          .status(400)
+          .json({ message: `Invalid return date for book "${name}".` });
       }
 
       const book = await Book.findOne({ where: { title: name, isbn } });
@@ -203,7 +223,9 @@ exports.store = async (req, res) => {
       }
 
       if (book.quantity < quantity) {
-        return res.status(400).json({ message: `Not enough copies of "${name}" available.` });
+        return res
+          .status(400)
+          .json({ message: `Not enough copies of "${name}" available.` });
       }
 
       // Create borrow record
@@ -216,24 +238,28 @@ exports.store = async (req, res) => {
         isbn,
         borrow_date: new Date(date_borrow),
         return_date: new Date(date_return),
-        status: status || 'borrowed',
-        borrowed_quantity: quantity
+        status: status || "borrowed",
+        borrowed_quantity: quantity,
       });
 
       // Update book stock
       const updatedQuantity = book.quantity - quantity;
       await book.update({
         quantity: updatedQuantity,
-        available: updatedQuantity > 0
+        available: updatedQuantity > 0,
       });
 
       // Fetch full borrow record
       const borrowWithAssociations = await Borrow.findByPk(newBorrow.id, {
         include: [
-          { model: User, as: 'user', attributes: ['username', 'email'] },
-          { model: Book, as: 'book', attributes: ['title', 'isbn', 'quantity'] },
-          { model: User, as: 'librarian', attributes: ['username'] }
-        ]
+          { model: User, as: "user", attributes: ["username", "email"] },
+          {
+            model: Book,
+            as: "book",
+            attributes: ["title", "isbn", "quantity"],
+          },
+          { model: User, as: "librarian", attributes: ["username"] },
+        ],
       });
 
       // Format response
@@ -249,32 +275,35 @@ exports.store = async (req, res) => {
         isbn: borrowWithAssociations.book.isbn,
         quantity: borrowWithAssociations.borrowed_quantity,
         librarian_name: borrowWithAssociations.librarian.username,
-date_borrow: new Date(borrowWithAssociations.borrow_date).toISOString().split('T')[0],
-date_return: new Date(borrowWithAssociations.return_date).toISOString().split('T')[0],
-        status: borrowWithAssociations.status
+        date_borrow: new Date(borrowWithAssociations.borrow_date)
+          .toISOString()
+          .split("T")[0],
+        date_return: new Date(borrowWithAssociations.return_date)
+          .toISOString()
+          .split("T")[0],
+        status: borrowWithAssociations.status,
       });
     }
 
     res.status(201).json({
-      message: 'Books borrowed successfully.',
-      borrows: borrowRecords
+      message: "Books borrowed successfully.",
+      borrows: borrowRecords,
     });
   } catch (err) {
-    console.error('Error borrowing books:', err);
+    console.error("Error borrowing books:", err);
     res.status(500).json({
-      message: 'Failed to create borrow records.',
-      error: err.message
+      message: "Failed to create borrow records.",
+      error: err.message,
     });
   }
 };
-
 
 // PUT /api/borrows/:id
 exports.update = async (req, res) => {
   try {
     const borrow = await Borrow.findByPk(req.params.id);
     if (!borrow) {
-      return res.status(404).json({ message: 'Borrow record not found.' });
+      return res.status(404).json({ message: "Borrow record not found." });
     }
 
     const {
@@ -292,7 +321,7 @@ exports.update = async (req, res) => {
     // Update user_id if user_name provided
     if (user_name) {
       const user = await User.findOne({ where: { username: user_name } });
-      if (!user) return res.status(404).json({ message: 'User not found.' });
+      if (!user) return res.status(404).json({ message: "User not found." });
       updateData.user_id = user.id;
 
       // Clear guest borrower info when updating to existing user
@@ -308,7 +337,7 @@ exports.update = async (req, res) => {
     // Update book_id if book_name provided
     if (book_name) {
       const book = await Book.findOne({ where: { title: book_name } });
-      if (!book) return res.status(404).json({ message: 'Book not found.' });
+      if (!book) return res.status(404).json({ message: "Book not found." });
       updateData.book_id = book.id;
     }
 
@@ -319,7 +348,7 @@ exports.update = async (req, res) => {
     await borrow.update(updateData);
 
     // If book is returned, mark available
-    if (status === 'returned') {
+    if (status === "returned") {
       const book = await Book.findByPk(borrow.book_id);
       if (book) {
         await book.update({ available: true });
@@ -329,9 +358,9 @@ exports.update = async (req, res) => {
     // Fetch updated borrow with associations
     const updated = await Borrow.findByPk(borrow.id, {
       include: [
-        { model: User, as: 'user', attributes: ['username', 'email'] },
-        { model: User, as: 'librarian', attributes: ['username'] },
-        { model: Book, as: 'book', attributes: ['title', 'isbn'] },
+        { model: User, as: "user", attributes: ["username", "email"] },
+        { model: User, as: "librarian", attributes: ["username"] },
+        { model: Book, as: "book", attributes: ["title", "isbn"] },
       ],
     });
 
@@ -357,8 +386,10 @@ exports.update = async (req, res) => {
 
     res.status(200).json(formatted);
   } catch (err) {
-    console.error('[BorrowController] Failed to update borrow:', err);
-    res.status(500).json({ message: 'Failed to update borrow record.', error: err.message });
+    console.error("[BorrowController] Failed to update borrow:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to update borrow record.", error: err.message });
   }
 };
 
@@ -366,12 +397,103 @@ exports.update = async (req, res) => {
 exports.destroy = async (req, res) => {
   try {
     const borrow = await Borrow.findByPk(req.params.id);
-    if (!borrow) return res.status(404).json({ message: 'Borrow record not found.' });
+    if (!borrow)
+      return res.status(404).json({ message: "Borrow record not found." });
 
     await borrow.destroy();
-    res.json({ message: 'Borrow record deleted successfully.' });
+    res.json({ message: "Borrow record deleted successfully." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to delete borrow record.' });
+    res.status(500).json({ message: "Failed to delete borrow record." });
   }
 };
+
+exports.sendReturnReminders = async () => {
+  try {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    const todayStr = today.toISOString().split("T")[0];
+    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+    const borrows = await Borrow.findAll({
+      where: {
+        return_date: [todayStr, tomorrowStr],
+        status: "borrowed",
+      },
+    });
+
+    if (borrows.length === 0) {
+      console.log(`📭 No borrow records due on ${todayStr} or ${tomorrowStr}`);
+      return;
+    }
+
+    for (const borrow of borrows) {
+      const returnDate = new Date(borrow.return_date);
+      const returnDateStr = returnDate.toISOString().split("T")[0];
+
+      const book = await Book.findByPk(borrow.book_id);
+      const bookName = book?.title || "Unknown Book";
+
+      // Get email and name
+      let recipientEmail = borrow.borrower_email;
+      let recipientName = borrow.borrower_name;
+
+      if (!recipientEmail && borrow.user_id) {
+        const user = await User.findByPk(borrow.user_id);
+        recipientEmail = user?.email;
+        recipientName = user?.username || "Library User";
+      }
+
+      if (!recipientEmail) {
+        console.warn(`⚠️ No email found for borrow ID ${borrow.id}`);
+        continue;
+      }
+
+      // Determine if due today or tomorrow
+      const isDueToday = returnDateStr === todayStr;
+      const isDueTomorrow = returnDateStr === tomorrowStr;
+
+      const subject = isDueToday
+        ? "📚 Book Return Due Today!"
+        : "📚 Book Return Reminder (Due Tomorrow)";
+
+      const message = isDueToday
+        ? `Your borrowed book, <strong style="color: #1a3c6d;">${bookName}</strong>, is due <strong style="color: #1a3c6d;">today (${returnDateStr})</strong>.`
+        : `This is a friendly reminder that your borrowed book, <strong style="color: #1a3c6d;">${bookName}</strong>, is due <strong style="color: #1a3c6d;">tomorrow (${returnDateStr})</strong>.`;
+
+      const mailOptions = {
+        from: `"Library System" <${process.env.EMAIL_USER}>`,
+        to: recipientEmail,
+        subject,
+        html: `
+<div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <div style="background-color: #ffffff; padding: 30px; border-radius: 8px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 style="color: #1a3c6d; font-size: 24px; margin: 0;">${subject}</h1>
+    </div>
+    <div style="color: #333333; font-size: 16px; line-height: 1.6;">
+      <p style="margin: 0 0 10px;">Dear ${recipientName || "Borrower"},</p>
+      <p style="margin: 0 0 20px;">${message}</p>
+      <p style="margin: 0 0 20px;">Please return it to the library on time to avoid any late fees.</p>
+      <p style="margin: 0;">Thank you for your attention,</p>
+      <p style="margin: 5px 0 0;">The Library Team</p>
+    </div>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #777777; font-size: 14px;">
+      <p style="margin: 0;">Library System | 123 Library Lane, Booktown</p>
+      <p style="margin: 5px 0 0;">Questions? Contact us at <a href="mailto:support@librarysystem.com" style="color: #1a3c6d; text-decoration: none;">support@librarysystem.com</a></p>
+    </div>
+  </div>
+</div>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`📧 Reminder sent to ${recipientEmail} (${subject})`);
+    }
+  } catch (err) {
+    console.error("❌ Failed to send reminders:", err.message);
+  }
+};
+

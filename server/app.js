@@ -9,6 +9,7 @@ const userRoutes = require("./routes/userRoute");
 
 
 
+
 dotenv.config();
 const app = express();
 
@@ -19,7 +20,7 @@ app.use('/uploads', express.static('uploads'));
 
 
 app.use('/api', routes);
-
+require('./cron/sendReminders');
 // Routes registration user
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
