@@ -11,6 +11,7 @@ import UserListView from '@/views/User/UserListView.vue'
 import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
+import AboutView from '@/views/website/AboutView.vue'
 
 const routes = [
   // Public routes
@@ -85,12 +86,14 @@ const routes = [
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+      { path: 'aboutPage', name: 'aboutPage', component: () => import('@/views/website/AboutView.vue') },
 
       // Add more routes like books, members, etc.
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
     ],
   },
-  { path: '/website', name: 'website', component: Website }, // ← Moved outside of AppLayout
+  { path: '/website', name: 'website', component: Website },
+  { path: '/aboutpage', name: 'aboutPage', component: AboutView },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
 ]

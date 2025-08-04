@@ -19,6 +19,7 @@ const uploadOptional = (req, res, next) => {
 
 // Public access routes
 router.get("/all", userController.allAccess);
+
 router.get("/user", [authJwt.verifyToken], userController.userBoard);
 router.get("/admin", [authJwt.verifyToken, authJwt.isAdmin], userController.adminBoard);
 router.get("/librarian", [authJwt.verifyToken, authJwt.isLibrarian], userController.librarianBoard);
