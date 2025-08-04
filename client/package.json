@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-community/barcode-scanner": "^4.0.1",
     "@heroicons/vue": "^2.2.0",
-    "@vueuse/core": "^13.6.0",
+    "@vueuse/core": "^13.5.0",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
-    "express": "^5.1.0",
     "lucide-vue-next": "^0.528.0",
     "multer": "^2.0.2",
     "pinia": "^3.0.3",
@@ -27,6 +27,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/jsbarcode": "^3.11.4",
     "@vitejs/plugin-vue": "^6.0.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",

@@ -1,4 +1,5 @@
-import ApiService from '../axios';
+// api/book.js or similar
+import ApiService from '../axios'; // or '../services/axios.js'
 
 export const getBooks = () => ApiService.get('/books');
 export const getBookById = (id) => ApiService.get(`/books/${id}`);
@@ -12,12 +13,13 @@ export const deleteBook = (id) => ApiService.delete(`/books/${id}`);
 export const getAuthors = () => ApiService.get('/authors');
 export const getCategories = () => ApiService.get('/categories');
 export const getLanguages = () => ApiService.get('/language');
+
 export const importBooks = (formData) => {
   return ApiService.post('/books/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     },
-    timeout: 30000, // 30 seconds timeout
+    timeout: 30000,
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round(
         (progressEvent.loaded * 100) / progressEvent.total

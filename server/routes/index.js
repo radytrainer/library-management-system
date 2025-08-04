@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const apiResource = require('./ApiRescource'); // Your custom helper
+const apiResource = require('./ApiRescource');
 
 // Import controllers
 const bookController = require('../controllers/bookController');
@@ -16,10 +16,10 @@ const donationController = require('../controllers/donationController');
 // Upload base folder
 const uploadDir = path.join(__dirname, '../uploads');
 
-// Multer storage with dynamic folder based on route
+// Multer storage config (dynamically set folder based on route)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = uploadDir; // default
+    let folder = uploadDir;
 
     if (req.baseUrl.includes('/authors')) {
       folder = path.join(uploadDir, 'authors');
@@ -44,7 +44,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Setup API resources with multer upload middleware
+// Register all routes
 const resources = [
   apiResource('/books', bookController, {
     store: [upload.single('cover_image')],
@@ -57,9 +57,11 @@ const resources = [
     store: [upload.single('profile_image')],
     update: [upload.single('profile_image')],
   }),
+
+  // ✅ Donation route with upload middleware
   apiResource('/donations', donationController, {
-    store: [upload.single('cover_image')],
-    update: [upload.single('cover_image')],
+    store: [upload.single('cover_image')],   // for create
+    update: [upload.single('cover_image')],  // for update
   }),
 ];
 

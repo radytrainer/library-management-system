@@ -7,9 +7,11 @@ import Login from '@/views/LoginView.vue'
 import Register from '@/views/RegisterView.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
-
+import UserListView from '@/views/User/UserListView.vue'
 import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
+import DonateView from '@/views/Donate/DonateView.vue'
+import AboutView from '@/views/website/AboutView.vue'
 
 const routes = [
   // Public routes
@@ -46,12 +48,12 @@ const routes = [
         component: () => import('@/views/User/UserListView.vue'),
         meta: { roles: ['admin', 'librarian'] },
       },
-      // {
-      //   path: 'donation',
-      //   name: 'donation',
-      //   component: () => import('@/views/Donation/DonationView.vue'),
-      //   meta: { roles: ['admin', 'librarian'] },
-      // },
+      {
+        path: 'donation',
+        name: 'donation',
+        component: DonateView,
+        meta: { roles: ['admin', 'librarian'] },
+      },
       {
         path: 'books',
         name: 'books',
@@ -84,12 +86,14 @@ const routes = [
       { path: 'users', component: () => import('@/views/User/UserListView.vue') },
       { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
       { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
+      { path: 'aboutPage', name: 'aboutPage', component: () => import('@/views/website/AboutView.vue') },
 
       // Add more routes like books, members, etc.
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
     ],
   },
-  { path: '/website', name: 'website', component: Website }, // ← Moved outside of AppLayout
+  { path: '/website', name: 'website', component: Website },
+  { path: '/aboutpage', name: 'aboutPage', component: AboutView },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
 ]
@@ -97,6 +101,35 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const isLoggedIn = !!authStore.user
+  const userRole = authStore.user?.role
+
+  // Public routes
+  if (to.meta.requiresAuth === false) {
+    if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+      if (userRole === 'admin') return next('/dashboard')
+      if (userRole === 'librarian' || userRole === 'user') return next('/books')
+    }
+    return next()
+  }
+
+  // Require login for protected routes
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    return next('/login')
+  }
+
+  // Role check
+  // if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+  //   if (userRole === 'admin') return next('/dashboard')
+  //   if (userRole === 'librarian' || userRole === 'user') return next('/books')
+  //   return next('/login')
+  // }
+
+  next()
 })
 
 export default router
