@@ -1,50 +1,5 @@
 <template>
     <div class="min-h-screen bg-gray-50">
-        <!-- Sticky Navbar -->
-        <nav class="bg-white shadow-sm sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Left Navigation Links -->
-                    <div class="flex space-x-8">
-                        <router-link to="/website"
-                            class="text-gray-900 hover:text-gray-700 px-3 py-2 text-sm font-medium">
-                            HOME
-                        </router-link>
-                        <router-link to="/aboutage"
-                            class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
-                            ABOUT
-                        </router-link>
-                        <router-link to="/book" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
-                            BOOK
-                        </router-link>
-                        <router-link to="/donate"
-                            class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
-                            DONATE
-                        </router-link>
-                        <router-link to="/history"
-                            class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
-                            HISTORY
-                        </router-link>
-                    </div>
-                    <!-- Right Buttons -->
-                    <div class="flex space-x-4 items-center">
-                        <router-link to="/login"
-                            class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
-                            Login
-                        </router-link>
-                        <router-link to="/register"
-                            class="text-green-600 hover:text-green-800 border border-green-600 hover:border-green-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">
-                            Register
-                        </router-link>
-                        <router-link to="/dashboard"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                            Admin Dashboard
-                        </router-link>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
         <!-- Hero Section -->
         <section class="relative text-white py-10">
             <!-- Background Image -->

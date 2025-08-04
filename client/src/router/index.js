@@ -1,27 +1,45 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// Import components
+// Layouts
 import AppLayout from '@/layouts/AppLayout.vue'
+import DefaultLayout from '@/views/website/MainWeb.vue'
+
+// Public Views
 import Login from '@/views/LoginView.vue'
 import Register from '@/views/RegisterView.vue'
+import Website from '@/views/website/pages/HomeWebView.vue';
+import AboutWebView from '@/views/website/pages/AboutWebView.vue';
+import BookWebView from '@/views/website/pages/BookWebView.vue'
+
+// Protected Views
 import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
-import Website from '@/views/WebsiteView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
-import AboutView from '@/views/website/AboutView.vue'
 
 const routes = [
-  // Public routes
+  // Public Auth Routes
   { path: '/login', name: 'login', component: Login, meta: { requiresAuth: false } },
   { path: '/register', name: 'register', component: Register, meta: { requiresAuth: false } },
 
-  // Redirect root based on role
+  // Public Website Pages (using DefaultLayout)
   {
     path: '/',
-    redirect: (to) => {
+    component: DefaultLayout,
+    children: [
+      { path: 'website', name: 'website', component: Website },
+      { path: 'about-us', name: 'about', component: AboutWebView },
+      { path: 'web-book', name: 'web-book', component: BookWebView},
+    ]
+  },
+
+  // Role-based redirect
+  {
+    path: '/',
+    redirect: () => {
       const authStore = useAuthStore()
       const role = authStore.user?.role
       if (role === 'admin') return '/dashboard'
@@ -30,72 +48,25 @@ const routes = [
     }
   },
 
-  // Protected routes
+  // Protected Routes (AppLayout)
   {
     path: '/',
     component: AppLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: 'dashboard',
-        name: 'dashboard',
-        component: Dashboard,
-        meta: { roles: ['admin'] },
-      },
-      {
-        path: 'users',
-        name: 'users',
-        component: () => import('@/views/User/UserListView.vue'),
-        meta: { roles: ['admin', 'librarian'] },
-      },
-      {
-        path: 'donation',
-        name: 'donation',
-        component: DonateView,
-        meta: { roles: ['admin', 'librarian'] },
-      },
-      {
-        path: 'books',
-        name: 'books',
-        component: ListBook,
-        meta: { roles: ['admin', 'librarian', 'user'] },
-      },
-      {
-        path: 'borrows',
-        name: 'borrows',
-        component: BorrowList,
-        meta: { roles: ['admin', 'librarian', 'user'] },
-      },
-      {
-        path: 'categories',
-        name: 'categories',
-        component: () => import('@/views/CategoryManagement/categorymanagementView.vue'),
-        meta: { roles: ['admin', 'librarian', 'user'] },
-      },
-      {
-        path: 'authors',
-        name: 'authors',
-        component: () => import('@/views/Author/AddauthorView.vue'),
-        meta: { roles: ['admin', 'librarian', 'user'] },
-      },
-      { path: '', redirect: '/dashboard' },
-      { path: 'dashboard', name: 'dashboard', component: Dashboard },
-      { path: 'books', name: 'books', component: () => import('@/views/books/ListBook.vue') },
-      { path: 'borrows', name: 'borrows', component: () => import('@/views/borrows/BorrowList.vue') },
-      { path: 'authors', component: () => import('@/views/Author/AddauthorView.vue') },
-      { path: 'users', component: () => import('@/views/User/UserListView.vue') },
-      { path: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue') },
-      { path: 'donations', name: 'doantions', component: () => import('@/views/Donate/DonateView.vue') },
-      { path: 'aboutPage', name: 'aboutPage', component: () => import('@/views/website/AboutView.vue') },
-
-      // Add more routes like books, members, etc.
-      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue') }, // <-- Added history route
+      { path: 'dashboard', name: 'dashboard', component: Dashboard, meta: { roles: ['admin'] } },
+      { path: 'users', name: 'users', component: UserListView, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'donations', name: 'donations', component: DonateView, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian', 'user'] } },
+      { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian', 'user'] } },
+      { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
+      { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian'] } },
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
     ],
   },
-  { path: '/website', name: 'website', component: Website },
-  { path: '/aboutpage', name: 'aboutPage', component: AboutView },
-  { path: '/login', component: Login },
-  { path: '/register', component: Register },
+
+  // Fallback
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -103,12 +74,12 @@ const router = createRouter({
   routes,
 })
 
+// Global Navigation Guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
-  // Public routes
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
       if (userRole === 'admin') return next('/dashboard')
@@ -117,17 +88,15 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // Require login for protected routes
   if (to.meta.requiresAuth && !isLoggedIn) {
     return next('/login')
   }
 
-  // Role check
-  // if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-  //   if (userRole === 'admin') return next('/dashboard')
-  //   if (userRole === 'librarian' || userRole === 'user') return next('/books')
-  //   return next('/login')
-  // }
+  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+    if (userRole === 'admin') return next('/dashboard')
+    if (userRole === 'librarian' || userRole === 'user') return next('/books')
+    return next('/login')
+  }
 
   next()
 })

@@ -1,39 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <!-- Left Navigation Links -->
-          <div class="flex space-x-8">
-            <a href="#" class="text-gray-900 hover:text-gray-700 px-3 py-2 text-sm font-medium">HOME</a>
-            <a href="aboutpage" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">ABOUT</a>
-            <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">BOOK</a>
-            <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">DONATE</a>
-            <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">HISTORY</a>
-          </div>
-
-          <!-- Right Buttons -->
-          <div class="flex space-x-4 items-center">
-            <router-link to="/login"
-              class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Login</router-link>
-            <router-link to="/register"
-              class="text-green-600 hover:text-green-800 border border-green-600 hover:border-green-800 px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200">Register</router-link>
-            <router-link to="/dashboard"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">Admin
-              Dashboard</router-link>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Hero Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <!-- Left Content -->
         <div class="space-y-8">
           <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-            📚 Welcome to Our Online Library!
+            Welcome to Our Online Library!
           </h1>
           <p class="text-gray-600 text-lg leading-relaxed max-w-md">
             Discover a world of knowledge and imagination at your fingertips. Our digital library offers a wide
@@ -42,7 +14,7 @@
             and be part of a growing community of passionate learners and readers.
           </p>
         </div>
-
+  
         <!-- Right Slideshow -->
         <div class="relative flex justify-center items-center">
           <div class="relative w-full max-w-[400px] h-[500px] rounded-lg overflow-hidden shadow-xl">
@@ -82,7 +54,7 @@
         </div>
       </div>
     </div>
-
+  
     <!-- Book Cards Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
