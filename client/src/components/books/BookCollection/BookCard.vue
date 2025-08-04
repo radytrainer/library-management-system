@@ -1,5 +1,5 @@
 <template>
-<div
+  <div
     class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer"
     @click="$emit('viewBook', book)">
     <div class="p-6">
@@ -91,20 +91,22 @@
             <span
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors duration-300"
               :class="{
-                'bg-green-100 text-green-800': book.quantity >= 10,
-                'bg-yellow-100 text-yellow-800': book.quantity > 0 && book.quantity < 10,
+                'bg-green-100 text-green-800': book.quantity >= 2,
+                'bg-yellow-100 text-yellow-800': book.quantity === 1,
                 'bg-red-100 text-red-800': book.quantity === 0
               }">
               <div class="w-1.5 h-1.5 rounded-full mr-1.5 transition-colors duration-300" :class="{
-                'bg-green-400': book.quantity >= 10,
-                'bg-yellow-400': book.quantity > 0 && book.quantity < 10,
+                'bg-green-400': book.quantity >= 2,
+                'bg-yellow-400': book.quantity === 1,
                 'bg-red-400': book.quantity === 0
               }"></div>
               {{
-                book.quantity >= 10
+                book.quantity >= 2
                   ? 'Available'
-                  : book.quantity > 0 && book.quantity < 10 ? 'Limited' : book.quantity === 0 ? 'Unavailable' : 'Unknown' }}
-                </span>
+                  : book.quantity === 1
+                    ? 'Limited' : 'Unavailable'
+              }}
+            </span>
           </div>
         </div>
       </div>
@@ -120,7 +122,7 @@ const props = defineProps({
   openActionMenu: [Number, String, null]
 });
 
-const emit = defineEmits(['viewBook', 'openForm', 'deleteBookById', 'toggleActionMenu']);
+const emit = defineEmits(['viewBook', 'openForm', 'deleteBookById', 'toggleActionMenu', 'bookUpdated']);
 
 const imageSrc = computed(() => {
   return props.book.cover_image_url || '/path/to/fallback-image.jpg';

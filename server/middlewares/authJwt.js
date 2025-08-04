@@ -4,10 +4,9 @@ const authConfig = require("../config/auth.config.js");
 
 const { User, Role } = db;
 
-// Verify JWT token and attach userId and userRole to request
+// ✅ Verify JWT token and attach user object with role to request
 const verifyToken = async (req, res, next) => {
   try {
-    // 🔍 Log incoming headers to debug
     console.log('Incoming Headers:', req.headers);
 
     let token = req.headers['x-access-token'] || req.headers['authorization'];
@@ -36,26 +35,25 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, authConfig.secret);
     console.log('✅ Decoded token:', { id: decoded.id, role: decoded.role });
 
-    req.userId = decoded.id;
-
-    const user = await User.findByPk(req.userId, {
+    const user = await User.findByPk(decoded.id, {
       include: [{ model: Role, as: 'Role', attributes: ['id', 'name', 'description'] }],
     });
 
     if (!user) {
-      console.error(`❌ User not found for ID: ${req.userId}`);
-      return res.status(401).json({ message: 'Unauthorized! User not found.', userId: req.userId });
+      console.error(`❌ User not found for ID: ${decoded.id}`);
+      return res.status(401).json({ message: 'Unauthorized! User not found.', userId: decoded.id });
     }
 
     if (!user.Role) {
-      console.error(`❌ No Role associated with user ID: ${req.userId}`);
-      return res.status(401).json({ message: 'Unauthorized! User has no associated role.', userId: req.userId });
+      console.error(`❌ No Role associated with user ID: ${user.id}`);
+      return res.status(401).json({ message: 'Unauthorized! User has no associated role.', userId: user.id });
     }
 
+    // ✅ Attach user & role consistently
     req.user = user;
-    req.userRole = user.Role.name;
+    req.user.role = user.Role.name; // <-- Always available now
 
-    console.log('✅ User verified:', { id: user.id, role: req.userRole });
+    console.log('✅ User verified:', { id: user.id, role: req.user.role });
 
     next();
   } catch (error) {
@@ -68,13 +66,6 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        message: 'Unauthorized! Invalid token.',
-        error: error.message,
-      });
-    }
-
     return res.status(401).json({
       message: 'Unauthorized! Invalid token.',
       error: error.message,
@@ -82,59 +73,42 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-
-// Check if user is an admin
-const isAdmin = async (req, res, next) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      console.error("No user object in isAdmin");
-      return res.status(401).json({ message: "No user data available!" });
-    }
-    if (!user.Role || user.Role.name !== "admin") {
-      return res.status(403).json({ message: "Require Admin Role!" });
-    }
-    next();
-  } catch (error) {
-    console.error("Admin role check error:", error);
-    res.status(500).json({ message: "Server error during role check." });
+// ✅ Check if user is Admin
+const isAdmin = (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    console.error("❌ No user data in isAdmin");
+    return res.status(401).json({ message: "No user data available!" });
   }
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Require Admin Role!" });
+  }
+  next();
 };
 
-// Check if user is a librarian
-const isLibrarian = async (req, res, next) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      console.error("No user object in isLibrarian");
-      return res.status(401).json({ message: "No user data available!" });
-    }
-    if (!user.Role || user.Role.name !== "librarian") {
-      return res.status(403).json({ message: "Require Librarian Role!" });
-    }
-    next();
-  } catch (error) {
-    console.error("Librarian role check error:", error);
-    res.status(500).json({ message: "Server error during role check." });
+// ✅ Check if user is Librarian
+const isLibrarian = (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    console.error("❌ No user data in isLibrarian");
+    return res.status(401).json({ message: "No user data available!" });
   }
+  if (req.user.role !== "librarian") {
+    return res.status(403).json({ message: "Require Librarian Role!" });
+  }
+  next();
 };
 
-// Check if user is either librarian or admin
-const isLibrarianOrAdmin = async (req, res, next) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      console.error("No user object in isLibrarianOrAdmin");
-      return res.status(401).json({ message: "No user data available!" });
-    }
-    if (!user.Role || !["admin", "librarian"].includes(user.Role.name)) {
-      return res.status(403).json({ message: "Require Librarian or Admin Role!" });
-    }
-    next();
-  } catch (error) {
-    console.error("LibrarianOrAdmin role check error:", error);
-    res.status(500).json({ message: "Server error during role check." });
+// ✅ Check if user is either Librarian or Admin
+const isLibrarianOrAdmin = (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    console.error("❌ No user data in isLibrarianOrAdmin");
+    return res.status(401).json({ message: "No user data available!" });
   }
+
+  if (!["admin", "librarian"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Only admins or librarians can create users" });
+  }
+
+  next();
 };
 
 module.exports = {

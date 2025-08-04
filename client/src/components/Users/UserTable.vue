@@ -43,9 +43,9 @@ const toggleMenu = (id) => {
           <td class="px-4 py-3">{{ user.phone || '-' }}</td>
           <td class="px-4 py-3">
             <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-              {{ user.role || 'User' }}
+                  {{ user.role || user.Role?.name || "User" }}
             </span>
-          </td>
+            </td>
           <td class="px-4 py-3">{{ user.date_of_birth || '-' }}</td>
           <td class="px-4 py-3">{{ user.barcode || '-' }}</td>
           <td class="px-4 py-3">
