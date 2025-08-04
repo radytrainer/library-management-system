@@ -24,37 +24,6 @@ const adminBoard = (req, res) => {
 const librarianBoard = (req, res) => {
   res.status(200).json({ message: "Librarian Content." })
 }
-
-
-const getUserBarcode = async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // ✅ Create canvas with size
-    const canvas = createCanvas(300, 100); // width x height
-
-    // ✅ Generate barcode
-    JsBarcode(canvas, user.id.toString(), {
-      format: 'CODE128',
-      displayValue: true,
-      fontSize: 18,
-      margin: 10,
-    });
-
-    // ✅ Return as PNG
-    res.setHeader('Content-Type', 'image/png');
-    canvas.createPNGStream().pipe(res);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error generating barcode' });
-  }
-};
-
-
 // Get all users
 // userController.js example snippet
 const getAllUsers = async (req, res) => {
@@ -70,9 +39,6 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch users', error: error.message });
   }
 };
-
-
-
 
 // Get user by specific ID
 const getUserById = async (req, res) => {
@@ -303,7 +269,6 @@ const deleteUserById = async (req, res) => {
   }
 };
 
-
 // Delete current user's account
 const deleteAccount = async (req, res) => {
   try {
@@ -401,41 +366,42 @@ const getProfileImageUrl = (req, filename) => {
   if (!filename) return null;
   return `${req.protocol}://${req.get("host")}/uploads/users/${filename}`;
 };
+// ✅ Create User
 const createUser = async (req, res) => {
   try {
-    // ✅ Role check
-    if (!req.userRole || !["admin", "librarian"].includes(req.userRole)) {
-      return res.status(403).json({ message: "Only admins or librarians can create users!" });
+    console.log('Incoming body:', req.body);
+    console.log('File info:', req.file);
+
+    // ✅ Use the flat role
+    if (!['admin', 'librarian'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only admins or librarians can create users' });
     }
 
     const { username, email, password, date_of_birth, phone, roleId } = req.body;
-    const file = req.file; // profile image from multer
-    const profile_image = file ? file.filename : null;
+    const profile_image = req.file ? req.file.filename : null;
 
-    // ✅ Validate required fields
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "Username, email, and password are required!" });
+      return res.status(400).json({ message: 'Username, email, and password are required' });
     }
 
-    // ✅ Email uniqueness
     const existingEmail = await User.findOne({ where: { email } });
-    if (existingEmail) return res.status(400).json({ message: "Email already exists!" });
+    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 8);
-
-    // ✅ Validate role
     const targetRole = await Role.findByPk(roleId);
-    if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
+    if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
-    if (req.userRole === "librarian" && targetRole.name !== "user") {
-      return res.status(403).json({ message: "Librarians can only create normal users!" });
+    // ✅ Librarian can only create normal users
+    if (req.user.role === 'librarian' && targetRole.name !== 'user') {
+      return res.status(403).json({ message: 'Librarians can only create normal users' });
     }
 
-    if (targetRole.name === "admin" && req.userRole !== "admin") {
-      return res.status(403).json({ message: "Only admins can create other admins!" });
+    // ✅ Only admins can create other admins
+    if (targetRole.name === 'admin' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can create other admins' });
     }
 
-    // ✅ Generate unique 12-digit barcode
+    // ✅ Generate unique barcode
     let barcode, isUnique = false;
     while (!isUnique) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
@@ -443,74 +409,72 @@ const createUser = async (req, res) => {
       if (!existingUser) isUnique = true;
     }
 
-    // ✅ Create user record
     const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      date_of_birth,
-      phone,
-      profile_image,
-      roleId,
-      barcode,
-      barcode_image: null
+      username, email, password: hashedPassword, date_of_birth, phone,
+      profile_image, roleId, barcode, barcode_image: null
     });
 
-    // ✅ Generate barcode image
-    const canvas = createCanvas(400, 150);
-    const ctx = canvas.getContext('2d');
-
-    JsBarcode(canvas, barcode, {
-      format: 'CODE128',
-      displayValue: true,
-      fontSize: 18,
-      margin: 20,
-    });
-
-    ctx.font = '18px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#000';
-    ctx.fillText(username, canvas.width / 2, 140);
-
+    // ✅ Create barcode image
     const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
+    const canvas = createCanvas(400, 150);
+    const ctx = canvas.getContext('2d');
+    JsBarcode(canvas, barcode, { format: 'CODE128', displayValue: true, fontSize: 18, margin: 20 });
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(username, canvas.width / 2, 140);
+
     const barcodeFilename = `barcode_${user.id}.png`;
     const barcodePath = path.join(barcodeDir, barcodeFilename);
-    const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
+    const barcodeImageUrl = `/uploads/barcodes/${barcodeFilename}`;
 
     const out = fs.createWriteStream(barcodePath);
     canvas.createPNGStream().pipe(out);
-    await new Promise((resolve) => out.on('finish', resolve));
+    await new Promise(resolve => out.on('finish', resolve));
 
     user.barcode_image = barcodeFilename;
     await user.save();
 
-    // ✅ Build full URLs for Vue
-    const profileImageUrl = profile_image
-      ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
-      : null;
-
     res.status(201).json({
-      message: "User created successfully!",
+      message: 'User created successfully',
       user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        date_of_birth: user.date_of_birth,
-        phone: user.phone,
-        profile_image: profileImageUrl,   // full URL
-        barcode: user.barcode,
-        barcode_image: barcodeImageUrl,   // full URL
-        role: targetRole.name,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        id: user.id, username, email, date_of_birth, phone,
+        profile_image: profile_image ? `/uploads/profile/${profile_image}` : null,
+        barcode, barcode_image: barcodeImageUrl, role: targetRole.name
       }
     });
-
   } catch (error) {
-    console.error("Create user error:", error);
-    res.status(500).json({ message: error.message });
+    console.error('Create user error:', error);
+    res.status(500).json({ message: 'Server error during upload', error: error.message });
+  }
+};
+
+const getUserBarcode = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // ✅ Create canvas with size
+    const canvas = createCanvas(300, 100); // width x height
+
+    // ✅ Generate barcode
+    JsBarcode(canvas, user.id.toString(), {
+      format: 'CODE128',
+      displayValue: true,
+      fontSize: 18,
+      margin: 10,
+    });
+
+    // ✅ Return as PNG
+    res.setHeader('Content-Type', 'image/png');
+    canvas.createPNGStream().pipe(res);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error generating barcode' });
   }
 };
 module.exports = {
