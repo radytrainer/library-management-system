@@ -1,28 +1,38 @@
 <template>
-  <div v-if="showDetail"
-    class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
+  <div v-if="showDetail" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
     <div class="relative top-[90px] mx-auto bg-white rounded-xl w-full max-w-full sm:max-w-4xl max-h-[80vh] overflow-y-auto">
       <!-- Modal Header -->
       <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold text-gray-900">Book Details</h2>
-          <button @click="$emit('closeDetail')"
-            class="w-10 h-10 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-500 transition-all duration-200 flex items-center justify-center group"
-            aria-label="Close details">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-2">
+            <button @click="$emit('editBook', selectedBook)"
+              class="w-10 h-10 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 flex items-center justify-center group"
+              aria-label="Edit book"
+              :disabled="!selectedBook">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+            <button @click="$emit('closeDetail')"
+              class="w-10 h-10 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-500 transition-all duration-200 flex items-center justify-center group"
+              aria-label="Close details">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Modal Content -->
-      <div class="p-6 overflow-y-auto" style="flex-grow:1;">
+      <div v-if="selectedBook" class="p-6 overflow-y-auto" style="flex-grow: 1;">
         <div class="flex flex-col lg:flex-row gap-8">
           <!-- Book Cover -->
           <div class="flex-shrink-0">
             <div class="relative group cursor-pointer" @click="$emit('openFullImage')" title="Click to view full image">
-              <img :src="selectedBook.cover_image_url" :alt="selectedBook.title + ' cover'"
+              <img :src="bookCover" :alt="`${bookTitle} cover`"
                 class="w-80 h-80 rounded-xl object-cover shadow-lg border border-gray-200 transition-transform duration-300 group-hover:scale-105" />
               <div
                 class="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-xl transition-all duration-300 flex items-center justify-center">
@@ -39,17 +49,17 @@
           <div class="flex-1 space-y-6">
             <!-- Title and Description -->
             <div class="space-y-3">
-              <h3 class="text-3xl font-bold text-gray-900 leading-tight">{{ selectedBook.title }}</h3>
-              <p class="text-gray-600 text-lg leading-relaxed">{{ selectedBook.description }}</p>
+              <h3 class="text-3xl font-bold text-gray-900 leading-tight">{{ bookTitle }}</h3>
+              <p class="text-gray-600 text-lg leading-relaxed">{{ bookDescription }}</p>
             </div>
 
             <!-- Badges -->
             <div class="flex flex-wrap gap-2">
               <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                {{ selectedBook.category?.name || 'N/A' }}
+                {{ categoryName }}
               </span>
               <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                {{ selectedBook.language?.name || 'N/A' }}
+                {{ languageName }}
               </span>
               <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
                 {{ selectedBook.public_year || 'N/A' }}
@@ -61,7 +71,7 @@
               <div class="space-y-4">
                 <div>
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Author</span>
-                  <p class="text-gray-900 font-medium text-lg">{{ selectedBook.author?.name || 'N/A' }}</p>
+                  <p class="text-gray-900 font-medium text-lg">{{ authorName }}</p>
                 </div>
                 <div>
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ISBN</span>
@@ -81,7 +91,7 @@
                 </div>
                 <div>
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Language</span>
-                  <p class="text-gray-900 font-medium text-lg">{{ selectedBook.language?.name || 'N/A' }}</p>
+                  <p class="text-gray-900 font-medium text-lg">{{ languageName }}</p>
                 </div>
                 <div v-if="selectedBook.donated_by">
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Donated By</span>
@@ -99,26 +109,16 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Biography</span>
-                <p class="text-gray-700 leading-relaxed mt-2">{{ selectedBook.author?.biography || 'N/A' }}</p>
+                <p class="text-gray-700 leading-relaxed mt-2">{{ authorBiography }}</p>
               </div>
               <div class="space-y-4">
                 <div>
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Birth Date</span>
-                  <p class="text-gray-900 font-medium text-lg">
-                    {{
-                      selectedBook.author?.birth_date
-                        ? new Date(selectedBook.author.birth_date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
-                        : 'N/A'
-                    }}
-                  </p>
+                  <p class="text-gray-900 font-medium text-lg">{{ formattedBirthDate }}</p>
                 </div>
                 <div>
                   <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nationality</span>
-                  <p class="text-gray-900 font-medium text-lg">{{ selectedBook.author?.nationality || 'N/A' }}</p>
+                  <p class="text-gray-900 font-medium text-lg">{{ authorNationality }}</p>
                 </div>
               </div>
             </div>
@@ -126,10 +126,42 @@
         </div>
       </div>
 
-      <!-- Full Image Modal - Improved Version -->
+      <!-- Loading State -->
+      <div v-else class="p-6">
+        <div class="animate-pulse space-y-4">
+          <div class="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div class="flex gap-8">
+            <div class="w-80 h-80 bg-gray-200 rounded-xl"></div>
+            <div class="flex-1 space-y-4">
+              <div class="h-10 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-20 bg-gray-200 rounded"></div>
+              <div class="flex gap-2">
+                <div class="h-6 bg-gray-200 rounded-full w-24"></div>
+                <div class="h-6 bg-gray-200 rounded-full w-24"></div>
+                <div class="h-6 bg-gray-200 rounded-full w-24"></div>
+              </div>
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div class="h-4 bg-gray-200 rounded w-20"></div>
+                  <div class="h-6 bg-gray-200 rounded w-40"></div>
+                  <div class="h-4 bg-gray-200 rounded w-20"></div>
+                  <div class="h-6 bg-gray-200 rounded w-40"></div>
+                </div>
+                <div class="space-y-4">
+                  <div class="h-4 bg-gray-200 rounded w-20"></div>
+                  <div class="h-6 bg-gray-200 rounded w-40"></div>
+                  <div class="h-4 bg-gray-200 rounded w-20"></div>
+                  <div class="h-6 bg-gray-200 rounded w-40"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Image Modal -->
       <div v-if="showFullImage"
         class="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4">
-        <!-- Close Button (Top Right) -->
         <button @click="$emit('closeFullImage')"
           class="absolute top-4 right-4 z-10 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200"
           aria-label="Close full image">
@@ -137,17 +169,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-
-        <!-- Image Container with Proper Constraints -->
         <div class="relative w-full h-full flex items-center justify-center">
-          <img :src="selectedBook.cover_image_url" :alt="selectedBook.title + ' cover - full size'"
+          <img :src="bookCover" :alt="`${bookTitle} cover - full size`"
             class="w-auto h-[76vh] object-contain rounded-lg shadow-2xl cursor-pointer"
             @click="$emit('closeFullImage')" />
         </div>
-
-        <!-- Optional Caption -->
         <div class="text-white text-center opacity-80">
-          <p class="text-sm">{{ selectedBook.title }}</p>
+          <p class="text-sm">{{ bookTitle }}</p>
         </div>
       </div>
     </div>
@@ -155,11 +183,33 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   showDetail: Boolean,
   selectedBook: Object,
   showFullImage: Boolean,
 })
+
+const emit = defineEmits(['closeDetail', 'openFullImage', 'closeFullImage', 'editBook'])
+
+const bookTitle = computed(() => props.selectedBook?.title || 'N/A')
+const bookDescription = computed(() => props.selectedBook?.description || 'No description available')
+const bookCover = computed(() => props.selectedBook?.cover_image_url || '/path/to/fallback-image.jpg')
+const authorName = computed(() => props.selectedBook?.author?.name || 'N/A')
+const authorBiography = computed(() => props.selectedBook?.author?.biography || 'No biography available')
+const authorNationality = computed(() => props.selectedBook?.author?.nationality || 'N/A')
+const categoryName = computed(() => props.selectedBook?.category?.name || 'N/A')
+const languageName = computed(() => props.selectedBook?.language?.name || 'N/A')
+const formattedBirthDate = computed(() =>
+  props.selectedBook?.author?.birth_date
+    ? new Date(props.selectedBook.author.birth_date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'N/A'
+)
 </script>
 
 <style scoped>
@@ -181,12 +231,10 @@ const props = defineProps({
   background: #a8a8a8;
 }
 
-/* Smooth transition for modal appearance */
 .fixed {
   transition: opacity 0.2s ease;
 }
 
-/* Better touch target for mobile */
 @media (max-width: 640px) {
   button {
     width: 12vw;

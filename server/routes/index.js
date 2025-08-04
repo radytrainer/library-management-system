@@ -66,7 +66,20 @@ const resources = [
 ];
 router.get("/api/reminder-test", borrowController.sendReturnReminders);
 
-// Register each resource to the main router
+// import route
+const memoryStorage = multer.memoryStorage();
+const uploadMemory = multer({ storage: memoryStorage });
+router.post(
+  '/books/import',
+  uploadMemory.fields([
+    { name: 'excelFile', maxCount: 1 },
+    { name: 'cover_images[]', maxCount: 100 }
+  ]),
+  bookController.importBooks
+);
+
+
+// Use each resource route
 resources.forEach(resource => {
   router.use(resource.path, resource.router);
 });
