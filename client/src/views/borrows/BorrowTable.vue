@@ -23,14 +23,34 @@
                     </select>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button disabled
-                        class="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export
-                    </button>
+                    <div class="relative inline-block text-left">
+                        <div>
+                            <button @click="toggleDropdown"
+                                class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-400 text-gray-500 rounded-lg focus:outline-none">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div v-if="dropdownOpen"
+                            class="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                <button @click="$emit('exportBorrowDataToPDF')"
+                                    class="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100">Export to
+                                    PDF</button>
+                                <button @click="$emit('exportBorrowDataToExcel')"
+                                    class="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100">Export to
+                                    Excel</button>
+                            </div>
+                        </div>
+                    </div>
                     <button @click="() => { console.log('clicked'); $emit('add-borrow') }"
                         class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,6 +238,15 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const dropdownOpen = ref(false)
+
+function toggleDropdown() {
+    dropdownOpen.value = !dropdownOpen.value
+}
+
+
 defineProps({
     filteredBorrowData: Array,
     categories: Array,
@@ -243,5 +272,7 @@ defineEmits([
     "update-record",
     "delete-record",
     "add-borrow",
+    "exportBorrowDataToExcel",
+    "exportBorrowDataToPDF"
 ]);
 </script>

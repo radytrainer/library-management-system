@@ -64,6 +64,7 @@ const resources = [
     update: [upload.single('cover_image')],  // for update
   }),
 ];
+router.get("/api/reminder-test", borrowController.sendReturnReminders);
 
 // import route
 const memoryStorage = multer.memoryStorage();

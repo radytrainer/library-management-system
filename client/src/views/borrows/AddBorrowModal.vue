@@ -1,11 +1,9 @@
 <template>
   <div
     class="fixed inset-0 z-50 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 sm:p-6 transition-opacity duration-300 ease-out"
-    v-if="showModal"
-  >
+    v-if="showModal">
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out scale-100"
-    >
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out scale-100">
       <div class="p-6 sm:p-8">
         <h2 class="text-2xl sm:text-3xl font-semibold text-gray-800 mb-6 tracking-tight">Create Borrow Record</h2>
         <div class="flex items-center mb-8">
@@ -16,10 +14,8 @@
               <span :class="{ 'text-indigo-600 font-semibold': currentStep === 3 }">3. Confirmation</span>
             </div>
             <div class="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                class="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-in-out"
-                :style="{ width: currentStep === 1 ? '33.33%' : currentStep === 2 ? '66.66%' : '100%' }"
-              ></div>
+              <div class="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-in-out"
+                :style="{ width: currentStep === 1 ? '33.33%' : currentStep === 2 ? '66.66%' : '100%' }"></div>
             </div>
           </div>
         </div>
@@ -29,11 +25,9 @@
           <div v-if="currentStep === 1" class="space-y-6">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Borrower Type</label>
-              <select
-                v-model="localForm.borrowerType"
+              <select v-model="localForm.borrowerType"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                @change="resetUserFields"
-              >
+                @change="resetUserFields">
                 <option value="new">New User</option>
                 <option value="existing">Existing User</option>
               </select>
@@ -42,116 +36,89 @@
             <div v-if="localForm.borrowerType === 'new'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Borrower Name</label>
-                <input
-                  v-model="localForm.user_name"
-                  type="text"
+                <input v-model="localForm.user_name" type="text"
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                  placeholder="Enter borrower name"
-                />
+                  placeholder="Enter borrower name" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Borrower Email</label>
-                <input
-                  v-model="localForm.borrower_email"
-                  type="email"
+                <input v-model="localForm.borrower_email" type="email"
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                  placeholder="Enter borrower email"
-                />
+                  placeholder="Enter borrower email" />
               </div>
             </div>
 
             <div v-else>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">User ID</label>
-              <input
-                v-model="localForm.user_id"
-                type="text"
+              <input v-model="localForm.user_id" type="text"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                placeholder="Enter user ID"
-              />
+                placeholder="Enter user ID" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Librarian Name</label>
-              <input
-                v-model="localForm.librarian_name"
-                type="text"
+              <input v-model="localForm.librarian_name" type="text"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                placeholder="Enter librarian name"
-              />
+                placeholder="Enter librarian name" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Borrow Date</label>
-              <input
-                v-model="localForm.date_borrow"
-                type="date"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 transition-all duration-200"
-              />
+              <input v-model="localForm.date_borrow" type="date"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 transition-all duration-200" />
             </div>
           </div>
-
           <!-- Step 2: Book Details -->
-          <div v-if="currentStep === 2" class="space-y-6">
-            <div class="flex justify-between items-center">
-              <h3 class="text-lg font-semibold text-gray-800 tracking-tight">Book Details</h3>
-              <button
-                type="button"
-                class="text-indigo-600 hover:text-indigo-700 font-medium text-sm transition-colors duration-200"
-                @click="addBook"
-                :disabled="localForm.books.length >= 3"
-                :class="{ 'opacity-50 cursor-not-allowed': localForm.books.length >= 3 }"
-              >
-                {{ localForm.books.length < 3 ? '+ Add Another Book' : 'Max 3 Books' }}
-              </button>
+          <div v-if="currentStep === 2" class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-semibold text-gray-800">Book Details</h3>
+              <button type="button" @click="addBook" :disabled="localForm.books.length >= 3"
+                :class="['inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition duration-200',
+                  localForm.books.length >= 3 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700']">
+                <svg v-if="localForm.books.length < 3" class="w-4 h-4" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                {{ localForm.books.length < 3 ? 'Add Another Book' : 'Max 3 Books' }} </button>
             </div>
-            <div v-for="(book, index) in localForm.books" :key="index" class="space-y-4 border-t pt-4 border-gray-200">
+            <div v-for="(book, index) in localForm.books" :key="index"
+              class="p-6 bg-white rounded-lg shadow border border-gray-200 space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">ISBN</label>
-                <input
-                  v-model="book.isbn"
-                  type="text"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                  placeholder="Enter ISBN"
-                  @input="fetchBookDetails(index)"
-                />
+                <input v-model="book.isbn" type="text" @input="fetchBookDetails(index)"
+                  class="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter ISBN" />
               </div>
+              <p class="text-sm text-gray-400">
+                <span class="text-gray-400">Book name:</span>
+                <span>{{ book.book_name || ' ..............' }}</span>
+              </p>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Book Name</label>
-                <input
-                  v-model="book.book_name"
-                  type="text"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-                  placeholder="Enter book name"
-                  readonly
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Return Date</label>
-                <input
-                  v-model="book.return_date"
-                  type="date"
-                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 transition-all duration-200"
-                />
+                <label class="block text-sm font-medium text-gray-700 mb-1">Return Date</label>
+                <input v-model="book.return_date" type="date"
+                  class="w-full px-4 py-2 border rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
               </div>
               <div v-if="localForm.books.length > 1" class="flex justify-end">
-                <button
-                  type="button"
-                  class="text-red-600 hover:text-red-700 font-medium text-sm transition-colors duration-200"
-                  @click="removeBook(index)"
-                >
-                  Remove Book
-                </button>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
+                  <button type="button" @click="removeBook(index)"
+                    class="flex items-center text-red-700 hover:text-red-800 font-medium text-sm transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-3 mr-1" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Remove Book
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
           <!-- Step 3: Confirmation -->
           <div v-if="currentStep === 3" class="space-y-6">
             <h3 class="text-lg font-semibold text-gray-800 tracking-tight">Confirm Details</h3>
             <div class="bg-gray-50 p-5 rounded-lg space-y-4 border border-gray-200">
               <div>
                 <p class="text-sm font-medium text-gray-700">Borrower Type</p>
-                <p class="text-gray-900 font-medium">{{ localForm.borrowerType === 'new' ? 'New User' : 'Existing User' }}</p>
+                <p class="text-gray-900 font-medium">{{ localForm.borrowerType === 'new' ? 'New User' : 'Existing User'
+                }}</p>
               </div>
               <div v-if="localForm.borrowerType === 'new'">
                 <p class="text-sm font-medium text-gray-700">Borrower Name</p>
@@ -175,47 +142,37 @@
                 <p class="text-sm font-medium text-gray-700">Books</p>
                 <ul class="list-disc pl-5 space-y-1">
                   <li v-for="(book, index) in localForm.books" :key="index" class="text-gray-900">
-                    {{ book.book_name || 'N/A' }} (ISBN: {{ book.isbn || 'N/A' }}, Return: {{ book.return_date || 'N/A' }})
+                    {{ book.book_name || 'N/A' }} (ISBN: {{ book.isbn || 'N/A' }}, Return: {{ book.return_date || 'N/A'
+                    }})
                   </li>
                 </ul>
               </div>
             </div>
           </div>
+          <div v-if="errorMessage" class="mt-4 text-red-600 font-medium">
+            {{ errorMessage }}
+          </div>
           <div class="flex justify-between pt-6">
-            <button
-              v-if="currentStep > 1"
-              type="button"
+            <button v-if="currentStep > 1" type="button"
               class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-              @click="currentStep--"
-            >
+              @click="currentStep--">
               Back
             </button>
             <div class="flex-1"></div>
             <div class="flex space-x-3">
-              <button
-                type="button"
+              <button type="button"
                 class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-                @click="emit('close')"
-              >
+                @click="emit('close')">
                 Cancel
               </button>
-              <button
-                v-if="currentStep < 3"
-                type="button"
+              <button v-if="currentStep < 3" type="button"
                 class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 font-medium text-sm"
-                @click="nextStep"
-                :disabled="!isStepValid"
-                :class="{ 'opacity-50 cursor-not-allowed': !isStepValid }"
-              >
+                @click="nextStep" :disabled="!isStepValid" :class="{ 'opacity-50 cursor-not-allowed': !isStepValid }">
                 Next
               </button>
-              <button
-                v-if="currentStep === 3"
-                type="submit"
+              <button v-if="currentStep === 3" type="submit"
                 class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 font-medium text-sm"
-                :disabled="loading"
-                :class="{ 'opacity-50 cursor-not-allowed': loading }"
-              >
+                :disabled="loading" :class="{ 'opacity-50 cursor-not-allowed': loading }">
                 {{ loading ? "Submitting..." : "Submit" }}
               </button>
             </div>
@@ -225,19 +182,14 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, watch } from "vue";
 import { inject } from "vue";
-
 const props = defineProps({
   modelValue: Object,
 });
-
 const emit = defineEmits(["update:modelValue", "submit", "close"]);
-
 const { getBook, showToast, booksData } = inject("borrowManagement");
-
 const localForm = ref({
   borrowerType: props.modelValue.borrowerType || "new",
   user_name: props.modelValue.borrower_name || "",
@@ -248,7 +200,7 @@ const localForm = ref({
   books: props.modelValue.books || [{ isbn: "", book_name: "", return_date: "" }],
   status: props.modelValue.status || "borrowed",
 });
-
+const errorMessage = ref("");
 const formError = ref("");
 const loading = ref(false);
 const showModal = ref(true);
@@ -287,6 +239,7 @@ async function fetchBookDetails(index) {
       const book = await getBook(isbn, "isbn");
       if (book) {
         localForm.value.books[index].book_name = book.title;
+        showToast(`Book name:${book.title}`, "success");
       } else {
         localForm.value.books[index].book_name = "";
         showToast(`Book with ISBN ${isbn} not found.`, "error");
@@ -367,8 +320,7 @@ async function submitForm() {
     );
     if (failedResponses.length > 0) {
       throw new Error(
-        `Failed to create ${failedResponses.length} borrow record(s): ${
-          failedResponses[0]?.data?.message || "Unknown backend error"
+        `Failed to create ${failedResponses.length} borrow record(s): ${failedResponses[0]?.data?.message || "Unknown backend error"
         }`
       );
     }
@@ -378,6 +330,7 @@ async function submitForm() {
   } catch (error) {
     console.error(`Error during form submission at ${now}:`, error.message, error.stack);
     formError.value = error.message || "Failed to create borrow records.";
+    errorMessage.value = message;
     showToast(`Error: ${formError.value}`, "error");
     setTimeout(() => (formError.value = ""), 5000);
   } finally {

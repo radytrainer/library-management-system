@@ -1,5 +1,5 @@
 <template>
-  <div class="">
+  <div class="bg-gray-100">
     <div class="p-6">
       <HeaderSection v-model:search="search" />
       <StatsCards :borrow-data="borrowData" :get-item-status="getItemStatus" />
@@ -10,7 +10,7 @@
         @update:limit="limit = $event" @update:selected-status="selectedStatus = $event"
         @update:selected-category="selectedCategory = $event" @toggle-dropdown="toggleDropdown" @show-book="handleShow"
         @confirm-return="confirmReturn" @update-record="openUpdateModal" @delete-record="handleDelete"
-        @add-borrow="showModal = true" />
+        @add-borrow="showModal = true"@exportBorrowDataToExcel="exportBorrowDataToExcel"@exportBorrowDataToPDF="exportBorrowDataToPDF" />
 
       <BookDetailModal v-if="showBookDetail" :book="selectedBook" :get-item-status="getItemStatus"
         :get-days-left="getDaysLeft" :format-date="formatDate" @close="showBookDetail = false" />
@@ -37,6 +37,8 @@ import AddBorrowModal from "./AddBorrowModal.vue";
 import UpdateBorrowModal from "./UpdateBorrowModal.vue";
 import ConfirmModal from "./ConfirmModal.vue";
 import ToastNotification from "./ToastNotification.vue";
+import { exportToExcel } from "@/utils/exportToExcel";
+import { exportToPDF } from "@/utils/exportToPDF";
 
 import { useBorrowManagement } from "@/composables/useBorrowManagement";
 
@@ -80,6 +82,13 @@ const {
   confirmReturn,
   handleConfirmReturn,
 } = useBorrowManagement();
+
+const exportBorrowDataToExcel = () => {
+  exportToExcel(filteredBorrowData.value || filteredBorrowData); 
+};
+const exportBorrowDataToPDF = () => {
+  exportToPDF(filteredBorrowData.value || filteredBorrowData);
+};
 
 onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
