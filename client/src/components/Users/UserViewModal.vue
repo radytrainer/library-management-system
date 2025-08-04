@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   show: Boolean,
-  user: Object
+  user: Array
 })
 
 const emits = defineEmits(['close'])
@@ -57,7 +57,7 @@ const emits = defineEmits(['close'])
               </div>
             </div>
 
-            <!-- Profile Image Section -->
+            <!-- Profile Image Section
             <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
               <h4 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ const emits = defineEmits(['close'])
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
           </div>
 
           <!-- Right Column - Information Sections -->
@@ -114,7 +114,7 @@ const emits = defineEmits(['close'])
                   </div>
                   <div class="flex flex-col gap-1">
                     <span class="text-sm font-medium text-gray-600">Role</span>
-                    <span class="text-base text-gray-900 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg font-medium">{{ user.role || '-' }}</span>
+                    <span class="text-base text-gray-900 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg font-medium">{{  user.role || user.Role?.name || "User"  }} </span>
                   </div>
                 </div>
               </div>
