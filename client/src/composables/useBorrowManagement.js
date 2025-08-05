@@ -6,12 +6,14 @@ import {
   deleteBorrow,
 } from "@/services/Api/borrow";
 import { getBooks, updateBook } from "@/services/Api/book";
+import { getAllUsers } from "@/services/Api/user";
 import { exportToExcel } from "@/utils/exportToExcel";
 import { exportToPDF } from "@/utils/exportToPDF";
 
 export function useBorrowManagement() {
   const borrowData = ref([]);
   const booksData = ref([]);
+  const usersData = ref([]);
   const loading = ref(false);
   const error = ref(null);
   const search = ref("");
@@ -34,8 +36,9 @@ export function useBorrowManagement() {
     borrowerType: "new",
     borrower_name: "",
     borrower_email: "",
+    user_barcode: "",
     user_id: "",
-    books: [{ isbn: "", book_name: "", return_date: "" }],
+    books: [{ isbn: "", book_name: "", return_date: ""}],
     librarian_name: "",
     date_borrow: "",
     status: "borrowed",
@@ -44,6 +47,7 @@ export function useBorrowManagement() {
   const updateForm = ref({
     id: null,
     user_name: "",
+    borrower_email: "",
     book_name: "",
     return_date: "",
     status: "",
@@ -56,9 +60,12 @@ export function useBorrowManagement() {
 
   provide("borrowManagement", {
     getBook,
+    getUser,
     showToast,
     fetchBooksData,
+    fetchUsersData,
     booksData,
+    usersData,
   });
 
   const categories = computed(() => {
@@ -178,6 +185,8 @@ export function useBorrowManagement() {
       if (type === "isbn") {
         const normalizedIsbn = identifier.trim();
         book = booksData.value.find((b) => b.isbn === normalizedIsbn);
+      } else if (type === "barcode") {
+        book = booksData.value.find((b) => b.barcode === identifier.trim());
       } else if (type === "id") {
         book = booksData.value.find((b) => b.id === identifier);
       } else if (type === "title") {
@@ -190,6 +199,44 @@ export function useBorrowManagement() {
       return book;
     } catch (error) {
       console.error("Error in getBook:", error.message, error.stack);
+      return null;
+    }
+  }
+
+  async function fetchUsersData() {
+    try {
+      loading.value = true;
+      const response = await getAllUsers();
+      console.log("Raw API response for getAllUsers:", response);
+      usersData.value = Array.isArray(response.data.users) ? response.data.users : [];
+      console.log("Users fetched:", usersData.value);
+      if (!usersData.value.length) {
+        showToast("No users available in the database.", "error");
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err.message, err.stack);
+      showToast("Failed to load user data. Please check your connection or database.", "error");
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function getUser(barcode) {
+    try {
+      if (!barcode) throw new Error("User barcode is missing or invalid");
+      console.log(`Looking for user with barcode: ${barcode}`);
+      const normalizedBarcode = barcode.trim();
+      let user = usersData.value.find((u) => u.barcode === normalizedBarcode);
+      if (!user) {
+        user = usersData.value.find((u) => u.id === normalizedBarcode);
+      }
+      if (!user) {
+        throw new Error(`User not found for barcode: ${barcode}`);
+      }
+      console.log("User found:", user);
+      return user;
+    } catch (error) {
+      console.error("Error in getUser:", error.message, error.stack);
       return null;
     }
   }
@@ -211,7 +258,7 @@ export function useBorrowManagement() {
     }
   }
 
-  async function submitAddBorrow(formData) {
+async function submitAddBorrow(formData) {
   try {
     const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
     console.log(`Received formData in submitAddBorrow at ${now}:`, JSON.stringify(formData, null, 2));
@@ -219,26 +266,32 @@ export function useBorrowManagement() {
     if (!formData) throw new Error("No form data provided.");
     if (formData.is_new_user) {
       if (!formData.borrower_name || !formData.borrower_email || !formData.date_borrow)
-        throw new Error("User name, email, and borrow date are required for new users.");
-    } else if (!formData.user_id || !formData.date_borrow)
-      throw new Error("User ID and borrow date are required for existing users.");
+        throw new Error("Borrower name, email, and borrow date are required for new users.");
+    } else {
+      if (!formData.user_name || !formData.date_borrow)
+        throw new Error("User name and borrow date are required for existing users.");
+      if (formData.user_barcode) {
+        const user = await getUser(formData.user_barcode);
+        if (!user) throw new Error(`User with barcode ${formData.user_barcode} not found.`);
+        formData.user_name = user.username; // Ensure user_name is set
+      }
+    }
     if (!formData.librarian_name) throw new Error("Librarian name is required.");
     if (!formData.books || formData.books.length === 0) throw new Error("At least one book is required.");
     if (formData.books.length > 3) throw new Error("Cannot borrow more than three books at a time.");
+
     for (const book of formData.books) {
       if (!book.isbn) throw new Error("Book ISBN is required.");
-      if (!/^\d{10}$|^\d{13}$/.test(book.isbn)) throw new Error(`Invalid ISBN: ${book.isbn}`);
+      const normalizedIsbn = book.isbn.replace(/[-\s]/g, '');
+      if (!/^(?:\d{10}|\d{13})$/.test(normalizedIsbn)) throw new Error(`Invalid ISBN: ${book.isbn}`);
       if (!book.date_return) throw new Error("Book return date is required.");
       if (!book.name) throw new Error("Book name is required.");
 
       const foundBook = await getBook(book.isbn, "isbn");
       if (!foundBook) throw new Error(`Book not found for ISBN ${book.isbn}.`);
-
-      // ✅ Condition 1: If only one copy left, block borrowing
       if (foundBook.quantity <= 1) {
-        throw new Error(`Book "${book.name}" has only one and cannot be borrowed.`);
+        throw new Error(`Book "${book.name}" has only one copy and cannot be borrowed.`);
       }
-
       if (foundBook.quantity < (formData.quantity || 1)) {
         throw new Error(`Book "${book.name}" has insufficient stock (available: ${foundBook.quantity}).`);
       }
@@ -252,12 +305,16 @@ export function useBorrowManagement() {
     try {
       const payload = {
         is_new_user: formData.is_new_user,
-        borrower_name: formData.borrower_name,
-        borrower_email: formData.borrower_email,
-        user_id: formData.user_id,
+        borrower_name: formData.is_new_user ? formData.borrower_name : undefined,
+        user_name: !formData.is_new_user ? formData.user_name : undefined,
+        borrower_email: formData.is_new_user ? formData.borrower_email : undefined,
         librarian_name: formData.librarian_name,
         date_borrow: formData.date_borrow,
-        books: formData.books,
+        books: formData.books.map((book) => ({
+          name: book.name,
+          isbn: book.isbn,
+          date_return: book.date_return,
+        })),
         quantity: formData.quantity || 1,
         status: formData.status,
       };
@@ -265,9 +322,14 @@ export function useBorrowManagement() {
       console.log(`Sending payload to createBorrow at ${now}:`, JSON.stringify(payload, null, 2));
       const response = await createBorrow(payload);
       console.log(`createBorrow response at ${now}:`, JSON.stringify(response, null, 2));
-      if (!response || (response.status && response.status >= 400)) {
-        throw new Error(response?.data?.message || "Failed to create borrow records");
+
+      if (!response || !response.data) {
+        throw new Error("Invalid or empty response from createBorrow API.");
       }
+      if (response.status && response.status >= 400) {
+        throw new Error(response.data?.message || `API error (status ${response.status})`);
+      }
+
       responses.push(response);
 
       for (const book of formData.books) {
@@ -278,6 +340,7 @@ export function useBorrowManagement() {
         }
       }
     } catch (err) {
+      console.error(`Error in createBorrow at ${now}:`, err.message, err.response?.data || err);
       for (const book of updatedBooks) {
         await updateBook(book.id, { quantity: book.quantity });
       }
@@ -294,6 +357,7 @@ export function useBorrowManagement() {
       borrowerType: "new",
       borrower_name: "",
       borrower_email: "",
+      user_barcode: "",
       user_id: "",
       books: [{ isbn: "", book_name: "", return_date: "" }],
       librarian_name: "",
@@ -308,51 +372,51 @@ export function useBorrowManagement() {
     console.error(`submitAddBorrow error at ${now}:`, err.message, err.response?.data || err);
     error.value = err.message || "Failed to create borrow records.";
     showToast(error.value, "error");
-    return [];
+    throw err;
   } finally {
     loading.value = false;
   }
 }
 
   async function submitUpdate(formData) {
-  try {
-    console.log("Received formData in submitUpdate:", JSON.stringify(formData, null, 2));
-    if (!formData.id) {
-      throw new Error("Borrow record ID is missing.");
-    }
-    if (!formData.return_date) {
-      throw new Error("Return date is required.");
-    }
-    if (!formData.status) {
-      throw new Error("Status is required.");
-    }
+    try {
+      console.log("Received formData in submitUpdate:", JSON.stringify(formData, null, 2));
+      if (!formData.id) {
+        throw new Error("Borrow record ID is missing.");
+      }
+      if (!formData.return_date) {
+        throw new Error("Return date is required.");
+      }
+      if (!formData.status) {
+        throw new Error("Status is required.");
+      }
 
-    // Verify borrow record exists locally
-    const borrowRecord = borrowData.value.find((item) => item.id === formData.id);
-    if (!borrowRecord) {
-      throw new Error(`Borrow record with ID ${formData.id} not found in local data.`);
-    }
-    console.log("Found borrow record:", JSON.stringify(borrowRecord, null, 2));
+      const borrowRecord = borrowData.value.find((item) => item.id === formData.id);
+      if (!borrowRecord) {
+        throw new Error(`Borrow record with ID ${formData.id} not found in local data.`);
+      }
+      console.log("Found borrow record:", JSON.stringify(borrowRecord, null, 2));
 
-    const payload = {
-      return_date: formData.return_date,
-      status: formData.status,
-    };
-    console.log("Update payload to /borrow/:id:", JSON.stringify(payload, null, 2));
-    const response = await updateBorrow(formData.id, payload);
-    console.log("updateBorrow response:", JSON.stringify(response, null, 2));
-    showUpdateModal.value = false;
-    formError.value = "";
-    await fetchBorrowData();
-    showToast("Borrow record updated successfully", "success");
-  } catch (err) {
-    console.error("Update error:", err.message, err.response?.data || err);
-    const errorMessage = err.response?.data?.message || err.message || "Failed to update borrow record.";
-    formError.value = errorMessage;
-    showToast(`Update failed: ${errorMessage}`, "error");
-    throw new Error(errorMessage);
+      const payload = {
+        return_date: formData.return_date,
+        status: formData.status,
+      };
+      console.log("Update payload to /borrow/:id:", JSON.stringify(payload, null, 2));
+      const response = await updateBorrow(formData.id, payload);
+      console.log("updateBorrow response:", JSON.stringify(response, null, 2));
+      showUpdateModal.value = false;
+      formError.value = "";
+      await fetchBorrowData();
+      showToast("Borrow record updated successfully", "success");
+    } catch (err) {
+      console.error("Update error:", err.message, err.response?.data || err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update borrow record.";
+      formError.value = errorMessage;
+      showToast(`Update failed: ${errorMessage}`, "error");
+      throw new Error(errorMessage);
+    }
   }
-}
+
   async function handleDelete(id) {
     try {
       if (!id) throw new Error("No ID provided for deletion");
@@ -425,46 +489,46 @@ export function useBorrowManagement() {
     showConfirmModal.value = true;
   }
 
-function exportBorrowDataToExcel() {
-  if (!borrowData.value.length) {
-    showToast("No borrow data to export", "error");
-    return;
+  function exportBorrowDataToExcel() {
+    if (!borrowData.value.length) {
+      showToast("No borrow data to export", "error");
+      return;
+    }
+    const flatData = borrowData.value.map((item) => ({
+      ID: item.id,
+      "Book Title": item.book.title,
+      "Book Author": item.book.author,
+      "Book Category": item.book.category,
+      "User Name": item.user.name,
+      "User Email": item.user.email,
+      Quantity: item.borrowed_quantity,
+      Status: item.status,
+      "Borrow Date": item.borrow_date,
+      "Return Date": item.return_date,
+      "Librarian Name": item.librarian.name,
+    }));
+    exportToExcel(flatData, "BorrowRecords");
   }
-  const flatData = borrowData.value.map((item) => ({
-    ID: item.id,
-    "Book Title": item.book.title,
-    "Book Author": item.book.author,
-    "Book Category": item.book.category,
-    "User Name": item.user.name,
-    "User Email": item.user.email,
-    Quantity: item.borrowed_quantity,
-    Status: item.status,
-    "Borrow Date": item.borrow_date,
-    "Return Date": item.return_date,
-    "Librarian Name": item.librarian.name,
-  }));
-  exportToExcel(flatData, "BorrowRecords");
-}
-function exportBorrowDataToPDF() {
-  if (!borrowData.value.length) {
-    showToast("No borrow data to export", "error");
-    return;
-  }
-  const flatData = borrowData.value.map((item) => ({
-    "Book Title": item.book.title,
-    "Book Author": item.book.author,
-    "Book Category": item.book.category,
-    "User Name": item.user.name,
-    "User Email": item.user.email,
-    Quantity: item.borrowed_quantity,
-    Status: item.status,
-    "Borrow Date": item.borrow_date,
-    "Return Date": item.return_date,
-    "Librarian Name": item.librarian.name,
-  }));
-  exportToPDF(flatData, "BorrowRecords.pdf");
-}
 
+  function exportBorrowDataToPDF() {
+    if (!borrowData.value.length) {
+      showToast("No borrow data to export", "error");
+      return;
+    }
+    const flatData = borrowData.value.map((item) => ({
+      "Book Title": item.book.title,
+      "Book Author": item.book.author,
+      "Book Category": item.book.category,
+      "User Name": item.user.name,
+      "User Email": item.user.email,
+      Quantity: item.borrowed_quantity,
+      Status: item.status,
+      "Borrow Date": item.borrow_date,
+      "Return Date": item.return_date,
+      "Librarian Name": item.librarian.name,
+    }));
+    exportToPDF(flatData, "BorrowRecords.pdf");
+  }
 
   return {
     borrowData,
@@ -501,6 +565,7 @@ function exportBorrowDataToPDF() {
     fetchBorrowData,
     fetchBooksData,
     getBook,
+    getUser,
     handleShow,
     openUpdateModal,
     closeUpdateModal,
@@ -512,5 +577,6 @@ function exportBorrowDataToPDF() {
     showToast,
     exportBorrowDataToExcel,
     exportBorrowDataToPDF,
+    fetchUsersData,
   };
 }

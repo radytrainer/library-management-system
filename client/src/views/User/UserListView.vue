@@ -60,11 +60,10 @@ async function confirmDeleteUser(id) {
   <div class="p-6 bg-white rounded-lg shadow">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-bold">User Management</h2>
-      <button @click="openAddUser" class="px-4 py-2 bg-blue-600 text-white rounded-lg">+ Add User</button>
     </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div class="flex items-center">
             <div class="p-3 bg-blue-100 rounded-lg">
@@ -105,7 +104,10 @@ async function confirmDeleteUser(id) {
           </div>
         </div>
       </div>
-    </div>
+    
+    </div>  <div class="flex justify-end mb-4">
+      <button @click="openAddUser" class="px-4 py-2 bg-blue-600 text-white rounded-lg">+ Add User</button>
+      </div>
     <UserTable
       :users="userStore.users"
       :roles="userStore.roles"

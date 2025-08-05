@@ -1,4 +1,3 @@
-// @/stores/userStore.js
 import { defineStore } from 'pinia';
 import {
   getAllUsers,
@@ -34,14 +33,13 @@ export const useUserStore = defineStore('users', {
   },
 
   actions: {
-    // ✅ Normalize image URLs
     normalizeUser(user) {
       return {
         ...user,
         profile_image: user.profile_image
           ? user.profile_image.startsWith('http')
             ? user.profile_image
-            : `${apiBase}/uploads/users/${user.profile_image}`
+            : `${apiBase}/uploads/profile/${user.profile_image}`
           : null,
         barcode_image: user.barcode_image
           ? user.barcode_image.startsWith('http')
@@ -51,7 +49,6 @@ export const useUserStore = defineStore('users', {
       };
     },
 
-    // ✅ Fetch all users
     async fetchUsers() {
       this.loading = true;
       this.error = '';
@@ -62,7 +59,7 @@ export const useUserStore = defineStore('users', {
           : [];
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to fetch users';
         console.error('❌ fetchUsers error:', this.error);
         return { success: false, error: this.error };
       } finally {
@@ -70,8 +67,7 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Fetch roles
-     async fetchRoles() {
+    async fetchRoles() {
       this.loading = true;
       this.error = '';
       try {
@@ -79,7 +75,7 @@ export const useUserStore = defineStore('users', {
         this.roles = Array.isArray(res.data.roles) ? res.data.roles : [];
         return { success: true };
       } catch (err) {
-        this.error = err.response?.status === 403 ? 'Authentication failed: Please log in again' : err.message;
+        this.error = err.response?.status === 403 ? 'Authentication failed: Please log in again' : 'Failed to fetch roles';
         console.error('❌ fetchRoles error:', err.message);
         return { success: false, error: this.error };
       } finally {
@@ -87,7 +83,6 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ View user by ID
     async viewUser(id) {
       this.loading = true;
       this.error = '';
@@ -96,7 +91,7 @@ export const useUserStore = defineStore('users', {
         this.viewedUser = res.data.user ? this.normalizeUser(res.data.user) : null;
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to fetch user';
         console.error('❌ viewUser error:', this.error);
         return { success: false, error: this.error };
       } finally {
@@ -104,7 +99,6 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Fetch logged-in profile
     async fetchProfile() {
       this.loading = true;
       this.error = '';
@@ -113,7 +107,7 @@ export const useUserStore = defineStore('users', {
         this.userProfile = res.data.user ? this.normalizeUser(res.data.user) : null;
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to fetch profile';
         console.error('❌ fetchProfile error:', this.error);
         return { success: false, error: this.error };
       } finally {
@@ -121,7 +115,6 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Fetch barcode image as blob
     async fetchUserBarcodeImage(id) {
       this.loading = true;
       this.error = '';
@@ -131,7 +124,7 @@ export const useUserStore = defineStore('users', {
         this.userBarcodeImageUrl = URL.createObjectURL(res.data);
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to fetch barcode image';
         console.error('❌ fetchUserBarcodeImage error:', this.error);
         this.userBarcodeImageUrl = null;
         return { success: false, error: this.error };
@@ -140,26 +133,16 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Create user with FormData
-    async createUser(formDataObject) {
+    async createUser(formData) {
       this.loading = true;
       this.error = '';
       try {
-        const formData = new FormData();
-        for (const key in formDataObject) {
-          const value = formDataObject[key];
-          if (value instanceof File) {
-            formData.append(key, value);
-          } else if (value !== null && value !== undefined) {
-            formData.append(key, value);
-          }
-        }
         const res = await createUser(formData);
         const newUser = this.normalizeUser(res.data.user);
         this.users.push(newUser);
         return { success: true, data: newUser };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to create user';
         console.error('❌ createUser error:', this.error);
         return { success: false, error: this.error };
       } finally {
@@ -167,27 +150,17 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Update user
-    async updateUser(id, formDataObject) {
+    async updateUser(id, formData) {
       this.loading = true;
       this.error = '';
       try {
-        const formData = new FormData();
-        for (const key in formDataObject) {
-          const value = formDataObject[key];
-          if (value instanceof File) {
-            formData.append(key, value);
-          } else if (value !== null && value !== undefined) {
-            formData.append(key, value);
-          }
-        }
         const res = await updateUser(id, formData);
         const updatedUser = this.normalizeUser(res.data.user);
         const index = this.users.findIndex((u) => u.id === id);
         if (index !== -1) this.users[index] = updatedUser;
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to update user';
         console.error('❌ updateUser error:', this.error);
         return { success: false, error: this.error };
       } finally {
@@ -195,7 +168,6 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    // ✅ Delete user
     async deleteUser(id) {
       this.loading = true;
       this.error = '';
@@ -204,7 +176,7 @@ export const useUserStore = defineStore('users', {
         this.users = this.users.filter((u) => u.id !== id);
         return { success: true };
       } catch (err) {
-        this.error = err.response?.data?.message || err.message;
+        this.error = err.response?.data?.message || 'Failed to delete user';
         console.error('❌ deleteUser error:', this.error);
         return { success: false, error: this.error };
       } finally {

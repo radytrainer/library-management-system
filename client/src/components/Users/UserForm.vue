@@ -59,7 +59,7 @@ function onFileChange(e) {
   console.log('File selected:', file);
   if (file) {
     if (!file.type.startsWith('image/')) {
-      errorMessage.value = 'Please select a valid image file';
+      errorMessage.value = 'Please select a valid image file (JPG, PNG)';
       return;
     }
     
@@ -81,64 +81,54 @@ function triggerFileInput() {
   }
 }
 
-// FIXED: Prepare form data properly for server
 async function submitForm() {
   errorMessage.value = '';
   
-  // Create a clean data object for the server (excluding client-only fields)
-  const serverData = {
-    username: localForm.value.username,
-    email: localForm.value.email,
-    phone: localForm.value.phone,
-    roleId: localForm.value.roleId,
-    date_of_birth: localForm.value.date_of_birth,
-  };
-
-  // Only include password if it's provided
-  if (localForm.value.password) {
-    serverData.password = localForm.value.password;
+  // Validate required fields for create operation
+  if (!props.isEditing) {
+    if (!localForm.value.username || !localForm.value.email || !localForm.value.password) {
+      errorMessage.value = 'Please provide a username, email, and password';
+      return;
+    }
   }
 
-  // Handle file upload differently based on your server setup
-  let result;
-  
+  // Create FormData for all submissions
+  const formData = new FormData();
+  formData.append('username', localForm.value.username);
+  formData.append('email', localForm.value.email);
+  if (localForm.value.password) {
+    formData.append('password', localForm.value.password);
+  }
+  if (localForm.value.phone) {
+    formData.append('phone', localForm.value.phone);
+  }
+  if (localForm.value.roleId) {
+    formData.append('roleId', localForm.value.roleId);
+  }
+  if (localForm.value.date_of_birth) {
+    formData.append('date_of_birth', localForm.value.date_of_birth);
+  }
   if (localForm.value.profile_image_file) {
-    // Option 1: If your server expects FormData with file
-    const formData = new FormData();
-    
-    // Add all text fields to FormData
-    Object.keys(serverData).forEach(key => {
-      if (serverData[key] !== null && serverData[key] !== undefined && serverData[key] !== '') {
-        formData.append(key, serverData[key]);
-      }
-    });
-    
-    // Add the file
     formData.append('profile_image', localForm.value.profile_image_file);
-    
-    console.log('Sending FormData with file:', formData);
-    
-    if (props.isEditing) {
-      result = await userStore.updateUserWithFile(props.userId, formData);
-    } else {
-      result = await userStore.createUser(formData);
-    }
+  }
+
+  console.log('Sending FormData:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}: ${value instanceof File ? value.name : value}`);
+  }
+
+  let result;
+  if (props.isEditing) {
+    result = await userStore.updateUser(props.userId, formData);
   } else {
-    // No file upload, send regular JSON data
-    console.log('Sending JSON data:', serverData);
-    
-    if (props.isEditing) {
-      result = await userStore.updateUser(props.userId, serverData);
-    } else {
-      result = await userStore.createUser(serverData);
-    }
+    result = await userStore.createUser(formData);
   }
 
   if (result.success) {
     emits('submit-success', localForm.value);
     closeModal();
   } else {
-    errorMessage.value = result.error;
+    errorMessage.value = result.error || 'Failed to save user. Please try again.';
     console.error('Server error:', result.error);
   }
 }
@@ -169,9 +159,7 @@ function closeModal() {
     class="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-6 animate-in fade-in duration-300"
     @click.self="closeModal"
   >
-    <!-- Large Modal Container - No Scrolling -->
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col transform transition-all duration-300 scale-100 animate-in slide-in-from-bottom-4">
-      <!-- Header - Fixed -->
       <div class="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-8 py-6 rounded-t-2xl">
         <div class="flex items-center justify-between">
           <div>
@@ -193,9 +181,7 @@ function closeModal() {
         </div>
       </div>
 
-      <!-- Content Area - Flexible -->
       <div class="flex-1 p-8 bg-gradient-to-b from-gray-50/30 to-white overflow-hidden">
-        <!-- Error Message -->
         <div 
           v-if="errorMessage" 
           class="mb-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-400 rounded-r-lg text-red-800 text-sm flex items-start gap-3 shadow-sm"
@@ -212,9 +198,7 @@ function closeModal() {
         </div>
 
         <form @submit.prevent="submitForm" class="h-full flex flex-col">
-          <!-- Main Content Grid - No Scrolling -->
           <div class="flex-1 grid grid-cols-12 gap-8">
-            <!-- Left Column - Profile Image -->
             <div class="col-span-4 flex flex-col items-center justify-start">
               <div class="w-full max-w-xs">
                 <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Profile Photo</h3>
@@ -249,8 +233,6 @@ function closeModal() {
                   </button>
                 </div>
                 <p class="text-center text-sm text-gray-500">Max 5MB • JPG, PNG</p>
-                
-                <!-- Hidden file input -->
                 <input 
                   id="profile-image-input"
                   type="file" 
@@ -261,12 +243,9 @@ function closeModal() {
               </div>
             </div>
 
-            <!-- Right Column - Form Fields -->
             <div class="col-span-8">
               <div class="grid grid-cols-2 gap-6 h-full">
-                <!-- Left Form Column -->
                 <div class="space-y-5">
-                  <!-- Username -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">
                       Username <span class="text-red-500 ml-1">*</span>
@@ -286,7 +265,6 @@ function closeModal() {
                     </div>
                   </div>
 
-                  <!-- Email -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">
                       Email Address <span class="text-red-500 ml-1">*</span>
@@ -307,7 +285,6 @@ function closeModal() {
                     </div>
                   </div>
 
-                  <!-- Password -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">
                       {{ isEditing ? 'New Password' : 'Password' }}
@@ -330,9 +307,7 @@ function closeModal() {
                   </div>
                 </div>
 
-                <!-- Right Form Column -->
                 <div class="space-y-5">
-                  <!-- Phone -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">Phone Number</label>
                     <div class="relative">
@@ -349,7 +324,6 @@ function closeModal() {
                     </div>
                   </div>
 
-                  <!-- Role -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">
                       Role <span class="text-red-500 ml-1">*</span>
@@ -373,7 +347,6 @@ function closeModal() {
                     </div>
                   </div>
 
-                  <!-- Date of Birth -->
                   <div class="space-y-2">
                     <label class="block text-sm font-semibold text-gray-700">Date of Birth</label>
                     <div class="relative">
@@ -394,7 +367,6 @@ function closeModal() {
             </div>
           </div>
 
-          <!-- Footer Buttons - Fixed -->
           <div class="flex-shrink-0 flex justify-end gap-4 pt-6 border-t border-gray-200 mt-6">
             <button 
               type="button" 
@@ -406,7 +378,7 @@ function closeModal() {
             <button 
               type="submit" 
               class="px-10 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
-              :disabled="userStore.loading"
+              :disabled="userStore.loading || (!isEditing && (!localForm.username || !localForm.email || !localForm.password))"
             >
               <svg 
                 v-if="userStore.loading" 
