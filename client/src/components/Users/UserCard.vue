@@ -1,12 +1,12 @@
 <template>
   <div v-if="user" class="card" ref="cardElement">
     <div class="header">
-      <img :src="logoUrl" alt="Logo" class="logo" v-if="logoUrl">
+      <img :src="logoUrl" alt="Logo" class="logo  " v-if="logoUrl" >
       <h3 class="system-name">{{ systemName }}</h3>
     </div>
     <div class="content">
       <img :src="user.profile_image" alt="Profile" class="profile" v-if="user.profile_image">
-      <p class="username">Username: {{ user.username }}</p>
+      <p class="username">Name: {{ user.username }}</p>
       <img :src="user.barcode_image" alt="Barcode" class="barcode" v-if="user.barcode_image">
       <p class="user-id">User ID: {{ user.id }}</p>
     </div>
@@ -20,8 +20,9 @@ import html2pdf from 'html2pdf.js';
 const props = defineProps({
   user: Object,
   systemName: String,
-  logoUrl: String,
+
 });
+const logoUrl = ref("../../public/logo.png");
 
 const emit = defineEmits(['generated']);
 
@@ -144,6 +145,7 @@ defineExpose({
   max-width: 100px;
   height: auto;
   margin-bottom: 10px;
+  margin-left: 85px;
 }
 
 .system-name {
