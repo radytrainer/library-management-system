@@ -14,20 +14,21 @@
             and be part of a growing community of passionate learners and readers.
           </p>
         </div>
-  
+
         <!-- Right Slideshow -->
         <div class="relative flex justify-center items-center">
-          <div class="relative w-full max-w-[400px] h-[500px] rounded-lg overflow-hidden shadow-xl">
+          <div class="relative w-full max-w-[400px] h-[500px] rounded-lg overflow-hidden shadow-xl slideshow-container">
             <!-- Slideshow Images -->
-            <div v-for="(image, index) in slideshowImages" :key="index"
+            <div v-for="(cover_image_url, index) in slideshowImages" :key="index"
               class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
               :class="{ 'opacity-100': currentImageIndex === index, 'opacity-0': currentImageIndex !== index }">
-              <img :src="image" :alt="'Slide ' + (index + 1)" class="w-full h-full object-cover" />
+              <img :src="cover_image_url" :alt="'Slide ' + (index + 1)" class="w-full h-full object-cover" />
               <!-- Caption Overlay -->
               <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
                 <p class="text-sm font-medium">{{ slideCaptions[index] }}</p>
               </div>
             </div>
+
             <!-- Navigation Arrows -->
             <button @click="prevSlide"
               class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all duration-200"
@@ -43,98 +44,153 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <!-- Dots Navigation -->
-            <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-              <button v-for="(image, index) in slideshowImages" :key="index" @click="currentImageIndex = index"
-                class="w-3 h-3 rounded-full transition-all duration-200"
-                :class="currentImageIndex === index ? 'bg-white scale-125' : 'bg-gray-400 bg-opacity-50'"
-                :aria-label="'Go to slide ' + (index + 1)"></button>
-            </div>
           </div>
         </div>
+
       </div>
     </div>
-  
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Newest Books Just Added</h2>
+      <p class="text-gray-700 max-w-3xl">
+        Explore the latest arrivals in our collection. These newest books are carefully selected to keep you inspired,
+        entertained, and informed. Whether you love fiction, non-fiction, or educational reads, you’ll find fresh titles
+        to dive into every week. Start exploring and discover your next favorite book today!
+      </p>
+    </div>
+
     <!-- Book Cards Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="book-card" v-for="(book, index) in books" :key="index">
-          <img :src="book.image" :alt="book.title" class="book-cover" />
+        <div class="book-card" v-for="(book, index) in latestTenBooks" :key="book.id || index">
+          <img :src="book.cover_image_url || ''" :alt="book.title" class="book-cover" />
           <h3 class="book-title">{{ book.title }}</h3>
-          <p class="book-bio">{{ book.bio }}</p>
+          <p class="book-bio">{{ book.author?.name || 'Unknown Author' }}</p>
         </div>
       </div>
     </div>
+
+    <!-- Add more info for me that relate to library please -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white rounded-lg shadow-lg mt-12">
+      <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Why Choose Our Online Library?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+        <div class="space-y-4">
+          <div
+            class="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-purple-600 text-white text-2xl font-bold">
+            📚</div>
+          <h3 class="text-xl font-semibold text-gray-800">Massive Collection</h3>
+          <p class="text-gray-600 max-w-xs mx-auto">
+            Thousands of books in all genres and topics, updated regularly to keep your curiosity alive.
+          </p>
+        </div>
+        <div class="space-y-4">
+          <div
+            class="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-purple-600 text-white text-2xl font-bold">
+            🌐</div>
+          <h3 class="text-xl font-semibold text-gray-800">Access Anywhere</h3>
+          <p class="text-gray-600 max-w-xs mx-auto">
+            Read on your phone, tablet, or laptop anytime, even offline with our downloadable books.
+          </p>
+        </div>
+        <div class="space-y-4">
+          <div
+            class="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-purple-600 text-white text-2xl font-bold">
+            💡</div>
+          <h3 class="text-xl font-semibold text-gray-800">Learning Support</h3>
+          <p class="text-gray-600 max-w-xs mx-auto">
+            Curated recommendations, summaries, and community discussions to help you learn faster and deeper.
+          </p>
+        </div>
+      </div>
+    </section>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { getBooks, getCategories, getLanguages, getAuthors } from '@/services/Api/book'
+import Swal from 'sweetalert2'
 
-// Slideshow images and captions
-const slideshowImages = [
-  'https://m.media-amazon.com/images/I/81TaxLQto1L._UF1000,1000_QL80_.jpg',
-  'https://i.pinimg.com/1200x/23/a3/bf/23a3bf29b87be4ccd52d41b3f9508d01.jpg',
-  'https://i.pinimg.com/736x/3d/6e/68/3d6e68aeaada9cc92012b1559b3934a0.jpg',
-  'https://i.pinimg.com/1200x/9b/98/82/9b98821112bf6264094356f24d01048a.jpg',
-  'https://i.pinimg.com/1200x/d4/a0/c9/d4a0c977658a5bfd83d135407d23b503.jpg',
-]
-
-const slideCaptions = [
-  'Explore Our Latest Bestseller!',
-  'Journey Through Epic Tales',
-  'Discover Hidden Gems',
-  'Discover Our Featured Book!',
-  'Uncover a Timeless Classic',
-]
+const slideshowImages = ref([])
+const slideCaptions = ref([])
 
 const currentImageIndex = ref(0)
 let slideshowInterval = null
 
+const books = ref([])
+const authors = ref([])
+const categories = ref([])
+const languages = ref([])
+
 const nextSlide = () => {
-  currentImageIndex.value = (currentImageIndex.value + 1) % slideshowImages.length
+  currentImageIndex.value = (currentImageIndex.value + 1) % slideshowImages.value.length
 }
 
 const prevSlide = () => {
-  currentImageIndex.value = (currentImageIndex.value - 1 + slideshowImages.length) % slideshowImages.length
+  currentImageIndex.value = (currentImageIndex.value - 1 + slideshowImages.value.length) % slideshowImages.value.length
 }
 
+const fetchBooks = async () => {
+  try {
+    const [booksRes, authorsRes, categoriesRes, languagesRes] = await Promise.all([
+      getBooks(),
+      getAuthors(),
+      getCategories(),
+      getLanguages(),
+    ])
+
+    books.value = booksRes.data.books || []
+    authors.value = authorsRes.data || []
+    categories.value = categoriesRes.data || []
+    languages.value = languagesRes.data || []
+
+    // Cache authors and categories
+    localStorage.setItem('authors', JSON.stringify(authors.value))
+    localStorage.setItem('categories', JSON.stringify(categories.value))
+
+    // Use ALL books for slideshow
+    slideshowImages.value = books.value.map(book => book.cover_image_url || '')
+    slideCaptions.value = books.value.map(book => book.title || 'Featured Book')
+  } catch (err) {
+    console.error('Failed to fetch data:', err)
+
+    // fallback to cached data
+    const cachedAuthors = localStorage.getItem('authors')
+    const cachedCategories = localStorage.getItem('categories')
+    if (cachedAuthors) authors.value = JSON.parse(cachedAuthors)
+    if (cachedCategories) categories.value = JSON.parse(cachedCategories)
+
+    Swal.fire({
+      toast: true,
+      position: 'bottom-end',
+      icon: 'error',
+      title: 'Failed to fetch data',
+      text: 'Please try again later.',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    })
+  }
+}
+
+// Computed: latest 10 books by created date descending
+const latestTenBooks = computed(() => {
+  // Assuming book has a 'created_at' or 'createdAt' date property (ISO string)
+  return books.value
+    .slice() // clone
+    .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
+    .slice(0, 10)
+})
+
 onMounted(() => {
+  fetchBooks()
   slideshowInterval = setInterval(nextSlide, 3000)
 })
 
 onUnmounted(() => {
   if (slideshowInterval) clearInterval(slideshowInterval)
 })
-
-// Book list
-const books = [
-  {
-    image: 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=400&q=80',
-    title: 'Adventure Awaits',
-    bio: 'A thrilling tale of exploration in uncharted lands.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=400&q=80',
-    title: 'Mystic Realms',
-    bio: 'Dive into a world of magic and mystery.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1584473457403-ea0fcaa2f5b4?auto=format&fit=crop&w=400&q=80',
-    title: 'Ocean\'s Secrets',
-    bio: 'Uncover hidden truths beneath the waves.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1611486213043-68c64c0feaea?auto=format&fit=crop&w=400&q=80',
-    title: 'Desert Quest',
-    bio: 'A journey through sands to find ancient relics.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1563201515-8220f5b42a9e?auto=format&fit=crop&w=400&q=80',
-    title: 'Starlight Saga',
-    bio: 'An epic space odyssey across the galaxy.',
-  },
-]
 </script>
 
 <style scoped>
