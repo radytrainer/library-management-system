@@ -145,7 +145,7 @@ defineExpose({
   max-width: 100px;
   height: auto;
   margin-bottom: 10px;
-  margin-left: 85px;
+  margin-left: 80px;
 }
 
 .system-name {
