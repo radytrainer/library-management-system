@@ -59,12 +59,12 @@
     <div class="bg-sky-600 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/20">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <!-- Left -->
-        <div>
-          <h2 class="text-3xl font-bold text-white">Author Management</h2>
-          <p class="text-white/90 mt-1 max-w-2xl leading-relaxed">
-            Manage author profiles in a sleek, modern dashboard designed for efficiency and clarity.
-          </p>
-        </div>
+<div>
+  <h2 class="text-3xl font-bold text-white">Directory Author </h2>
+  <p class="text-white/90 mt-1 max-w-2xl leading-relaxed">
+    View and manage all authors associated with your library in one simple, streamlined interface.
+  </p>
+</div>
 
         <!-- Filters -->
         <div class="flex flex-wrap gap-3">

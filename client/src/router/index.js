@@ -22,6 +22,7 @@ import DonateView from '@/views/Donate/DonateView.vue'
 
 const routes = [
   // Public Auth Routes
+  { path: '/', redirect: '/login' },
   { path: '/login', name: 'login', component: Login, meta: { requiresAuth: false } },
   { path: '/register', name: 'register', component: Register, meta: { requiresAuth: false } },
 
@@ -37,16 +38,17 @@ const routes = [
   },
 
   // Role-based redirect
-  {
-    path: '/',
-    redirect: () => {
-      const authStore = useAuthStore()
-      const role = authStore.user?.role
-      if (role === 'admin') return '/dashboard'
-      if (role === 'librarian' || role === 'user') return '/books'
-      return '/login'
-    }
-  },
+{
+  path: '/',
+  redirect: () => {
+    const authStore = useAuthStore()
+    const role = authStore.user?.role
+    if (role === 'admin') return '/dashboard'
+    if (role === 'librarian' || role === 'user') return '/books'
+    return '/login'
+  }
+},
+
 
   // Protected Routes (AppLayout)
   {

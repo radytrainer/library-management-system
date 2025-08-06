@@ -263,13 +263,21 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { inject } from "vue";
+import { useAuthStore } from '@/stores/auth';
 
+const authStore = useAuthStore()
 const props = defineProps({
-  modelValue: Object,
-});
+  modelValue: {
+    type: Object,
+    default: () => ({}),
+  },
+})
 
 const emit = defineEmits(["update:modelValue", "submit", "close"]);
 const { getBook, getUser, showToast, fetchBooksData, fetchUsersData, booksData } = inject("borrowManagement");
+
+
+const today = new Date().toISOString().split('T')[0]
 
 const localForm = ref({
   borrowerType: props.modelValue.borrowerType || "new",
@@ -277,11 +285,11 @@ const localForm = ref({
   borrower_email: props.modelValue.borrower_email || "",
   user_barcode: props.modelValue.user_barcode || "",
   user_id: props.modelValue.user_id || "",
-  librarian_name: props.modelValue.librarian_name || "",
-  date_borrow: props.modelValue.date_borrow || "",
+  librarian_name: authStore.user?.name || "",
+  date_borrow: props.modelValue.date_borrow || today,
   books: props.modelValue.books || [{ isbn: "", book_name: "", return_date: "" }],
   status: props.modelValue.status || "borrowed",
-});
+})
 
 const errorMessage = ref("");
 const formError = ref("");
