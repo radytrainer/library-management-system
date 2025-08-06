@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'// ✅ import your Pinia store
+import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/userStore'
+
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -25,13 +28,10 @@ const navItems = [
   { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian', 'user'] }
 ]
 
-// ✅ Filter navigation by role
 const filteredNav = computed(() => {
   return navItems.filter(item => item.roles.includes(authStore.user?.role || ''))
 })
 
-
-// ✅ Language switch
 function selectLanguage(lang) {
   language.value = lang
   localStorage.setItem('language', language.value)
@@ -56,6 +56,7 @@ function toggleProfileDropdown() {
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value
 }
+
 const user = ref({
   name: '',
   email: '',
@@ -63,36 +64,45 @@ const user = ref({
   profile_image: ''
 })
 
+async function fetchUserProfile() {
+  try {
+    await authStore.fetchUser()
+    if (authStore.user) {
+      user.value = { ...authStore.user }
+      localStorage.setItem('user', JSON.stringify(user.value))
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error)
+    router.push('/login')
+  }
+}
+
 function logout() {
   authStore.reset()
   user.value = { name: '', email: '', role: '', profile_image: '' }
+  localStorage.removeItem('user')
   router.push('/login')
 }
 
-
-
-
-const profileInitial = computed(() => {
-  if (user.value.email) {
-    return user.value.email.charAt(0).toUpperCase()
-  }
-  return '?'
+const props = defineProps({
+  users: Array
 })
 
+const profileInitial = computed(() => {
+  return user.value.email ? user.value.email.charAt(0).toUpperCase() : '?'
+})
 
-onMounted(() => {
+onMounted(async () => {
   language.value = localStorage.getItem('language') || 'en'
   const savedUser = localStorage.getItem('user')
   if (savedUser) {
     const parsedUser = JSON.parse(savedUser)
     user.value = parsedUser
-    authStore.user = parsedUser // ✅ Sync Pinia store
+    authStore.user = parsedUser
   }
+  await fetchUserProfile()
 })
 
-
-
-// ✅ Dynamic Page Title
 const pageTitle = computed(() => {
   const map = {
     dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
