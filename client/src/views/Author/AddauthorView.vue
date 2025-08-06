@@ -98,7 +98,7 @@
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-2xl overflow-hidden">
+    <div class="bg-white shadow rounded-2xl">
       <table class="min-w-full text-sm">
         <thead class="bg-sky-50 text-sky-700">
           <tr>
