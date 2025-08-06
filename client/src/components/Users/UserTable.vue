@@ -6,7 +6,7 @@ const props = defineProps({
   roles: Array
 })
 
-const emits = defineEmits(['edit-user', 'delete-user', 'view-user'])
+const emits = defineEmits(['edit-user', 'delete-user', 'view-user','print-user'])
 
 const openMenuId = ref(null)
 
@@ -60,6 +60,7 @@ const toggleMenu = (id) => {
               <button @click="$emit('view-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-500">View</button>
               <button @click="$emit('edit-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-green-500">Edit</button>
               <button @click="$emit('delete-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">Delete</button>
+              <button @click="$emit('print-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">Print</button>
             </div>
           </td>
         </tr>

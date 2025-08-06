@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import UserTable from '@/components/Users/UserTable.vue';
 import UserForm from '@/components/Users/UserForm.vue';
 import UserViewModal from '@/components/Users/UserViewModal.vue';
+import UserCard from '@/components/Users/UserCard.vue';
 
 const userStore = useUserStore();
 
@@ -13,8 +14,9 @@ const isEditing = ref(false);
 const selectedUser = ref(null);
 const formUserData = ref({});
 const selectedUserId = ref(null);
+const selectedUserForPrint = ref(null);
+const printCardRef = ref(null);
 
-// Fetch users and roles on mount
 onMounted(() => {
   userStore.fetchUsers();
   userStore.fetchRoles();
@@ -41,19 +43,46 @@ function openViewUser(user) {
 
 function handleFormSubmitSuccess() {
   showFormModal.value = false;
-  userStore.fetchUsers(); // Refresh user list
+  userStore.fetchUsers();
 }
 
 async function confirmDeleteUser(id) {
   if (!confirm('Are you sure you want to delete this user?')) return;
   const res = await userStore.deleteUser(id);
   if (res.success) {
-    // Consider using a toast notification library like vue-toastification
     console.log('User deleted!');
   } else {
     console.error('Error:', res.error);
   }
 }
+
+const handlePrintUser = async (userId) => {
+  console.log('Print user:', userId);
+  const user = userStore.users.find(u => u.id === userId);
+  if (user) {
+    selectedUserForPrint.value = user;
+    await nextTick();
+    if (printCardRef.value) {
+      console.log('Generating card for PDF');
+      printCardRef.value.generateCard();
+      // Trigger PDF generation after card is ready
+      setTimeout(() => {
+        if (printCardRef.value && printCardRef.value.generatePDF) {
+          console.log('Attempting to generate PDF');
+          printCardRef.value.generatePDF();
+          // Hide the card after PDF is generated
+          setTimeout(() => {
+            selectedUserForPrint.value = null;
+          }, 500);
+        } else {
+          console.error('printCardRef not ready for PDF');
+        }
+      }, 2000); // Increased delay to 2 seconds for image loading
+    } else {
+      console.error('printCardRef is not initialized');
+    }
+  }
+};
 </script>
 
 <template>
@@ -62,7 +91,6 @@ async function confirmDeleteUser(id) {
       <h2 class="text-xl font-bold">User Management</h2>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div class="flex items-center">
@@ -104,16 +132,17 @@ async function confirmDeleteUser(id) {
           </div>
         </div>
       </div>
-    
-    </div>  <div class="flex justify-end mb-4">
+    </div>
+    <div class="flex justify-end mb-4">
       <button @click="openAddUser" class="px-4 py-2 bg-blue-600 text-white rounded-lg">+ Add User</button>
-      </div>
+    </div>
     <UserTable
       :users="userStore.users"
       :roles="userStore.roles"
       @edit-user="openEditUser"
       @view-user="openViewUser"
       @delete-user="confirmDeleteUser"
+      @print-user="handlePrintUser"
     />
     <UserForm
       :show="showFormModal"
@@ -127,6 +156,13 @@ async function confirmDeleteUser(id) {
       :show="showViewModal"
       :user="selectedUser"
       @close="showViewModal = false"
+    />
+    <UserCard
+      v-if="selectedUserForPrint"
+      ref="printCardRef"
+      :user="selectedUserForPrint"
+      systemName="Library Digital"
+      logoUrl="/path/to/your/logo.png"
     />
   </div>
 </template>

@@ -1,6 +1,62 @@
 <template>
   <div class="space-y-6 p-8">
-    <div class="bg-sky-600/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/20">
+    <!-- Notification Area -->
+    <transition
+      enter-active-class="transition ease-out duration-300"
+      enter-from-class="opacity-0 transform translate-y-2"
+      enter-to-class="opacity-100 transform translate-y-0"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100 transform translate-y-0"
+      leave-to-class="opacity-0 transform translate-y-2"
+    >
+      <div
+        v-if="notification.visible"
+        :class="[
+          'fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-xl shadow-2xl border-l-4 p-6',
+          notification.type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800',
+        ]"
+      >
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0">
+            <svg v-if="notification.type === 'success'" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <svg v-else class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold">{{ notification.type === "success" ? "Success" : "Error" }}</p>
+            <p class="text-sm mt-1">{{ notification.message }}</p>
+          </div>
+          <button @click="notification.visible = false" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg w-full max-w-md text-center">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to delete this author?</p>
+        <div class="flex justify-center gap-4">
+          <button @click="confirmDelete" 
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            Yes, Delete
+          </button>
+          <button @click="cancelDelete" 
+                  class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-sky-600 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/20">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <!-- Left -->
         <div>
@@ -13,35 +69,36 @@
         <!-- Filters -->
         <div class="flex flex-wrap gap-3">
           <select v-model="selectedNationality"
-            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50">
-            <option value="" class="bg-black text-white">Nationality</option>
+            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50 transition-colors">
+            <option value="" class="bg-black text-white">All Nationalities</option>
             <option v-for="nation in nationalities" :key="nation" :value="nation" class="bg-black text-white">
               {{ nation }}
             </option>
           </select>
 
           <select v-model="limit"
-            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50">
-            <option value="" class="bg-black text-white">Authors</option>
+            class="border border-white/40 bg-white/30 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-white/50 transition-colors">
+            <option value="" class="bg-black text-white">All Authors</option>
             <option v-for="n in [10, 20, 50]" :key="n" :value="n" class="bg-black text-white">
               Show {{ n }}
             </option>
           </select>
-
         </div>
       </div>
 
       <!-- Search and Add -->
       <div class="mt-6 flex flex-col md:flex-row justify-between gap-4">
-        <input v-model="search" type="text" placeholder=" Search Author Name..."
-          class="border border-white/40 bg-white/30 text-white placeholder-white/70 rounded-lg px-4 py-2 w-full md:w-1/3 focus:ring-2 focus:ring-white/50">
-        <button @click="openAddDialog" class="bg-white text-sky-700 px-4 py-2 rounded-lg hover:bg-sky-100 transition">
-          + Add Author
+        <input v-model="search" type="text" placeholder="Search Author Name..."
+          class="border border-white/40 bg-white/30 text-white placeholder-white/70 rounded-lg px-4 py-2 w-full md:w-1/3 focus:ring-2 focus:ring-white/50 transition-colors">
+        <button @click="openAddDialog" 
+                class="bg-white text-sky-700 px-4 py-2 rounded-lg hover:bg-sky-100 transition flex items-center gap-2"
+                :disabled="isLoading">
+          <span class="material-icons">add</span> Add Author
         </button>
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-2xl">
+    <div class="bg-white shadow rounded-2xl overflow-hidden">
       <table class="min-w-full text-sm">
         <thead class="bg-sky-50 text-sky-700">
           <tr>
@@ -61,7 +118,7 @@
               <div class="flex items-center gap-3">
                 <img
                   :src="author.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=random`"
-                  class="w-10 h-10 rounded-full object-cover border border-sky-200" alt="Author" />
+                  class="w-10 h-10 rounded-full object-cover border border-sky-200 transition-transform hover:scale-105" alt="Author" />
                 <span class="font-semibold text-gray-900">{{ author.name }}</span>
               </div>
             </td>
@@ -75,7 +132,9 @@
             </td>
             <td class="px-4 py-3 text-right">
               <div class="relative">
-                <button @click="toggleActionMenu(author.id)" class="text-2xl hover:text-sky-600 transition p-2">
+                <button @click="toggleActionMenu(author.id)" 
+                        class="text-2xl hover:text-sky-600 transition p-2"
+                        :disabled="isLoading">
                   ⋮
                 </button>
 
@@ -85,7 +144,7 @@
                     class="block w-full text-left px-4 py-2 hover:bg-sky-50">View</button>
                   <button @click="editAuthor(author)"
                     class="block w-full text-left px-4 py-2 hover:bg-sky-50">Edit</button>
-                  <button @click="handleDeleteAuthor(author.id)"
+                  <button @click="openDeleteConfirm(author.id)"
                     class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">Delete</button>
                 </div>
               </div>
@@ -95,37 +154,40 @@
       </table>
     </div>
 
-
     <!-- Add/Edit Author Modal -->
     <div v-if="showAddEditModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-lg w-full max-w-md space-y-4 max-h-[90vh]">
+      <div class="bg-white p-6 rounded-lg w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-semibold">{{ isEditing ? 'Edit Author' : 'Add Author' }}</h3>
         <form @submit.prevent="submitAuthor" class="space-y-3">
-          <input v-model="currentAuthor.name" type="text" placeholder="Name" class="w-full p-2 border rounded"
-            required />
-          <input v-model="currentAuthor.birth_date" type="date" class="w-full p-2 border rounded" required />
+          <input v-model="currentAuthor.name" type="text" placeholder="Name" 
+                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
+                 required :disabled="isLoading" />
+          <input v-model="currentAuthor.birth_date" type="date" 
+                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
+                 required :disabled="isLoading" />
           <input v-model="currentAuthor.nationality" type="text" placeholder="Nationality"
-            class="w-full p-2 border rounded" />
+                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
+                 :disabled="isLoading" />
           <label class="flex items-center space-x-2">
-            <input v-model="currentAuthor.isLiving" type="checkbox" class="w-4 h-4" />
+            <input v-model="currentAuthor.isLiving" type="checkbox" 
+                   class="w-4 h-4 accent-blue-600" :disabled="isLoading" />
             <span>Is Living?</span>
           </label>
           <textarea v-model="currentAuthor.biography" placeholder="Biography"
-            class="w-full p-2 border rounded resize-none" rows="2"></textarea>
+                    class="w-full p-2 border rounded resize-none focus:ring-2 focus:ring-blue-400 transition" 
+                    rows="2" :disabled="isLoading"></textarea>
           <div
             class="flex flex-col items-center border-2 border-dashed border-sky-300 rounded-xl p-1 cursor-pointer hover:bg-sky-50 transition">
             <label class="flex flex-col items-center cursor-pointer">
-              <!-- Upload Icon -->
               <svg class="w-10 h-10 text-sky-500 mb-2" fill="none" stroke="currentColor" stroke-width="2"
                 viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4-4m0 0l-4 4m4-4v12"></path>
               </svg>
               <span class="text-sky-600 font-medium">Click to upload</span>
-              <input type="file" accept="image/*" @change="handleProfileImage" class="hidden" />
+              <input type="file" accept="image/*" @change="handleProfileImage" class="hidden" :disabled="isLoading" />
             </label>
 
-            <!-- Square Preview -->
             <div v-if="currentAuthor.profile_preview" class="flex justify-center mt-4">
               <img :src="currentAuthor.profile_preview" alt="Preview"
                 class="w-24 h-24 object-cover border-2 border-sky-300 shadow rounded-lg" />
@@ -133,8 +195,15 @@
           </div>
 
           <div class="flex justify-end gap-2 mt-4">
-            <button type="button" @click="closeAddEditDialog" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <button type="button" @click="closeAddEditDialog" 
+                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition" 
+                    :disabled="isLoading">
+              Cancel
+            </button>
+            <button type="submit" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                    :disabled="isLoading">
+              <span v-if="isLoading" class="animate-spin">⟳</span>
               {{ isEditing ? 'Update' : 'Add' }}
             </button>
           </div>
@@ -145,21 +214,18 @@
     <!-- View Author Modal -->
     <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <!-- Header -->
         <div class="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-5 border-b border-gray-100">
           <h3 class="text-2xl font-semibold text-gray-800">Author Profile</h3>
         </div>
 
-        <!-- Content -->
         <div class="p-6 max-h-[calc(90vh-140px)]">
-          <!-- Author Profile Section -->
           <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-6 sm:space-y-0 sm:space-x-8 mb-8">
             <div class="flex-shrink-0">
               <div class="relative">
                 <img :src="selectedAuthorDetails.profile_image_url ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAuthorDetails.name)}&background=random`
                   " alt="Author Portrait"
-                  class="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-lg ring-1 ring-gray-200" />
+                  class="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-lg ring-1 ring-gray-200 transition-transform hover:scale-105" />
                 <div
                   class="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center">
                   <div :class="selectedAuthorDetails.isLiving ? 'bg-emerald-400' : 'bg-slate-400'"
@@ -199,7 +265,6 @@
             </div>
           </div>
 
-          <!-- Biography Section -->
           <div class="border-t border-gray-100 pt-6">
             <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Biography</label>
             <div
@@ -211,7 +276,6 @@
           </div>
         </div>
 
-        <!-- Footer -->
         <div class="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end">
           <button @click="closeViewDialog"
             class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm">
@@ -226,8 +290,8 @@
       <div>Page {{ currentPage }} of {{ totalPages }}</div>
 
       <div class="flex items-center gap-4">
-        <button :disabled="currentPage === 1" @click="currentPage--"
-          class="px-3 py-1 border rounded disabled:opacity-50">
+        <button :disabled="currentPage === 1 || isLoading" @click="prevPage"
+          class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-sky-50 transition">
           ‹
         </button>
 
@@ -235,13 +299,12 @@
           {{ currentPage }}
         </div>
 
-        <button :disabled="currentPage === totalPages" @click="currentPage++"
-          class="px-3 py-1 border rounded disabled:opacity-50">
+        <button :disabled="currentPage === totalPages || isLoading" @click="nextPage"
+          class="px-3 py-1 border rounded disabled:opacity-50 hover:bg-sky-50 transition">
           ›
         </button>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -252,6 +315,14 @@ import { getAuthors, createAuthor, updateAuthor, deleteAuthor } from '@/services
 const authors = ref([])
 const activeActionMenu = ref(null)
 const closeMenuTimeout = ref(null)
+const isLoading = ref(false)
+const notification = ref({
+  visible: false,
+  message: '',
+  type: ''
+})
+const showDeleteConfirm = ref(false)
+const authorToDelete = ref(null)
 
 const selectedNationality = ref('')
 const limit = ref('')
@@ -318,30 +389,23 @@ const totalPages = computed(() => {
   return Math.ceil(result.length / rowsPerPage)
 })
 
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
+const showNotification = (message, type) => {
+  notification.value = { visible: true, message, type }
+  setTimeout(() => {
+    notification.value.visible = false
+  }, 3000)
 }
 
 const fetchAuthors = async () => {
   try {
+    isLoading.value = true
     const res = await getAuthors()
     authors.value = res.data
   } catch (err) {
+    showNotification('Failed to fetch authors', 'error')
     console.error('Error fetching authors:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -395,6 +459,7 @@ const handleProfileImage = (e) => {
 
 const submitAuthor = async () => {
   try {
+    isLoading.value = true
     const formData = new FormData()
     formData.append('name', currentAuthor.value.name)
     formData.append('birth_date', currentAuthor.value.birth_date)
@@ -407,14 +472,19 @@ const submitAuthor = async () => {
 
     if (isEditing.value) {
       await updateAuthor(currentAuthor.value.id, formData)
+      showNotification('Author updated successfully', 'success')
     } else {
       await createAuthor(formData)
+      showNotification('Author added successfully', 'success')
     }
 
     await fetchAuthors()
     closeAddEditDialog()
   } catch (error) {
+    showNotification(`Failed to ${isEditing.value ? 'update' : 'add'} author`, 'error')
     console.error('Failed to submit author:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -446,16 +516,30 @@ const editAuthor = (author) => {
   activeActionMenu.value = null
 }
 
-const handleDeleteAuthor = async (id) => {
+const openDeleteConfirm = (id) => {
+  authorToDelete.value = id
+  showDeleteConfirm.value = true
   activeActionMenu.value = null
-  const confirmed = window.confirm('Are you sure you want to delete this author?')
-  if (!confirmed) return
+}
 
+const cancelDelete = () => {
+  showDeleteConfirm.value = false
+  authorToDelete.value = null
+}
+
+const confirmDelete = async () => {
   try {
-    await deleteAuthor(id)
+    isLoading.value = true
+    await deleteAuthor(authorToDelete.value)
+    showNotification('Author deleted successfully', 'success')
     await fetchAuthors()
   } catch (error) {
+    showNotification('Failed to delete author', 'error')
     console.error('Failed to delete author:', error)
+  } finally {
+    isLoading.value = false
+    showDeleteConfirm.value = false
+    authorToDelete.value = null
   }
 }
 
@@ -468,7 +552,35 @@ const formatDate = (date) => {
   })
 }
 
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
 onMounted(() => {
   fetchAuthors()
 })
 </script>
+
+<style>
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+}
+</style>

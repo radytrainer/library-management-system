@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, nextTick } from 'vue';
 import { useUserStore } from '@/stores/userStore';
+import UserCard from './UserCard.vue';
 
 const userStore = useUserStore();
 
@@ -26,6 +27,8 @@ const localForm = ref({
 });
 
 const errorMessage = ref('');
+const idCardRef = ref(null);
+const newUser = ref(null);
 
 onMounted(async () => {
   const result = await userStore.fetchRoles();
@@ -56,21 +59,17 @@ watch(
 
 function onFileChange(e) {
   const file = e.target.files[0];
-  console.log('File selected:', file);
   if (file) {
     if (!file.type.startsWith('image/')) {
       errorMessage.value = 'Please select a valid image file (JPG, PNG)';
       return;
     }
-    
     if (file.size > 5 * 1024 * 1024) {
       errorMessage.value = 'Image size should be less than 5MB';
       return;
     }
-    
     localForm.value.profile_image_file = file;
     localForm.value.profile_image_preview = URL.createObjectURL(file);
-    console.log('Preview URL created:', localForm.value.profile_image_preview);
   }
 }
 
@@ -84,7 +83,6 @@ function triggerFileInput() {
 async function submitForm() {
   errorMessage.value = '';
   
-  // Validate required fields for create operation
   if (!props.isEditing) {
     if (!localForm.value.username || !localForm.value.email || !localForm.value.password) {
       errorMessage.value = 'Please provide a username, email, and password';
@@ -92,7 +90,6 @@ async function submitForm() {
     }
   }
 
-  // Create FormData for all submissions
   const formData = new FormData();
   formData.append('username', localForm.value.username);
   formData.append('email', localForm.value.email);
@@ -112,16 +109,24 @@ async function submitForm() {
     formData.append('profile_image', localForm.value.profile_image_file);
   }
 
-  console.log('Sending FormData:');
-  for (let [key, value] of formData.entries()) {
-    console.log(`${key}: ${value instanceof File ? value.name : value}`);
-  }
-
   let result;
   if (props.isEditing) {
     result = await userStore.updateUser(props.userId, formData);
   } else {
     result = await userStore.createUser(formData);
+    if (result.success) {
+      newUser.value = result.data;
+      console.log('New user created:', newUser.value);
+      if (idCardRef.value) {
+        await nextTick(); // Wait for DOM update
+        console.log('Generating card for user:', newUser.value.id);
+        idCardRef.value.generateCard(); // Trigger card generation and auto-print
+      } else {
+        console.error('idCardRef is not initialized');
+      }
+    } else {
+      console.error('User creation failed:', result.error);
+    }
   }
 
   if (result.success) {
@@ -129,7 +134,6 @@ async function submitForm() {
     closeModal();
   } else {
     errorMessage.value = result.error || 'Failed to save user. Please try again.';
-    console.error('Server error:', result.error);
   }
 }
 
@@ -150,6 +154,7 @@ function closeModal() {
     profile_image_preview: null,
   };
   errorMessage.value = '';
+  newUser.value = null;
 }
 </script>
 
@@ -399,4 +404,10 @@ function closeModal() {
       </div>
     </div>
   </div>
+  <UserCard
+    ref="idCardRef"
+    :user="newUser"
+    systemName="Library Digital"
+    logoUrl="/path/to/your/logo.png"
+  />
 </template>

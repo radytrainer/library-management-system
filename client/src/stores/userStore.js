@@ -20,7 +20,7 @@ export const useUserStore = defineStore('users', {
     userProfile: null,
     userBarcodeImageUrl: null,
     error: '',
-    loading: false,
+    loading: false, 
   }),
 
   getters: {
