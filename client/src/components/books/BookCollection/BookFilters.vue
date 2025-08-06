@@ -31,7 +31,7 @@
         <option value="new">New Books</option>
         <option value="available">Available</option>
         <option value="limited">Limited</option>
-        <option value="unavailable">Unavailable</option>
+        
       </select> 
       <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

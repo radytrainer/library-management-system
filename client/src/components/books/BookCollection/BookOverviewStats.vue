@@ -49,12 +49,12 @@
         </div>
       </div>
 
-      <!-- Languages -->
+      <!-- unavailableBooks-->
       <div class="bg-indigo-50 shadow hover:shadow-lg transition-all duration-300 rounded-2xl p-6 text-indigo-800 border border-indigo-100">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-2xl font-bold">{{ languages.length }}</div>
-            <div class="text-sm text-gray-500">Languages</div>
+            <div class="text-2xl font-bold">{{ unavailableBooks}}</div>
+            <div class="text-sm text-gray-500">Unavailable</div>
           </div>
           <div class="text-indigo-500">
             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
@@ -73,6 +73,6 @@ defineProps({
   totalBooks: Number,
   availableBooks: Number,
   categories: Array,
-  languages: Array
+  unavailableBooks: Number,
 })
 </script>

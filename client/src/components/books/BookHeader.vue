@@ -1,7 +1,7 @@
 <template>
   <!-- Header Section -->
   <div
-    class="bg-gradient-to-r from-blue-600 via-blue-800 to-blue-900 rounded-2xl mx-6 overflow-hidden relative shadow-lg">
+    class="bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-2xl mx-6 overflow-hidden relative shadow-lg">
 
     <div class="flex justify-between items-center p-8">
       <div class="text-white">

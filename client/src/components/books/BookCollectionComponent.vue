@@ -4,7 +4,7 @@
       :totalBooks="totalBooks"
       :availableBooks="availableBooks"
       :categories="categories"
-      :languages="languages"
+      :unavailableBooks="unavailableBooks"
     />
 
     <div class="px-6 mb-6">
@@ -237,6 +237,13 @@ const totalBooks = computed(() => props.books.length);
 const availableBooks = computed(() =>
   props.books.filter((book) => getBookStatus(book.quantity) === "available").length
 );
+const unavailableBooks = computed(() =>
+  props.books.filter((book) => {
+    const status = getBookStatus(book.quantity)
+    return status === 'limited' || status === 'Unavailable'
+  }).length
+);
+
 
 // **New: Update book in props.books reactively**
 function updateBook(updatedBook) {

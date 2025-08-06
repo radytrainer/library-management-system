@@ -86,83 +86,79 @@ const handlePrintUser = async (userId) => {
 </script>
 
 <template>
-  <div class="p-6 bg-white rounded-lg shadow">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold">User Management</h2>
-    </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div class="flex items-center">
-            <div class="p-3 bg-blue-100 rounded-lg">
-              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+  <div class=" p-8">
+    <div class="flex justify-between items-center mb-2">
+  <div>
+    <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>
+    <p class="text-gray-600 mt-1 max-w-md leading-relaxed">
+      Overview of all users including total count, active users, and new users added this month.
+    </p>
+  </div>
+  <div>
+    <button @click="openAddUser" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg shadow-sm">
+      + Add User
+    </button>
+  </div>
+</div>
+
+    <div class="max-w-7xl mx-auto  py-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Total Users -->
+        <div
+          class="bg-blue-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-blue-100 cursor-pointer">
+          <div class="flex items-center space-x-5">
+            <div class="p-4 bg-blue-200 rounded-full text-blue-700 flex items-center justify-center"
+              style="width: 56px; height: 56px;">
+              <span class="material-icons text-3xl">group</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Users</p>
-              <p class="text-2xl font-bold text-gray-900">{{ userStore.users.length }}</p>
+            <div>
+              <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">Total Users</p>
+              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.users.length }}</p>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div class="flex items-center">
-            <div class="p-3 bg-green-100 rounded-lg">
-              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+
+        <!-- Active Users -->
+        <div
+          class="bg-green-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-green-100 cursor-pointer">
+          <div class="flex items-center space-x-5">
+            <div class="p-4 bg-green-200 rounded-full text-green-700 flex items-center justify-center"
+              style="width: 56px; height: 56px;">
+              <span class="material-icons text-3xl">verified_user</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Active Users</p>
-              <p class="text-2xl font-bold text-gray-900">{{ userStore.activeUsersCount }}</p>
+            <div>
+              <p class="text-sm font-semibold text-green-700 uppercase tracking-wide">Active Users</p>
+              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.activeUsersCount }}</p>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div class="flex items-center">
-            <div class="p-3 bg-purple-100 rounded-lg">
-              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+
+        <!-- New This Month -->
+        <div
+          class="bg-purple-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-purple-100 cursor-pointer">
+          <div class="flex items-center space-x-5">
+            <div class="p-4 bg-purple-200 rounded-full text-purple-700 flex items-center justify-center"
+              style="width: 56px; height: 56px;">
+              <span class="material-icons text-3xl">person_add</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">New This Month</p>
-              <p class="text-2xl font-bold text-gray-900">{{ userStore.newUsersCount }}</p>
+            <div>
+              <p class="text-sm font-semibold text-purple-700 uppercase tracking-wide">New This Month</p>
+              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.newUsersCount }}</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="flex justify-end mb-4">
-      <button @click="openAddUser" class="px-4 py-2 bg-blue-600 text-white rounded-lg">+ Add User</button>
-    </div>
-    <UserTable
-      :users="userStore.users"
-      :roles="userStore.roles"
-      @edit-user="openEditUser"
-      @view-user="openViewUser"
-      @delete-user="confirmDeleteUser"
-      @print-user="handlePrintUser"
-    />
-    <UserForm
-      :show="showFormModal"
-      :isEditing="isEditing"
-      :formData="formUserData"
-      :userId="selectedUserId"
-      @close="showFormModal = false"
-      @submit-success="handleFormSubmitSuccess"
-    />
-    <UserViewModal
-      :show="showViewModal"
-      :user="selectedUser"
-      @close="showViewModal = false"
-    />
-    <UserCard
-      v-if="selectedUserForPrint"
-      ref="printCardRef"
-      :user="selectedUserForPrint"
-      systemName="Library Digital"
-      logoUrl="/path/to/your/logo.png"
-    />
+    <UserTable :users="userStore.users" :roles="userStore.roles" @edit-user="openEditUser" @view-user="openViewUser"
+      @delete-user="confirmDeleteUser" @print-user="handlePrintUser" />
+    <UserForm :show="showFormModal" :isEditing="isEditing" :formData="formUserData" :userId="selectedUserId"
+      @close="showFormModal = false" @submit-success="handleFormSubmitSuccess" />
+    <UserViewModal :show="showViewModal" :user="selectedUser" @close="showViewModal = false" />
+    <UserCard v-if="selectedUserForPrint" ref="printCardRef" :user="selectedUserForPrint" systemName="Library Digital"
+      logoUrl="/path/to/your/logo.png" />
   </div>
 </template>
+<style>
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+</style>
