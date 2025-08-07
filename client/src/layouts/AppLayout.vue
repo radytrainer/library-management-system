@@ -299,8 +299,10 @@ const pageTitle = computed(() => {
 
             <div v-if="showProfileDropdown"
               class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-10 border border-gray-100">
-              <p class="text-sm font-semibold">{{ user.username }}</p>
-              <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
+              <div class="flex flex-row hover:bg-blue-200  p-1 rounded">
+              <span class="material-symbols-outlined text-blue-600">person</span>
+              <p class="text-sm  truncate text-blue-500 ">ViewProfile</p>
+               </div>
               <button
                 class="mt-3 w-full text-left text-sm text-red-600 hover:bg-red-50 rounded px-2 py-1"
                 @click="logout"
@@ -308,7 +310,7 @@ const pageTitle = computed(() => {
               >
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
-
+           
 
             </div>
           </div>
