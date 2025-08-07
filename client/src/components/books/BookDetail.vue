@@ -33,7 +33,7 @@
           <div class="flex-shrink-0">
             <div class="relative group cursor-pointer" @click="$emit('openFullImage')" title="Click to view full image">
               <img :src="bookCover" :alt="`${bookTitle} cover`"
-                class="w-80 h-80 rounded-xl object-cover shadow-lg border border-gray-200 transition-transform duration-300 group-hover:scale-105" />
+                class="w-80 h-auto rounded-xl object-cover shadow-lg border border-gray-200 transition-transform duration-300 group-hover:scale-105" />
               <div
                 class="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-xl transition-all duration-300 flex items-center justify-center">
                 <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -46,11 +46,11 @@
           </div>
 
           <!-- Book Information -->
-          <div class="flex-1 space-y-6">
+          <div class="flex-1 space-y-6 over-flow">
             <!-- Title and Description -->
-            <div class="space-y-3">
+            <div class="space-y-3 w-full max-w-full">
               <h3 class="text-3xl font-bold text-gray-900 leading-tight">{{ bookTitle }}</h3>
-              <p class="text-gray-600 text-lg leading-relaxed">{{ bookDescription }}</p>
+              <p class="text-gray-600 text-lg leading-relaxed break-all">{{ bookDescription }}</p>
             </div>
 
             <!-- Badges -->
@@ -183,7 +183,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+
 
 const props = defineProps({
   showDetail: Boolean,

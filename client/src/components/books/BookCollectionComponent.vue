@@ -41,7 +41,7 @@
     </div>
 
     <div class="px-6 pb-10">
-      <div class="grid grid-cols-1 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <BookCard
           v-for="book in filteredBooks"
           :key="book.id"
