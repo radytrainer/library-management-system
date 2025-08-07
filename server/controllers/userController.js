@@ -135,26 +135,32 @@ const updateUser = async (req, res) => {
     console.log("File:", req.file);
 
     const userId = req.params.id;
+
+    // ❌ Librarians can't update users at all
+    if (req.userRole === 'librarian') {
+      return res.status(403).json({ message: "Librarians are not allowed to update users!" });
+    }
+
     const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
     const profile_image = req.file ? req.file.filename : null;
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found!" });
 
+    // Handle role change if roleId is provided
     if (roleId) {
       const targetRole = await Role.findByPk(roleId);
       if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
 
-      if (req.userRole === "librarian" && targetRole.name !== "user") {
-        return res.status(403).json({ message: "Librarians can only set user role!" });
-      }
-      if (targetRole.name === "admin" && req.userRole !== "admin") {
-        return res.status(403).json({ message: "Only admins can assign admin role!" });
+      // ❌ Prevent assigning admin role (even by other admins)
+      if (targetRole.name === 'admin' && user.roleId !== roleId) {
+        return res.status(403).json({ message: 'Assigning the admin role is not allowed' });
       }
 
       user.roleId = roleId;
     }
 
+    // Update fields
     if (username) user.username = username;
     if (email) user.email = email;
     if (phone) user.phone = phone;
@@ -166,7 +172,6 @@ const updateUser = async (req, res) => {
     }
 
     let regenerateBarcode = false;
-
     if (barcode && barcode !== user.barcode) {
       user.barcode = barcode;
       regenerateBarcode = true;
@@ -225,6 +230,8 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: error.message, stack: error.stack });
   }
 };
+
+
 
 const deleteUserById = async (req, res) => {
   try {
@@ -374,14 +381,17 @@ const createUser = async (req, res) => {
     const targetRole = await Role.findByPk(roleId);
     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
+    // ❌ Nobody can create users with admin role
+    if (targetRole.name === 'admin') {
+      return res.status(403).json({ message: 'Creating users with admin role is not allowed' });
+    }
+
+    // ❌ Librarians can only create users with "user" role
     if (req.user.role === 'librarian' && targetRole.name !== 'user') {
-      return res.status(403).json({ message: 'Librarians can only create normal users' });
+      return res.status(403).json({ message: 'Librarians can only create users with the "user" role' });
     }
 
-    if (targetRole.name === 'admin' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admins can create other admins' });
-    }
-
+    // Generate unique barcode
     let barcode, isUnique = false;
     while (!isUnique) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
@@ -394,17 +404,13 @@ const createUser = async (req, res) => {
       profile_image, roleId, barcode, barcode_image: null
     });
 
+    // Barcode generation
     const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
     const canvas = createCanvas(400, 150);
     const ctx = canvas.getContext('2d');
-    JsBarcode(canvas, barcode, { 
-      format: 'CODE128', 
-      displayValue: true, 
-      fontSize: 18, 
-      margin: 20 
-    });
+    JsBarcode(canvas, barcode, { format: 'CODE128', displayValue: true, fontSize: 18, margin: 20 });
     ctx.font = '18px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(username, canvas.width / 2, 140);
@@ -439,6 +445,7 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during upload', error: error.message });
   }
 };
+
 
 const getUserBarcode = async (req, res) => {
   try {
