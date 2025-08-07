@@ -49,7 +49,7 @@
           :openActionMenu="openActionMenu"
           @viewBook="$emit('viewBook', $event)"
           @openForm="$emit('openForm', $event)"
-          @deleteBookById="$emit('deleteBookById', $event)"
+          @deleteBookById="confirmDeleteBook"
           @toggleActionMenu="$emit('toggleActionMenu', $event)"
           @bookUpdated="updateBook"
         />
@@ -244,14 +244,53 @@ const unavailableBooks = computed(() =>
   }).length
 );
 
-
-// **New: Update book in props.books reactively**
 function updateBook(updatedBook) {
-  // Find index in the books array
   const index = props.books.findIndex((b) => b.id === updatedBook.id);
   if (index !== -1) {
-    // This updates the reactive array so UI updates automatically
     props.books.splice(index, 1, updatedBook);
   }
 }
+const confirmDeleteBook = async (bookId) => {
+  const result = await Swal.fire({
+    title: "Delete Book?",
+    html: `
+      <div class="text-sm text-gray-700">
+        This action <b>cannot be undone</b>. Are you sure you want to delete this book?
+      </div>
+    `,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Delete",
+    cancelButtonText: "Cancel",
+    focusCancel: true,
+    confirmButtonColor: "#dc2626", 
+    cancelButtonColor: "#6b7280", 
+    customClass: {
+      popup: "rounded-xl shadow-lg",
+      title: "text-lg font-semibold text-gray-800",
+      htmlContainer: "text-sm text-gray-600",
+      confirmButton: "px-4 py-2 text-sm font-medium",
+      cancelButton: "px-4 py-2 text-sm font-medium",
+    },
+    allowOutsideClick: false,
+    allowEscapeKey: true,
+  });
+
+  if (result.isConfirmed) {
+    emit("deleteBookById", bookId);
+    await Swal.fire({
+      title: "Deleted",
+      text: "The book has been successfully deleted.",
+      icon: "success",
+      confirmButtonText: "OK",
+      customClass: {
+        popup: "rounded-xl",
+        title: "text-lg font-semibold text-gray-800",
+        confirmButton: "px-4 py-2 text-sm font-medium",
+      },
+    });
+  }
+};
+
+
 </script>

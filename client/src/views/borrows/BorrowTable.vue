@@ -1,4 +1,3 @@
-<!-- src/components/borrows/BorrowTable.vue -->
 <template>
     <div class="bg-white rounded-xl border border-gray-100 shadow-md">
         <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50">
@@ -38,7 +37,6 @@
                                 </svg>
                             </button>
                         </div>
-
                         <div v-if="dropdownOpen"
                             class="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
                             <div class="py-1">
@@ -187,7 +185,7 @@
                                         </svg>
                                         Edit Record
                                     </button>
-                                    <button @click="$emit('delete-record', item.id)"
+                                    <button @click="confirmDelete(item.id)"
                                         class="flex items-center gap-3 px-4 py-2 w-full text-sm sm:text-base text-red-600 hover:bg-red-50 transition-all">
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -239,6 +237,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import Swal from 'sweetalert2'
 
 const dropdownOpen = ref(false)
 
@@ -246,6 +245,46 @@ function toggleDropdown() {
     dropdownOpen.value = !dropdownOpen.value
 }
 
+const emit = defineEmits([
+    "update:currentPage",
+    "update:limit",
+    "update:selectedStatus",
+    "update:selectedCategory",
+    "toggle-dropdown",
+    "show-book",
+    "confirm-return",
+    "update-record",
+    "delete-record",
+    "add-borrow",
+    "exportBorrowDataToExcel",
+    "exportBorrowDataToPDF"
+])
+
+async function confirmDelete(itemId) {
+    const result = await Swal.fire({
+        title: 'Confirm Deletion',
+        text: 'Are you sure you want to delete this borrow record? This action cannot be undone.',
+        icon: 'warning',
+        iconColor: '#f87171',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        buttonsStyling: false,
+        customClass: {
+            popup: 'rounded-xl shadow-lg bg-white p-6',
+            title: 'text-lg font-semibold text-gray-900',
+            htmlContainer: 'text-sm text-gray-600 mt-1 leading-tight',
+            confirmButton: 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium',
+            cancelButton: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium mr-4',
+            icon: 'animate-pulse',
+            actions: 'mt-3 flex justify-end gap-2'
+        }
+    })
+
+    if (result.isConfirmed) {
+        emit('delete-record', itemId)
+    }
+}
 
 defineProps({
     filteredBorrowData: Array,
@@ -260,19 +299,4 @@ defineProps({
     getItemStatus: Function,
     formatDate: Function,
 });
-
-defineEmits([
-    "update:currentPage",
-    "update:limit",
-    "update:selectedStatus",
-    "update:selectedCategory",
-    "toggle-dropdown",
-    "show-book",
-    "confirm-return",
-    "update-record",
-    "delete-record",
-    "add-borrow",
-    "exportBorrowDataToExcel",
-    "exportBorrowDataToPDF"
-]);
 </script>
