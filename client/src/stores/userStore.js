@@ -9,6 +9,7 @@ import {
   deleteUser,
   createUser,
 } from '@/services/Api/user';
+import Swal from 'sweetalert2';
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -48,7 +49,7 @@ export const useUserStore = defineStore('users', {
           : null,
       };
     },
-
+    
     async fetchUsers() {
       this.loading = true;
       this.error = '';
@@ -98,7 +99,6 @@ export const useUserStore = defineStore('users', {
         this.loading = false;
       }
     },
-
     async fetchProfile() {
       this.loading = true;
       this.error = '';
@@ -114,7 +114,7 @@ export const useUserStore = defineStore('users', {
         this.loading = false;
       }
     },
-
+    
     async fetchUserBarcodeImage(id) {
       this.loading = true;
       this.error = '';
@@ -133,22 +133,40 @@ export const useUserStore = defineStore('users', {
       }
     },
 
-    async createUser(formData) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const res = await createUser(formData);
-        const newUser = this.normalizeUser(res.data.user);
-        this.users.push(newUser);
-        return { success: true, data: newUser };
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Failed to create user';
-        console.error('❌ createUser error:', this.error);
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+   async createUser(formData) {
+  this.loading = true;
+  this.error = '';
+  try {
+    const res = await createUser(formData);
+    const newUser = this.normalizeUser(res.data.user);
+    this.users.push(newUser);
+
+    // Success popup (optional)
+    Swal.fire({
+      icon: 'success',
+      title: 'User created!',
+      text: 'The user was created successfully.',
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    return { success: true, data: newUser };
+  } catch (err) {
+    this.error = err.response?.data?.message || 'Failed to create user';
+    console.error('❌ createUser error:', this.error);
+
+    // Show error popup with SweetAlert2
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: this.error,
+    });
+
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
 
     async updateUser(id, formData) {
       this.loading = true;

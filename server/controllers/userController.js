@@ -135,11 +135,7 @@ const updateUser = async (req, res) => {
     console.log("File:", req.file);
 
     const userId = req.params.id;
-
-    // ❌ Librarians can't update users at all
-    if (req.userRole === 'librarian') {
-      return res.status(403).json({ message: "Librarians are not allowed to update users!" });
-    }
+    const isSelfUpdate = req.user.id.toString() === userId.toString();
 
     const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
     const profile_image = req.file ? req.file.filename : null;
@@ -147,20 +143,34 @@ const updateUser = async (req, res) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found!" });
 
-    // Handle role change if roleId is provided
+    // Librarians can only update their own account
+    if (req.userRole === 'librarian' && !isSelfUpdate) {
+      return res.status(403).json({ message: "Librarians cannot update other users!" });
+    }
+
+    // Role change logic for librarians
     if (roleId) {
       const targetRole = await Role.findByPk(roleId);
       if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
 
-      // ❌ Prevent assigning admin role (even by other admins)
-      if (targetRole.name === 'admin' && user.roleId !== roleId) {
-        return res.status(403).json({ message: 'Assigning the admin role is not allowed' });
+      if (req.userRole === 'librarian') {
+        // Librarian can only assign themselves the librarian role
+        if (!isSelfUpdate) {
+          return res.status(403).json({ message: "Librarians cannot change roles of other users!" });
+        }
+        if (targetRole.name !== 'librarian') {
+          return res.status(403).json({ message: "Librarians can only assign themselves the 'librarian' role!" });
+        }
+      } else {
+        // Admin role restrictions for others (admins can't assign admin role)
+        if (targetRole.name === 'admin' && user.roleId !== roleId) {
+          return res.status(403).json({ message: 'Assigning the admin role is not allowed' });
+        }
       }
-
       user.roleId = roleId;
     }
 
-    // Update fields
+    // Update other fields
     if (username) user.username = username;
     if (email) user.email = email;
     if (phone) user.phone = phone;
@@ -233,6 +243,7 @@ const updateUser = async (req, res) => {
 
 
 
+
 const deleteUserById = async (req, res) => {
   try {
     console.log("➡️ DELETE called with ID:", req.params.id);
@@ -245,17 +256,30 @@ const deleteUserById = async (req, res) => {
       return res.status(404).json({ message: "User not found!" });
     }
 
+    // ❗ Check for foreign key relation if user is a librarian
+    if (user.role === 'librarian') {
+      const borrowCount = await Borrow.count({ where: { librarian_id: userId } });
+      if (borrowCount > 0) {
+        return res.status(400).json({
+          message: "Cannot delete this librarian. They are linked to borrow records."
+        });
+      }
+    }
+
+    // 🗑 Delete barcode image if exists
     if (user.barcode_image) {
       const filename = path.basename(user.barcode_image);
       const filePath = path.join(process.cwd(), 'uploads', 'barcodes', filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
+    // 🗑 Delete profile image if exists
     if (user.profile_image) {
       const profilePath = path.join(process.cwd(), 'uploads', 'profiles', user.profile_image);
       if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
     }
 
+    // ✅ Safe to delete
     await user.destroy();
 
     res.status(200).json({ message: "User deleted successfully!" });
@@ -363,6 +387,7 @@ const createUser = async (req, res) => {
     console.log('Incoming body:', req.body);
     console.log('File info:', req.file);
 
+    // 1. Only 'admin' or 'librarian' can create users
     if (!['admin', 'librarian'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Only admins or librarians can create users' });
     }
@@ -378,20 +403,21 @@ const createUser = async (req, res) => {
     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 8);
+
     const targetRole = await Role.findByPk(roleId);
     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
-    // ❌ Nobody can create users with admin role
+    // 🚫 No one can create users with admin role
     if (targetRole.name === 'admin') {
       return res.status(403).json({ message: 'Creating users with admin role is not allowed' });
     }
 
-    // ❌ Librarians can only create users with "user" role
+    // 🚫 Librarians can only assign "user" role
     if (req.user.role === 'librarian' && targetRole.name !== 'user') {
       return res.status(403).json({ message: 'Librarians can only create users with the "user" role' });
     }
 
-    // Generate unique barcode
+    // ✅ Generate unique barcode
     let barcode, isUnique = false;
     while (!isUnique) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
@@ -399,12 +425,13 @@ const createUser = async (req, res) => {
       if (!existingUser) isUnique = true;
     }
 
+    // ✅ Create user
     const user = await User.create({
       username, email, password: hashedPassword, date_of_birth, phone,
       profile_image, roleId, barcode, barcode_image: null
     });
 
-    // Barcode generation
+    // ✅ Generate barcode image
     const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
@@ -426,25 +453,30 @@ const createUser = async (req, res) => {
     user.barcode_image = barcodeImageUrl;
     await user.save();
 
+    // ✅ Return response
     res.status(201).json({
       message: 'User created successfully',
       user: {
-        id: user.id, 
-        username, 
-        email, 
-        date_of_birth, 
+        id: user.id,
+        username,
+        email,
+        date_of_birth,
         phone,
-        profile_image: profile_image ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}` : null,
-        barcode, 
-        barcode_image: barcodeImageUrl, 
-        role: targetRole.name
+        profile_image: profile_image
+          ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
+          : null,
+        barcode,
+        barcode_image: barcodeImageUrl,
+        role: targetRole.name,
       }
     });
+
   } catch (error) {
     console.error('Create user error:', error);
-    res.status(500).json({ message: 'Server error during upload', error: error.message });
+    res.status(500).json({ message: 'Server error during user creation', error: error.message });
   }
 };
+
 
 
 const getUserBarcode = async (req, res) => {

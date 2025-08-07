@@ -33,21 +33,23 @@ const routes = [
     children: [
       { path: 'website', name: 'website', component: Website },
       { path: 'about-us', name: 'about', component: AboutWebView },
-      { path: 'web-book', name: 'web-book', component: BookWebView},
+      { path: 'web-book', name: 'web-book', component: BookWebView },
+    
+      
     ]
   },
 
   // Role-based redirect
-{
-  path: '/',
-  redirect: () => {
-    const authStore = useAuthStore()
-    const role = authStore.user?.role
-    if (role === 'admin') return '/dashboard'
-    if (role === 'librarian' || role === 'user') return '/books'
-    return '/login'
-  }
-},
+  {
+    path: '/',
+    redirect: () => {
+      const authStore = useAuthStore()
+      const role = authStore.user?.role
+      if (role === 'admin') return '/dashboard'
+      if (role === 'librarian' || role === 'user') return '/books'
+      return '/login'
+    }
+  },
 
 
   // Protected Routes (AppLayout)
