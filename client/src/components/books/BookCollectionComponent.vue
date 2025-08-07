@@ -41,68 +41,20 @@
     </div>
 
     <div class="px-6 pb-10">
-      <div v-if="isLoading" class="text-center py-6">
-        <svg class="animate-spin h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="text-gray-500">Loading books...</p>
-      </div>
-
-      <div v-else-if="paginatedBooks.length === 0" class="py-6">
-        <EmptyState @addBook="handleAddByForm" />
-      </div>
-
-      <div v-else class="grid grid-cols-2 gap-4">
+      <div class="grid gap-4">
         <BookCard
-          v-for="book in paginatedBooks"
+          v-for="book in filteredBooks"
           :key="book.id"
           :book="book"
           :openActionMenu="openActionMenu"
           @viewBook="$emit('viewBook', $event)"
           @openForm="$emit('openForm', $event)"
-          @deleteBookById="$emit('deleteBookById', $event)"
+          @deleteBookById="confirmDeleteBook"
           @toggleActionMenu="$emit('toggleActionMenu', $event)"
           @bookUpdated="updateBook"
         />
       </div>
-
-      <!-- Pagination Controls -->
-      <div v-if="paginatedBooks.length > 0" class="mt-6 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
-          Showing {{ paginationRange.from + 1 }} to {{ Math.min(paginationRange.to, filteredBooks.length) }} of {{ filteredBooks.length }} books
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="prevPage"
-            :disabled="currentPage === 1"
-            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Previous page"
-          >
-            Previous
-          </button>
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            @click="setPage(page)"
-            :class="[
-              'px-3 py-1 rounded-lg',
-              currentPage === page ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            ]"
-            :aria-label="`Page ${page}`"
-          >
-            {{ page }}
-          </button>
-          <button
-            @click="nextPage"
-            :disabled="currentPage === totalPages"
-            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Next page"
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <EmptyState v-if="filteredBooks.length === 0" @addBook="handleAddByForm" />
     </div>
   </div>
 </template>
@@ -118,6 +70,7 @@ import BookCard from "./BookCollection/BookCard.vue";
 import EmptyState from "./BookCollection/EmptyState.vue";
 import ImportModal from "./BookCollection/ImportBooksModal.vue";
 import { importBooks } from "@/services/Api/book";
+import { deleteBook } from "@/services/Api/book";
 
 const props = defineProps({
   books: { type: Array, default: () => [] },
@@ -136,14 +89,12 @@ const emit = defineEmits([
 
 const showImportModal = ref(false);
 const isLoading = ref(false);
+
 const searchQuery = ref("");
 const selectedCategory = ref("");
 const selectedStatus = ref("all");
 const selectedLanguage = ref("");
 const filterType = ref("all");
-const currentPage = ref(1);
-const itemsPerPage = ref(6);
-const siblingCount = ref(2);
 
 const handleAddByForm = () => {
   emit("openForm");
@@ -161,7 +112,6 @@ const handleImportSuccess = async (formData, callback) => {
     if (response.data.success) {
       emit("fetchBooks");
       showImportModal.value = false;
-      currentPage.value = 1; // Reset to first page on import
 
       let successMessage = `Successfully imported ${response.data.importedCount} book(s).`;
       let errorsHtml = "";
@@ -213,7 +163,7 @@ const handleImportSuccess = async (formData, callback) => {
     console.error("Import error:", error);
     await Swal.fire({
       icon: "error",
-      title: "Import Failed", // Fixed: Added colon
+      title: "Import Failed",
       text: error.response?.data?.message || error.message,
       footer: "Please check the Excel file format and try again",
       confirmButtonText: "OK",
@@ -234,14 +184,13 @@ const handleImportSuccess = async (formData, callback) => {
 
 const onStatusChange = () => {
   filterType.value = selectedStatus.value;
-  currentPage.value = 1;
 };
 
 const getBookStatus = (quantity) => {
   const qty = Number(quantity);
   if (qty >= 2) return "available";
   if (qty === 1) return "limited";
-  return "unavailable";
+  return "unavailable"; // fixed from 'available' to 'unavailable'
 };
 
 const filteredBooks = computed(() => {
@@ -291,51 +240,10 @@ const availableBooks = computed(() =>
 );
 const unavailableBooks = computed(() =>
   props.books.filter((book) => {
-    const status = getBookStatus(book.quantity);
-    return status === "limited" || status === "unavailable";
+    const status = getBookStatus(book.quantity)
+    return status === 'limited' || status === 'Unavailable'
   }).length
 );
-
-const totalPages = computed(() => Math.ceil(filteredBooks.value.length / itemsPerPage.value));
-
-const paginationRange = computed(() => {
-  const from = (currentPage.value - 1) * itemsPerPage.value;
-  const to = from + itemsPerPage.value;
-  return { from, to };
-});
-
-const paginatedBooks = computed(() => {
-  return filteredBooks.value.slice(paginationRange.value.from, paginationRange.value.to);
-});
-
-const visiblePages = computed(() => {
-  const pages = [];
-  const start = Math.max(1, currentPage.value - siblingCount.value);
-  const end = Math.min(totalPages.value, currentPage.value + siblingCount.value);
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-  return pages;
-});
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
-};
-
-const setPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
 
 function updateBook(updatedBook) {
   const index = props.books.findIndex((b) => b.id === updatedBook.id);
@@ -343,11 +251,31 @@ function updateBook(updatedBook) {
     props.books.splice(index, 1, updatedBook);
   }
 }
-</script>
+async function confirmDeleteBook(bookId) {
+  console.log('Confirming deletion for book ID:', bookId); // Debug log
+  const result = await Swal.fire({
+    title: 'Confirm Deletion',
+    text: 'Are you sure you want to delete this book record? This action cannot be undone.',
+    icon: 'warning',
+    iconColor: '#f87171',
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    cancelButtonText: 'Cancel',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'rounded-xl shadow-lg bg-white p-6',
+      title: 'text-lg font-semibold text-gray-900',
+      htmlContainer: 'text-sm text-gray-600 mt-1 leading-tight',
+      confirmButton: 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium',
+      cancelButton: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium mr-4',
+      icon: 'animate-pulse',
+      actions: 'mt-3 flex justify-end gap-2'
+    }
+  });
 
-<style scoped>
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  if (result.isConfirmed) {
+    console.log('Emitting deleteBookById with ID:', bookId); // Debug log
+    emit('deleteBookById', bookId);
+  }
 }
-</style>
+</script>

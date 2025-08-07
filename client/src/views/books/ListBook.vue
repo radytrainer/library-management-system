@@ -350,7 +350,6 @@ const submitForm = async () => {
 
 // Delete book by ID with confirmation
 const deleteBookById = async (id) => {
-  if (confirm('Are you sure you want to delete this book?')) {
     try {
       await deleteBook(id)
       books.value = books.value.filter(book => book.id !== id)
@@ -359,7 +358,6 @@ const deleteBookById = async (id) => {
       console.error('Error deleting book:', err, err.response?.data)
       showNotification(err.response?.data?.message || 'Failed to delete the book.', 'error')
     }
-  }
 }
 
 // ESC key closes modals
