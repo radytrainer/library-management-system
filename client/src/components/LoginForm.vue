@@ -37,7 +37,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/services/axios'
+import { loginUser } from '@/services/Api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -53,37 +53,20 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    const response = await api.post('/auth/signin', {
-      email: form.value.email,
-      password: form.value.password,
-    })
+    const user = await loginUser(form.value.email, form.value.password)
 
-    const user = response.data.user
-
-    // ✅ Save token & role into Pinia store
-    authStore.setUser({
+    const userData = {
       token: user.accessToken,
       role: user.role,
       name: user.username,
       email: user.email,
       profile_image: user.profile_image || ''
-    })
-
-    // ✅ Save user to localStorage (important)
-    localStorage.setItem('user', JSON.stringify({
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email,
-      profile_image: user.profile_image || ''
-    }))
-
-    // ✅ Redirect based on role
-    if (user.role === 'admin') {
-      router.push('/dashboard')
-    } else {
-      router.push('/books')
     }
+
+    authStore.setUser(userData)
+    localStorage.setItem('user', JSON.stringify(userData))
+
+    router.push(user.role === 'admin' ? '/dashboard' : '/books')
 
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Invalid email or password!'

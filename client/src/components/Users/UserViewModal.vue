@@ -13,18 +13,7 @@ const userStore = useUserStore();
 const isLoadingLoans = ref(false);
 const isLoadingInterests = ref(false);
 
-onMounted(async () => {
-  if (props.user?.id) {
-    isLoadingLoans.value = true;
-    isLoadingInterests.value = true;
-    await Promise.all([
-      userStore.fetchBorrowingHistory(props.user.id),
-      userStore.fetchBookInterests(props.user.id),
-    ]);
-    isLoadingLoans.value = false;
-    isLoadingInterests.value = false;
-  }
-});
+
 </script>
 
 <template>

@@ -78,16 +78,9 @@ const getUserById = async (req, res) => {
   }
 };
 
-const getUserProfile = async (req, res) => {
+const getUserProfile = (req, res) => {
   try {
-    const userId = req.userId;
-
-    const user = await User.findByPk(userId, {
-      include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"] }],
-      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
-    });
-
-    if (!user) return res.status(404).json({ message: "User not found!" });
+    const user = req.user; // already fetched and includes Role
 
     res.status(200).json({
       message: "Profile retrieved successfully!",
@@ -100,13 +93,11 @@ const getUserProfile = async (req, res) => {
         phone: user.phone,
         barcode: user.barcode,
         barcode_image: user.barcode_image,
-        role: user.Role
-          ? {
-              id: user.Role.id,
-              name: user.Role.name,
-              description: user.Role.description,
-            }
-          : null,
+        role: {
+          id: user.Role.id,
+          name: user.Role.name,
+          description: user.Role.description,
+        },
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -116,6 +107,7 @@ const getUserProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const getRoles = async (req, res) => {
   try {
@@ -259,9 +251,11 @@ const deleteUserById = async (req, res) => {
     // ❗ Check for foreign key relation if user is a librarian
     if (user.role === 'librarian') {
       const borrowCount = await Borrow.count({ where: { librarian_id: userId } });
+      console.log("📌 Borrow records linked to this librarian:", borrowCount);
+
       if (borrowCount > 0) {
         return res.status(400).json({
-          message: "Cannot delete this librarian. They are linked to borrow records."
+          message: "❗ Cannot delete this librarian. They are linked to borrow records."
         });
       }
     }
@@ -270,17 +264,24 @@ const deleteUserById = async (req, res) => {
     if (user.barcode_image) {
       const filename = path.basename(user.barcode_image);
       const filePath = path.join(process.cwd(), 'uploads', 'barcodes', filename);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log("🗑 Barcode image deleted:", filePath);
+      }
     }
 
     // 🗑 Delete profile image if exists
     if (user.profile_image) {
       const profilePath = path.join(process.cwd(), 'uploads', 'profiles', user.profile_image);
-      if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
+      if (fs.existsSync(profilePath)) {
+        fs.unlinkSync(profilePath);
+        console.log("🗑 Profile image deleted:", profilePath);
+      }
     }
 
     // ✅ Safe to delete
     await user.destroy();
+    console.log("✅ User deleted successfully with ID:", userId);
 
     res.status(200).json({ message: "User deleted successfully!" });
   } catch (error) {
@@ -379,7 +380,7 @@ const exportUsersWithImages = async (req, res) => {
 };
 const getProfileImageUrl = (req, filename) => {
   if (!filename) return null;
-  return `${req.protocol}://${req.get("host")}/uploads/users/${filename}`;
+  return `${req.protocol}://${req.get("host")}/uploads/profile/${filename}`;
 };
 
 const createUser = async (req, res) => {

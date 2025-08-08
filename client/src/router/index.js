@@ -19,6 +19,7 @@ import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
+import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
   // Public Auth Routes
@@ -66,6 +67,8 @@ const routes = [
       { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
+      {path:'profile',name:'profile',component:UserProfile}
+
     ],
   },
 
