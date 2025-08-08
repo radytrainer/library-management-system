@@ -453,7 +453,41 @@ const getCategoryStyle = (category) => {
   }
 }
 
-
+// Borrow and Return functions
+const handleBorrowBook = async (bookId) => {
+  try {
+    isLoading.value = true
+    const response = await borrowBook(bookId, { user: { name: 'Current User', email: 'user@example.com' } })
+    console.log('Borrow Response:', response.data)
+    const newRecord = response.data
+    const bookIndex = books.value.findIndex(book => book.id === bookId)
+    if (bookIndex !== -1) {
+      const updatedBook = { ...books.value[bookIndex] }
+      updatedBook.borrowHistory.push({
+        user: { name: newRecord.user?.name || 'Current User' },
+        borrow_date: newRecord.borrow_date,
+        return_date: newRecord.return_date,
+        librarian: { name: newRecord.librarian?.name || 'Unknown' },
+        status: newRecord.status || 'borrowed'
+      })
+      updatedBook.isAvailable = newRecord.status === 'returned'
+      updatedBook.borrower = newRecord.user?.name || 'Current User'
+      updatedBook.return_date = newRecord.return_date
+      books.value[bookIndex] = updatedBook
+      if (selectedBook.value?.id === bookId) {
+        selectedBook.value = updatedBook
+      }
+    } else {
+      console.warn(`Book with ID ${bookId} not found`)
+      error.value = `Book with ID ${bookId} not found`
+    }
+  } catch (err) {
+    error.value = `Failed to borrow book: ${err.message}`
+    console.error('Borrow Error:', err.message, err.response?.data)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const handleReturnBook = async (bookId) => {
   try {
