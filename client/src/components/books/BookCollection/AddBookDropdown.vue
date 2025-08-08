@@ -9,7 +9,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
       </svg>
     </button>
-
     <div v-if="showDropdown" class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
       <div class="py-2">
         <button @click="addByForm" class="w-full text-left px-4 py-3 text-gray-700 hover:bg-purple-50 transition-colors duration-150 flex items-center gap-3">
