@@ -186,7 +186,7 @@
                 </label>
               </div>
               <div v-if="previewImage" class="mt-4">
-                <img :src="previewImage" alt="Preview" class="w-60 h-60 object-cover rounded-lg border" />
+                <img :src="previewImage" alt="Preview" class="w-40 h-auto object-cover rounded-lg border" />
               </div>
             </div>
           </div>

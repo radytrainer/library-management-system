@@ -14,9 +14,9 @@ const languageBook = require('../controllers/langaugeBook');
 const donationController = require('../controllers/donationController');
 
 // Upload base folder
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../Uploads');
 
-// Multer storage config (dynamically set folder based on route)
+// Multer storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let folder = uploadDir;
@@ -57,27 +57,16 @@ const resources = [
     store: [upload.single('profile_image')],
     update: [upload.single('profile_image')],
   }),
-
-  // ✅ Donation route with upload middleware
   apiResource('/donations', donationController, {
-    store: [upload.single('cover_image')],   // for create
-    update: [upload.single('cover_image')],  // for update
+    store: [upload.single('cover_image')],
+    update: [upload.single('cover_image')],
   }),
 ];
+
+// const upload = multer({ storage: multer.memoryStorage() });
+router.post('/api/books/preview', upload.single('excelFile'), bookController.previewImport);
+
 router.get("/api/reminder-test", borrowController.sendReturnReminders);
-
-// import route
-const memoryStorage = multer.memoryStorage();
-const uploadMemory = multer({ storage: memoryStorage });
-router.post(
-  '/books/import',
-  uploadMemory.fields([
-    { name: 'excelFile', maxCount: 1 },
-    { name: 'cover_images[]', maxCount: 100 }
-  ]),
-  bookController.importBooks
-);
-
 
 // Use each resource route
 resources.forEach(resource => {

@@ -3,11 +3,11 @@
     class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out transform hover:-translate-y-1 cursor-pointer"
     @click="$emit('viewBook', book)"
   >
-    <div class="p-4">
+    <div class="p-4 ">
       <div class="flex items-start gap-8">
         <!-- Book Cover -->
         <div class="flex-shrink-0">
-          <div v-if="book.cover_image_url" class="w-24 h-auto shadow-md">
+          <div v-if="book.cover_image_url" class="w-20 h-auto shadow-md">
             <img
               :src="book.cover_image_url"
               :alt="book.title"
@@ -34,7 +34,7 @@
           <!-- Book Title, Author, Description + Action Menu -->
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <h3 class="font-semibold text-gray-900 text-lg leading-tight mb-1 line-clamp-2">
+              <h3 class="font-semibold text-gray-900 text-lg leading-tight mb-1 mt-1 line-clamp-2">
                 {{ book.title }}
               </h3>
               <p class="text-gray-600 text-sm mb-2">
@@ -113,7 +113,7 @@
               </span>
               <span
                 v-if="book.language?.name"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-gray-800"
               >
                 {{ book.language.name }}
               </span>

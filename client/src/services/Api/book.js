@@ -1,5 +1,4 @@
-// api/book.js or similar
-import ApiService from '../axios'; // or '../services/axios.js'
+import ApiService from '../axios';
 
 export const getBooks = () => ApiService.get('/books');
 export const getBookById = (id) => ApiService.get(`/books/${id}`);
@@ -17,7 +16,7 @@ export const getLanguages = () => ApiService.get('/language');
 export const importBooks = (formData) => {
   return ApiService.post('/books/import', formData, {
     headers: {
-      'Content-Type': 'multipart/form-data'
+      'Content-Type': 'multipart/form-data',
     },
     timeout: 30000,
     onUploadProgress: (progressEvent) => {
@@ -25,6 +24,21 @@ export const importBooks = (formData) => {
         (progressEvent.loaded * 100) / progressEvent.total
       );
       console.log(`Upload progress: ${percentCompleted}%`);
-    }
+    },
+  });
+};
+
+export const previewBooks = (formData) => {
+  return ApiService.post('/books/preview', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    timeout: 30000,
+    onUploadProgress: (progressEvent) => {
+      const percentCompleted = Math.round(
+        (progressEvent.loaded * 100) / progressEvent.total
+      );
+      console.log(`Preview upload progress: ${percentCompleted}%`);
+    },
   });
 };
