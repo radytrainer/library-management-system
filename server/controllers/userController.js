@@ -133,84 +133,65 @@ const updateUser = async (req, res) => {
     const profile_image = req.file ? req.file.filename : null;
 
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found!" });
-
-    // Librarians can only update their own account
-    if (req.userRole === 'librarian' && !isSelfUpdate) {
-      return res.status(403).json({ message: "Librarians cannot update other users!" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
     }
 
-    // Role change logic for librarians
+    // Non-admins can only update their own account
+    if (req.userRole !== 'admin' && !isSelfUpdate) {
+      return res.status(403).json({ message: "You can only update your own account!" });
+    }
+
+    const updates = {};
+
+    // Basic info updates
+    if (username) updates.username = username;
+    if (email) updates.email = email;
+    if (date_of_birth) updates.date_of_birth = date_of_birth;
+    if (phone) updates.phone = phone;
+
+    // Password update
+    if (password && password.trim() !== "") {
+      updates.password = await bcrypt.hash(password, 8);
+    }
+
+    // Barcode update
+    if (barcode) updates.barcode = barcode;
+
+    // Role change — only admins allowed
     if (roleId) {
       const targetRole = await Role.findByPk(roleId);
-      if (!targetRole) return res.status(400).json({ message: "Invalid roleId!" });
+      if (!targetRole) {
+        return res.status(400).json({ message: "Invalid roleId!" });
+      }
+      if (req.userRole !== 'admin') {
+        return res.status(403).json({ message: "Only admins can change roles!" });
+      }
+      updates.roleId = roleId;
+    }
 
-      if (req.userRole === 'librarian') {
-        // Librarian can only assign themselves the librarian role
-        if (!isSelfUpdate) {
-          return res.status(403).json({ message: "Librarians cannot change roles of other users!" });
-        }
-        if (targetRole.name !== 'librarian') {
-          return res.status(403).json({ message: "Librarians can only assign themselves the 'librarian' role!" });
-        }
-      } else {
-        // Admin role restrictions for others (admins can't assign admin role)
-        if (targetRole.name === 'admin' && user.roleId !== roleId) {
-          return res.status(403).json({ message: 'Assigning the admin role is not allowed' });
+    // Profile image update
+    if (profile_image) {
+      if (user.profile_image) {
+        const oldImagePath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
         }
       }
-      user.roleId = roleId;
+      updates.profile_image = profile_image;
     }
 
-    // Update other fields
-    if (username) user.username = username;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (date_of_birth) user.date_of_birth = date_of_birth;
-    if (profile_image) user.profile_image = profile_image;
+    // Apply updates
+    await user.update(updates);
 
-    if (password) {
-      user.password = await bcrypt.hash(password, 8);
-    }
-
-    let regenerateBarcode = false;
-    if (barcode && barcode !== user.barcode) {
-      user.barcode = barcode;
-      regenerateBarcode = true;
-    }
-
-    await user.save();
-
-    if (regenerateBarcode) {
-      const canvas = createCanvas(400, 150);
-      const ctx = canvas.getContext('2d');
-
-      JsBarcode(canvas, user.barcode, {
-        format: 'CODE128',
-        displayValue: true,
-        fontSize: 18,
-        margin: 20,
-      });
-
-      ctx.font = '18px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#000';
-      ctx.fillText(user.username, canvas.width / 2, 140);
-
-      const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
-      if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
-
-      const barcodeFilename = `barcode_${user.id}.png`;
-      const barcodePath = path.join(barcodeDir, barcodeFilename);
-      const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
-
-      const out = fs.createWriteStream(barcodePath);
-      canvas.createPNGStream().pipe(out);
-      await new Promise((resolve) => out.on('finish', resolve));
-
-      user.barcode_image = barcodeImageUrl;
-      await user.save();
-    }
+    // Reload with role info
+    await user.reload({
+      include: {
+        model: Role,
+        as:'role',
+        attributes: ["id", "name", "description"]
+      }
+    });
 
     res.status(200).json({
       message: "User updated successfully!",
@@ -218,22 +199,24 @@ const updateUser = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        phone: user.phone,
         date_of_birth: user.date_of_birth,
         profile_image: getProfileImageUrl(req, user.profile_image),
+        phone: user.phone,
         barcode: user.barcode,
         barcode_image: user.barcode_image,
-        roleId: user.roleId,
+        role: user.Role
+          ? { id: user.Role.id, name: user.Role.name, description: user.Role.description }
+          : null,
+        createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-      }
+      },
     });
+
   } catch (error) {
     console.error("Update user error:", error);
-    res.status(500).json({ message: error.message, stack: error.stack });
+    res.status(500).json({ message: "Failed to update user", error: error.message });
   }
 };
-
-
 
 
 const deleteUserById = async (req, res) => {
@@ -478,8 +461,6 @@ const createUser = async (req, res) => {
   }
 };
 
-
-
 const getUserBarcode = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -504,6 +485,46 @@ const getUserBarcode = async (req, res) => {
     res.status(500).json({ message: 'Error generating barcode' });
   }
 };
+
+const uploadProfileImage = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const profile_image = req.file ? req.file.filename : null;
+
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "User not found!" });
+
+    if (profile_image) {
+      // Delete old profile image if it exists
+      if (user.profile_image) {
+        const oldImagePath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
+        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+      }
+      user.profile_image = profile_image;
+      await user.save();
+    }
+
+    res.status(200).json({
+      message: "Profile image uploaded successfully!",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        date_of_birth: user.date_of_birth,
+        profile_image: getProfileImageUrl(req, user.profile_image),
+        phone: user.phone,
+        barcode: user.barcode,
+        barcode_image: user.barcode_image,
+        role: user.Role ? { id: user.Role.id, name: user.Role.name, description: user.Role.description } : null,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Upload profile image error:", error);
+    res.status(500).json({ message: "Failed to upload profile image", error: error.message });
+  }
+};
 module.exports = {
   allAccess,
   userBoard,
@@ -519,4 +540,5 @@ module.exports = {
   updateUser,
   deleteUserById,
   deleteAccount,
+  uploadProfileImage
 }

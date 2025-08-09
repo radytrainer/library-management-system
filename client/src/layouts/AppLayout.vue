@@ -102,7 +102,7 @@ async function fetchUserProfile() {
 
 function logout() {
   authStore.reset()
-  localStorage.removeItem('user')
+  // localStorage.removeItem('user')
   router.push('/login')
 }
 
@@ -281,7 +281,7 @@ watch(searchQuery, () => performSearch())
           <!-- Profile -->
           <div class="relative">
             <div
-              v-if="authStore.user?.profile_image"
+              v-if="authStore.profile_image"
               class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
               @click="toggleProfileDropdown"
               role="button"

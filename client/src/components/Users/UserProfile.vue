@@ -49,7 +49,8 @@ const updateProfile = async () => {
     formData.append('password', editForm.value.password)
   }
   if (imageFile.value) {
-    formData.append('profileImage', imageFile.value)
+    formData.append('profile_image', imageFile.value)
+
   }
 
   const userId = userStore.userProfile?.id
@@ -86,7 +87,9 @@ const goBack = () => {
        <!-- Profile Card  -->
       <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
          <!-- Cover Section  -->
-        <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+          <img class="justify-end flex w-20" src="../../../public/logo.png" alt="">
+        </div>
         
          <!-- Profile Content  -->
         <div class="relative px-8 pb-8">
@@ -137,7 +140,8 @@ const goBack = () => {
                 </div>
                 <div class="flex items-center gap-2 text-slate-600">
                   <Shield class="w-4 h-4" />
-                  <span class="capitalize">{{ userStore.users?.role }}</span>
+            <span class="capitalize">{{ userStore.userProfile?.role?.name || 'No Role Assigned' }}</span>
+
                 </div>
               </div>
             </div>
