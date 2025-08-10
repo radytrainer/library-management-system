@@ -122,76 +122,64 @@ const getRoles = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     console.log("Incoming PUT /user/:id request");
-    console.log("Params:", req.params);
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
-
     const userId = req.params.id;
     const isSelfUpdate = req.user.id.toString() === userId.toString();
 
     const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
     const profile_image = req.file ? req.file.filename : null;
 
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" });
-    }
+    const user = await User.findByPk(userId, {
+      include: { model: Role, as: 'Role', attributes: ["id", "name", "description"] }
+    });
+    if (!user) return res.status(404).json({ message: "User not found!" });
 
-    // Non-admins can only update their own account
     if (req.userRole !== 'admin' && !isSelfUpdate) {
       return res.status(403).json({ message: "You can only update your own account!" });
     }
 
     const updates = {};
 
-    // Basic info updates
-    if (username) updates.username = username;
-    if (email) updates.email = email;
+    // Basic fields
+    if (username?.trim()) updates.username = username.trim();
+    if (email?.trim()) updates.email = email.trim();
     if (date_of_birth) updates.date_of_birth = date_of_birth;
-    if (phone) updates.phone = phone;
+    if (phone?.trim()) updates.phone = phone.trim();
+    if (barcode?.trim()) updates.barcode = barcode.trim();
 
-    // Password update
-    if (password && password.trim() !== "") {
+    // Password
+    if (password?.trim()) {
       updates.password = await bcrypt.hash(password, 8);
     }
 
-    // Barcode update
-    if (barcode) updates.barcode = barcode;
-
-    // Role change — only admins allowed
+    // Role change (admins only)
     if (roleId) {
+      if (req.userRole !== 'admin') {
+        return res.status(403).json({ message: "Only admins can change roles!" });
+      }
       const targetRole = await Role.findByPk(roleId);
       if (!targetRole) {
         return res.status(400).json({ message: "Invalid roleId!" });
       }
-      if (req.userRole !== 'admin') {
-        return res.status(403).json({ message: "Only admins can change roles!" });
-      }
       updates.roleId = roleId;
     }
 
-    // Profile image update
+    // Profile image
     if (profile_image) {
       if (user.profile_image) {
-        const oldImagePath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+        const oldPath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
         }
       }
       updates.profile_image = profile_image;
     }
 
-    // Apply updates
-    await user.update(updates);
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: "No valid fields to update" });
+    }
 
-    // Reload with role info
-    await user.reload({
-      include: {
-        model: Role,
-        as:'role',
-        attributes: ["id", "name", "description"]
-      }
-    });
+    await user.update(updates);
+    await user.reload();
 
     res.status(200).json({
       message: "User updated successfully!",
@@ -217,7 +205,6 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: "Failed to update user", error: error.message });
   }
 };
-
 
 const deleteUserById = async (req, res) => {
   try {
@@ -361,10 +348,7 @@ const exportUsersWithImages = async (req, res) => {
     res.status(500).json({ message: 'Error exporting Excel file' });
   }
 };
-const getProfileImageUrl = (req, filename) => {
-  if (!filename) return null;
-  return `${req.protocol}://${req.get("host")}/uploads/profile/${filename}`;
-};
+
 
 const createUser = async (req, res) => {
   try {
@@ -485,20 +469,29 @@ const getUserBarcode = async (req, res) => {
     res.status(500).json({ message: 'Error generating barcode' });
   }
 };
-
+const getProfileImageUrl = (req, filename) => {
+  if (!filename) return null;
+  return `${req.protocol}://${req.get("host")}/uploads/profile/${filename}`;
+};
 const uploadProfileImage = async (req, res) => {
   try {
     const userId = req.params.id;
     const profile_image = req.file ? req.file.filename : null;
 
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      include: { model: Role, as: "Role", attributes: ["id", "name", "description"] }
+    });
     if (!user) return res.status(404).json({ message: "User not found!" });
 
     if (profile_image) {
       // Delete old profile image if it exists
       if (user.profile_image) {
         const oldImagePath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
-        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        } else {
+          console.warn(`Old profile image not found: ${oldImagePath}`);
+        }
       }
       user.profile_image = profile_image;
       await user.save();
@@ -515,7 +508,9 @@ const uploadProfileImage = async (req, res) => {
         phone: user.phone,
         barcode: user.barcode,
         barcode_image: user.barcode_image,
-        role: user.Role ? { id: user.Role.id, name: user.Role.name, description: user.Role.description } : null,
+        role: user.Role
+          ? { id: user.Role.id, name: user.Role.name, description: user.Role.description }
+          : null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -525,6 +520,7 @@ const uploadProfileImage = async (req, res) => {
     res.status(500).json({ message: "Failed to upload profile image", error: error.message });
   }
 };
+
 module.exports = {
   allAccess,
   userBoard,

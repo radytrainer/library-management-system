@@ -36,11 +36,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { loginUser } from '@/services/Api/auth'
+import { useUserStore } from '@/stores/userStore'
+import { loginUser } from '@/services/Api/user'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const authStore = useUserStore()
 
 const form = ref({ email: '', password: '' })
 const errorMessage = ref('')

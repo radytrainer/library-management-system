@@ -38,7 +38,7 @@ export function getUserById(id) {
 }
 
 export function updateUser(id, formData) {
-  return api.put(`/user/${data.id}`, formData, {
+  return api.put(`/user/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 }
