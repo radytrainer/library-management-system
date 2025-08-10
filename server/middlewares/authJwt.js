@@ -4,7 +4,6 @@ const authConfig = require("../config/auth.config.js");
 
 const { User, Role } = db;
 
-// ✅ Verify JWT token and attach user object with role to request
 const verifyToken = async (req, res, next) => {
   try {
     console.log('Incoming Headers:', req.headers);
@@ -40,10 +39,11 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Unauthorized! User has no associated role.' });
     }
 
-    // ✅ Attach user and userId to request
+    // Attach user and role info to request
     req.user = user;
     req.userId = user.id;
-    req.user.role = user.Role.name;
+    req.userRole = user.Role.name;  // <-- Added this line
+    req.user.role = user.Role.name; // Optional if your code uses req.user.role elsewhere
 
     next();
   } catch (error) {
@@ -57,39 +57,35 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-
-// ✅ Check if user is Admin
 const isAdmin = (req, res, next) => {
-  if (!req.user || !req.user.role) {
+  if (!req.user || !req.userRole) {
     console.error("❌ No user data in isAdmin");
     return res.status(401).json({ message: "No user data available!" });
   }
-  if (req.user.role !== "admin") {
+  if (req.userRole !== "admin") {
     return res.status(403).json({ message: "Require Admin Role!" });
   }
   next();
 };
 
-// ✅ Check if user is Librarian
 const isLibrarian = (req, res, next) => {
-  if (!req.user || !req.user.role) {
+  if (!req.user || !req.userRole) {
     console.error("❌ No user data in isLibrarian");
     return res.status(401).json({ message: "No user data available!" });
   }
-  if (req.user.role !== "librarian") {
+  if (req.userRole !== "librarian") {
     return res.status(403).json({ message: "Require Librarian Role!" });
   }
   next();
 };
 
-// ✅ Check if user is either Librarian or Admin
 const isLibrarianOrAdmin = (req, res, next) => {
-  if (!req.user || !req.user.role) {
+  if (!req.user || !req.userRole) {
     console.error("❌ No user data in isLibrarianOrAdmin");
     return res.status(401).json({ message: "No user data available!" });
   }
 
-  if (!["admin", "librarian"].includes(req.user.role)) {
+  if (!["admin", "librarian"].includes(req.userRole)) {
     return res.status(403).json({ message: "Only admins or librarians can create users" });
   }
 

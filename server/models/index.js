@@ -9,7 +9,7 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 // Import models
-db.User = require("./user")(sequelize, Sequelize.DataTypes);
+db.User = require("./user").default(sequelize, Sequelize.DataTypes);
 db.Role = require("./role")(sequelize, Sequelize.DataTypes);
 db.Book = require("./book")(sequelize, Sequelize.DataTypes);
 db.Category = require("./categories")(sequelize, Sequelize.DataTypes);
