@@ -49,11 +49,17 @@ const isLoading = ref(false)
 const goToRegister = () => router.push('/register')
 
 const handleLogin = async () => {
-  errorMessage.value = ''
-  isLoading.value = true
+  console.log('Login started with email:', form.value.email);
+  errorMessage.value = '';
+  isLoading.value = true;
 
   try {
-    const user = await loginUser(form.value.email, form.value.password)
+    const response = await loginUser(form.value.email, form.value.password);
+    console.log('Login response:', response);
+
+    // Adjust according to API response structure:
+    const user = response.user || response;
+    console.log('User extracted from response:', user);
 
     const userData = {
       token: user.accessToken,
@@ -61,17 +67,27 @@ const handleLogin = async () => {
       name: user.username,
       email: user.email,
       profile_image: user.profile_image || ''
-    }
+    };
+    console.log('User data prepared for store:', userData);
 
-    authStore.setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
+    authStore.setUser(userData);
+    localStorage.setItem('token', user.accessToken);
+    localStorage.setItem('user', JSON.stringify(userData));
 
-    router.push(user.role === 'admin' ? '/dashboard' : '/books')
+    console.log('User data saved to store and localStorage');
+    console.log('Redirecting to:', user.role === 'admin' ? '/dashboard' : '/books');
+
+    router.push(user.role === 'admin' ? '/dashboard' : '/books');
 
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || 'Invalid email or password!'
+    console.error('Login error:', err);
+    errorMessage.value = err.response?.data?.message || 'Invalid email or password!';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
+    console.log('Login process finished');
   }
-}
+};
+
+
+
 </script>

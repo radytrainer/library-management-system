@@ -54,6 +54,7 @@ export const useUserStore = defineStore('user', {
       this.token = null
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      
     },
 
     normalizeUser(user) {
@@ -189,21 +190,38 @@ export const useUserStore = defineStore('user', {
         this.loading = false
       }
     },
+async fetchProfile() {
+  this.loading = true
+  this.error = ''
+  try {
+    const res = await getProfile()
 
-    async fetchProfile() {
-      this.loading = true
-      this.error = ''
-      try {
-        const res = await getProfile()
-        this.userProfile = res.data.user ? this.normalizeUser(res.data.user) : null
-        return { success: true }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to fetch profile'
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
+    if (res.data.user) {
+      const normalizedUser = this.normalizeUser(res.data.user)
+      this.userProfile = normalizedUser
+      this.setUser(normalizedUser) // keep user in sync
+
+      // ✅ Cache profile_image if valid
+      if (normalizedUser.profile_image) {
+        localStorage.setItem('profile_image', normalizedUser.profile_image)
+      } else {
+        localStorage.removeItem('profile_image')
       }
-    },
+    } else {
+      this.userProfile = null
+      localStorage.removeItem('profile_image')
+    }
+
+    return { success: true }
+  } catch (error) {
+    this.error = error.response?.data?.message || 'Failed to fetch profile'
+    localStorage.removeItem('profile_image')
+    return { success: false, error: this.error }
+  } finally {
+    this.loading = false
+  }
+},
+
 
     async fetchUserBarcodeImage(id) {
       this.loading = true

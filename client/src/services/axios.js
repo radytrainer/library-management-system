@@ -7,21 +7,20 @@ const instance = axios.create({
 });
 
 instance.interceptors.request.use((config) => {
-  const userStr = localStorage.getItem('user');
-  if (userStr) {
-    const user = JSON.parse(userStr);
-    if (user.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
-      console.log('Token included in request:', user.token.substring(0, 10) + '...');
+  const token = localStorage.getItem('token');
+
+  if (!config.url.includes('/auth/signin') && !config.url.includes('/auth/signup')) {
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      // Optional debug log:
+      // console.log('Token added to request:', token.substring(0, 10) + '...');
     } else {
-      console.warn('No token found in user object for request:', config.url);
+      console.warn(`No token found for request: ${config.url}`);
     }
-  } else {
-    console.warn('No user object found in localStorage for request:', config.url);
   }
+
   return config;
 }, (error) => {
-  console.error('Axios request interceptor error:', error);
   return Promise.reject(error);
 });
 

@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/userStore'
 import { debounce } from 'lodash'
 
-const authStore = useAuthStore()
+// Stores and router
+const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -18,7 +19,7 @@ const isSidebarOpen = ref(true)
 const isOpen = ref(false)
 const isLoading = ref(false)
 
-// Navigation items
+// Navigation items with role-based access
 const navItems = [
   { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' }, roles: ['admin'] },
   { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' }, roles: ['admin', 'librarian', 'user'] },
@@ -30,15 +31,35 @@ const navItems = [
   { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian', 'user'] },
 ]
 
-// Computed properties
+// Filter nav based on user role
 const filteredNav = computed(() => {
-  return navItems.filter(item => authStore.user?.role ? item.roles.includes(authStore.user.role) : false)
+  return navItems.filter(item => userStore.user?.role ? item.roles.includes(userStore.user.role) : false)
 })
 
+// User initial fallback (first letter of email)
 const profileInitial = computed(() => {
-  return authStore.user?.email?.charAt(0)?.toUpperCase() || '?'
+  return userStore.user?.email?.charAt(0)?.toUpperCase() || '?'
 })
 
+// Profile image URL with normalization, fallback and cache-busting
+const profileImageUrl = computed(() => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  let image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
+
+  // Normalize relative path to absolute URL
+  if (image && !image.startsWith('http') && !image.startsWith('data:image')) {
+    image = `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`
+  }
+
+  // Validate URL, fallback to default if invalid or empty
+  const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image'))
+  const finalImage = isValidUrl ? image : '/default-profile.png'
+
+  // Add cache busting query param for HTTP URLs (avoid for data:image)
+  return finalImage.startsWith('http') ? `${finalImage}?t=${new Date().getTime()}` : finalImage
+})
+
+// Page title based on route name and language
 const pageTitle = computed(() => {
   const map = {
     dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
@@ -48,20 +69,20 @@ const pageTitle = computed(() => {
     authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
     categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
     donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
-    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចីស៖'}
+    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចី' },
   }
   const key = route.name
   return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
 })
 
-
-// Methods
+// Language selection
 function selectLanguage(lang) {
   language.value = lang
   localStorage.setItem('language', lang)
   isOpen.value = false
 }
 
+// Notifications toggles
 function toggleNotifications() {
   showNotifications.value = !showNotifications.value
   showProfileDropdown.value = false
@@ -72,43 +93,69 @@ function clearNotifications() {
   showNotifications.value = false
 }
 
+// Profile dropdown toggle
 function toggleProfileDropdown() {
   showProfileDropdown.value = !showProfileDropdown.value
   showNotifications.value = false
 }
 
+// Sidebar toggle
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value
 }
 
+// Debounced search (placeholder for real API call)
 const performSearch = debounce(async () => {
   if (searchQuery.value) {
-    // Implement search API call here
     console.log(`Searching for: ${searchQuery.value}`)
+    // TODO: implement search API call
   }
 }, 300)
 
+// Fetch user profile on mount if token exists, otherwise redirect to login
 async function fetchUserProfile() {
+  if (!userStore.token) {
+    console.log('No token found, redirecting to login')
+    router.push('/login')
+    return
+  }
+
   isLoading.value = true
   try {
-    await authStore.fetchUser()
+    const { success } = await userStore.fetchProfile()
+    if (!success) {
+      console.log('Failed to fetch profile, redirecting to login')
+      router.push('/login')
+    }
   } catch (error) {
-    console.error('Failed to fetch user profile:', error)
+    console.error('Error fetching profile:', error)
     router.push('/login')
   } finally {
     isLoading.value = false
   }
 }
 
+// Logout function clears auth and localStorage and redirects
 function logout() {
-  authStore.reset()
-  // localStorage.removeItem('user')
+  userStore.resetAuth()
+  localStorage.removeItem('profile_image')
   router.push('/login')
 }
 
-onMounted(fetchUserProfile)
-watch(searchQuery, () => performSearch())
+// On mount: restore profile image if missing, then fetch fresh profile
+onMounted(() => {
+  const cachedImage = localStorage.getItem('profile_image')
+  console.log('Cached profile_image from localStorage:', cachedImage)
+
+  // Only set profile_image if missing in userStore.user and cachedImage is valid
+  if (cachedImage && (!userStore.user?.profile_image || userStore.user.profile_image === null)) {
+    userStore.user = { ...userStore.user, profile_image: cachedImage }
+  }
+
+  fetchUserProfile()
+})
 </script>
+
 
 <template>
   <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
@@ -281,26 +328,17 @@ watch(searchQuery, () => performSearch())
           <!-- Profile -->
           <div class="relative">
             <div
-              v-if="authStore.profile_image"
               class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
               @click="toggleProfileDropdown"
               role="button"
               aria-label="Toggle profile dropdown"
             >
               <img
-                :src="authStore.user.profile_image"
+                :src="profileImageUrl"
                 alt="Profile"
                 class="h-full w-full rounded-full object-cover"
+                @error="handleImageError"
               />
-            </div>
-            <div
-              v-else
-              class="h-10 w-10 rounded-full cursor-pointer bg-indigo-600 text-white flex items-center justify-center font-bold border border-gray-200 hover:border-indigo-400"
-              @click="toggleProfileDropdown"
-              role="button"
-              aria-label="Toggle profile dropdown"
-            >
-              {{ profileInitial }}
             </div>
             <div
               v-if="showProfileDropdown"
@@ -309,10 +347,10 @@ watch(searchQuery, () => performSearch())
             >
               <div class="border-b border-gray-200 pb-2 mb-2">
                 <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
-                  {{ authStore.user?.username || 'Unknown' }}
+                  {{ userStore.user?.username || 'Unknown' }}
                 </p>
                 <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }">
-                  {{ authStore.user?.email || 'No email' }}
+                  {{ userStore.user?.email || 'No email' }}
                 </p>
               </div>
               <RouterLink

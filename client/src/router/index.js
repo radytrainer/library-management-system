@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/userStore'
 
 // Layouts
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -44,7 +44,7 @@ const routes = [
   {
     path: '/',
     redirect: () => {
-      const authStore = useAuthStore()
+      const authStore = useUserStore()
       const role = authStore.user?.role
       if (role === 'admin') return '/dashboard'
       if (role === 'librarian' || role === 'user') return '/books'
@@ -83,7 +83,7 @@ const router = createRouter({
 
 // Global Navigation Guard
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useUserStore()
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
