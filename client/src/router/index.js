@@ -19,6 +19,7 @@ import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
+import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
   // Public Auth Routes
@@ -33,21 +34,23 @@ const routes = [
     children: [
       { path: 'website', name: 'website', component: Website },
       { path: 'about-us', name: 'about', component: AboutWebView },
-      { path: 'web-book', name: 'web-book', component: BookWebView},
+      { path: 'web-book', name: 'web-book', component: BookWebView },
+    
+      
     ]
   },
 
   // Role-based redirect
-{
-  path: '/',
-  redirect: () => {
-    const authStore = useAuthStore()
-    const role = authStore.user?.role
-    if (role === 'admin') return '/dashboard'
-    if (role === 'librarian' || role === 'user') return '/books'
-    return '/login'
-  }
-},
+  {
+    path: '/',
+    redirect: () => {
+      const authStore = useAuthStore()
+      const role = authStore.user?.role
+      if (role === 'admin') return '/dashboard'
+      if (role === 'librarian' || role === 'user') return '/books'
+      return '/login'
+    }
+  },
 
 
   // Protected Routes (AppLayout)
@@ -62,8 +65,10 @@ const routes = [
       { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
-      { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian'] } },
+      { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian','user'] } },
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
+      {path:'profile',name:'profile',component:UserProfile}
+
     ],
   },
 

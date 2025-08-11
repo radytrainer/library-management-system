@@ -12,66 +12,51 @@ const verifyToken = async (req, res, next) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
 
     if (!token) {
-      console.error('❌ No token provided in headers');
       return res.status(403).json({ message: 'No token provided!' });
     }
 
-    // ✅ Support 'Bearer ' prefix
     if (token.startsWith('Bearer ')) {
-      token = token.slice(7);
+      token = token.slice(7); // remove 'Bearer ' prefix
     }
 
-    // ✅ Basic JWT format validation
     if (!token.match(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/)) {
-      console.error('❌ Invalid token format:', token);
       return res.status(401).json({
         message: 'Unauthorized! Malformed token.',
-        error: 'Token does not match JWT format (header.payload.signature).'
       });
     }
 
-    console.log('🔐 Verifying token:', token.substring(0, 20) + '...');
-
     const decoded = jwt.verify(token, authConfig.secret);
-    console.log('✅ Decoded token:', { id: decoded.id, role: decoded.role });
+    console.log('✅ Decoded token:', decoded);
 
     const user = await User.findByPk(decoded.id, {
       include: [{ model: Role, as: 'Role', attributes: ['id', 'name', 'description'] }],
     });
 
     if (!user) {
-      console.error(`❌ User not found for ID: ${decoded.id}`);
-      return res.status(401).json({ message: 'Unauthorized! User not found.', userId: decoded.id });
+      return res.status(401).json({ message: 'Unauthorized! User not found.' });
     }
 
     if (!user.Role) {
-      console.error(`❌ No Role associated with user ID: ${user.id}`);
-      return res.status(401).json({ message: 'Unauthorized! User has no associated role.', userId: user.id });
+      return res.status(401).json({ message: 'Unauthorized! User has no associated role.' });
     }
 
-    // ✅ Attach user & role consistently
+    // ✅ Attach user and userId to request
     req.user = user;
-    req.user.role = user.Role.name; // <-- Always available now
-
-    console.log('✅ User verified:', { id: user.id, role: req.user.role });
+    req.userId = user.id;
+    req.user.role = user.Role.name;
 
     next();
   } catch (error) {
-    console.error('❌ Token verification error:', error.name, error.message);
+    console.error('❌ Token verification error:', error.message);
 
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        message: 'Token expired. Please log in again.',
-        expiredAt: error.expiredAt,
-      });
+      return res.status(401).json({ message: 'Token expired.', expiredAt: error.expiredAt });
     }
 
-    return res.status(401).json({
-      message: 'Unauthorized! Invalid token.',
-      error: error.message,
-    });
+    return res.status(401).json({ message: 'Unauthorized!', error: error.message });
   }
 };
+
 
 // ✅ Check if user is Admin
 const isAdmin = (req, res, next) => {
