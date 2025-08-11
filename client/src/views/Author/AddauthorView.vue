@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 p-8">
+  <div class="space-y-6 p-8 bg-[#F8F8F8]">
     <!-- Notification Area -->
     <transition
       enter-active-class="transition ease-out duration-300"
