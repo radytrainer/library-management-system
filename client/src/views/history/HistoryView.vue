@@ -50,8 +50,18 @@
             <option v-for="borrower in borrowers" :key="borrower" :value="borrower">{{ borrower }}</option>
           </select>
         </div>
+        <div>
+          <button
+            @click="exportToPDF"
+            class="px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+            :disabled="isLoading || !filteredBooks.length"
+            :class="{ 'opacity-50 cursor-not-allowed': isLoading || !filteredBooks.length }"
+          >
+            <FileText class="w-5 h-5" />
+            Export PDF
+          </button>
+        </div>
       </div>
-
       <!-- Error Message -->
       <div v-if="error" class="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm shadow-sm">
         {{ error }}
@@ -74,7 +84,7 @@
           <div class="mt-2 text-2xl font-semibold text-green-600">{{ availableBooks }}</div>
         </div>
         <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-          <div class="text-sm font-medium text-gray-500 uppercase tracking-wide">OVERDUE</div>
+          <div class="text-sm font-medium text-gray-500 uppercase tracking-wide">Overdue</div>
           <div class="mt-2 text-2xl font-semibold text-red-600">{{ borrowedBooks }}</div>
         </div>
       </div>
@@ -82,8 +92,7 @@
       <!-- Book List -->
       <div v-if="!isLoading && filteredBooks.length" class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-          <div class-RS
-            class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+          <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
             <div class="col-span-1"></div>
             <div class="col-span-3">Book</div>
             <div class="col-span-2">Borrower</div>
@@ -300,274 +309,301 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { History, X } from 'lucide-vue-next'
-import { getBorrows } from '@/services/Api/borrow'
+import { ref, computed, onMounted } from 'vue';
+import { History, X, FileText } from 'lucide-vue-next';
+import { getBorrows} from '@/services/Api/borrow';
+import { exportTableToPdf } from '@/utils/exportPDFHistory';
 
-const books = ref([])
-const selectedBook = ref(null)
-const isLoading = ref(false)
-const error = ref(null)
-const searchQuery = ref('')
-const categoryFilter = ref('')
-const statusFilter = ref('')
-const userFilter = ref('')
+const books = ref([]);
+const selectedBook = ref(null);
+const isLoading = ref(false);
+const error = ref(null);
+const successMessage = ref(null);
+const searchQuery = ref('');
+const categoryFilter = ref('');
+const statusFilter = ref('');
+const userFilter = ref('');
 
 // Available categories (derived dynamically from data)
 const categories = computed(() => {
-  const uniqueCategories = new Set(books.value.map(book => book.category).filter(category => category))
-  return [...uniqueCategories].sort()
-})
+  const uniqueCategories = new Set(books.value.map(book => book.category).filter(category => category));
+  return [...uniqueCategories].sort();
+});
 
 // Available borrowers (derived from data)
 const borrowers = computed(() => {
-  const uniqueBorrowers = new Set(books.value.map(book => book.borrower).filter(borrower => borrower !== '—'))
-  return [...uniqueBorrowers].sort()
-})
+  const uniqueBorrowers = new Set(books.value.map(book => book.borrower).filter(borrower => borrower !== '—'));
+  return [...uniqueBorrowers].sort();
+});
 
 // Transform API data into book-centric structure
 const transformApiData = (apiData) => {
-  const bookMap = new Map()
+  if (!Array.isArray(apiData)) {
+    console.error('Invalid API data: Expected an array, got:', apiData);
+    return [];
+  }
+
+  const bookMap = new Map();
   apiData.forEach(record => {
-    const bookId = record.book.id || record.id
+    const bookId = record.book?.id || record.id || 'unknown-' + Math.random().toString(36).substr(2, 9);
     const bookData = {
       id: bookId,
-      title: record.book.title || 'Unknown Title',
-      author: record.book.author || 'Unknown Author',
-      category: record.book.category || 'Uncategorized',
-      cover_image: record.book.cover_image || 'https://via.placeholder.com/150',
-      description: record.book.description || 'No description available',
+      title: record.book?.title || 'Unknown Title',
+      author: record.book?.author || 'Unknown Author',
+      category: record.book?.category || 'Uncategorized',
+      cover_image: record.book?.cover_image || 'https://via.placeholder.com/150',
+      description: record.book?.description || 'No description available',
       borrower: record.user?.name || '—',
       return_date: record.return_date || null,
       borrowHistory: [],
-      isAvailable: true
-    }
+      isAvailable: true,
+    };
     if (!bookMap.has(bookId)) {
-      bookMap.set(bookId, bookData)
+      bookMap.set(bookId, bookData);
     }
     bookMap.get(bookId).borrowHistory.push({
       user: { name: record.user?.name || 'Unknown' },
-      borrow_date: record.borrow_date,
-      return_date: record.return_date,
+      borrow_date: record.borrow_date || null,
+      return_date: record.return_date || null,
       librarian: { name: record.librarian?.name || 'Unknown' },
-      status: record.status || 'unknown'
-    })
-  })
+      status: record.status || 'unknown',
+    });
+  });
 
   const booksArray = Array.from(bookMap.values()).map(book => {
-    const latestRecord = book.borrowHistory[book.borrowHistory.length - 1]
-    book.isAvailable = !latestRecord || latestRecord.status === 'returned'
-    book.borrower = latestRecord ? latestRecord.user.name : '—'
-    book.return_date = latestRecord ? latestRecord.return_date : null
-    return book
-  })
+    const latestRecord = book.borrowHistory[book.borrowHistory.length - 1];
+    book.isAvailable = !latestRecord || latestRecord.status === 'returned';
+    book.borrower = latestRecord ? latestRecord.user.name : '—';
+    book.return_date = latestRecord ? latestRecord.return_date : null;
+    return book;
+  });
 
-  console.log('Transformed Books:', booksArray)
-  return booksArray
-}
+  console.log('Transformed Books:', booksArray);
+  return booksArray;
+};
 
 // Fetch borrowing records
 onMounted(async () => {
   try {
-    isLoading.value = true
-    const response = await getBorrows()
-    console.log('API Response:', response.data)
-    books.value = transformApiData(response.data)
+    isLoading.value = true;
+    const response = await getBorrows();
+    console.log('API Response:', response.data);
+    books.value = transformApiData(response.data);
+    console.log('Books Loaded:', books.value.length);
+    console.log('Filtered Books:', filteredBooks.value.length);
   } catch (err) {
-    error.value = 'Failed to load borrowing data. Please check if the server is running.'
-    console.error('Fetch Error:', err.message, err.response?.data)
+    error.value = 'Failed to load borrowing data. Please check if the server is running.';
+    console.error('Fetch Error:', err.message, err.response?.data);
+    // Mock data for testing
+    const mockData = [
+      {
+        book: { id: 1, title: 'Sample Book', author: 'John Doe', category: 'Fiction', cover_image: 'https://via.placeholder.com/150', description: 'A sample book' },
+        user: { name: 'Alice' },
+        borrow_date: '2025-07-01',
+        return_date: null,
+        librarian: { name: 'Bob' },
+        status: 'borrowed',
+      },
+      {
+        book: { id: 2, title: 'Another Book', author: 'Jane Smith', category: 'History', cover_image: 'https://via.placeholder.com/150', description: 'Another sample book' },
+        user: { name: 'Bob' },
+        borrow_date: '2025-06-15',
+        return_date: '2025-07-01',
+        librarian: { name: 'Alice' },
+        status: 'returned',
+      },
+    ];
+    books.value = transformApiData(mockData);
+    console.log('Using Mock Data:', books.value);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
+    console.log('isLoading:', isLoading.value);
   }
-})
+});
 
 // Filtered books for search and filters
 const filteredBooks = computed(() => {
-  let filtered = books.value
+  let filtered = books.value;
 
   // Apply search query filter
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
+    const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(
       book =>
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query)
-    )
+    );
   }
 
   // Apply category filter
   if (categoryFilter.value) {
-    filtered = filtered.filter(book => book.category === categoryFilter.value)
+    filtered = filtered.filter(book => book.category === categoryFilter.value);
   }
 
   // Apply status filter
   if (statusFilter.value) {
     filtered = filtered.filter(book => 
       statusFilter.value === 'available' ? book.isAvailable : !book.isAvailable
-    )
+    );
   }
 
   // Apply user filter
   if (userFilter.value) {
-    filtered = filtered.filter(book => book.borrower === userFilter.value)
+    filtered = filtered.filter(book => book.borrower === userFilter.value);
   }
 
-  return filtered
-})
+  console.log('Filtered Books Count:', filtered.length);
+  return filtered;
+});
 
 // Stats
-const availableBooks = computed(() => filteredBooks.value.filter(book => book.isAvailable).length)
-const borrowedBooks = computed(() => filteredBooks.value.filter(book => !book.isAvailable).length)
+const availableBooks = computed(() => filteredBooks.value.filter(book => book.isAvailable).length);
+const borrowedBooks = computed(() => filteredBooks.value.filter(book => !book.isAvailable).length);
+
+// Export to PDF
+const exportToPDF = async () => {
+  console.log('Exporting to PDF...');
+  const headers = ['Book', 'Author', 'Borrower', 'Category', 'Return Date', 'Status'];
+  const rows = filteredBooks.value.map(book => [
+    book.title || 'Unknown',
+    book.author || 'Unknown',
+    book.borrower || '—',
+    book.category || 'Uncategorized',
+    formatDate(book.return_date),
+    book.isAvailable ? 'Available' : 'Borrowed',
+  ]);
+  console.log('PDF Data Prepared:', { headers, rows });
+
+  try {
+    await exportTableToPdf(headers, rows, 'Library Borrowing History', 'borrowing_history.pdf');
+    console.log('PDF export completed');
+    successMessage.value = 'PDF exported successfully! Check your Downloads folder or browser download history.';
+    setTimeout(() => (successMessage.value = null), 5000);
+  } catch (err) {
+    error.value = `Failed to export PDF: ${err.message}. Check browser console for details.`;
+    console.error('PDF Export Error:', err.message, err.stack);
+  }
+};
+
+// Clear filters
+const clearFilters = () => {
+  searchQuery.value = '';
+  categoryFilter.value = '';
+  statusFilter.value = '';
+  userFilter.value = '';
+  console.log('Filters cleared');
+};
 
 // Modal controls
 const openBookDetails = (book) => {
-  selectedBook.value = book
-  document.body.style.overflow = 'hidden'
-}
+  selectedBook.value = book;
+  document.body.style.overflow = 'hidden';
+};
 
 const closeBookDetails = () => {
-  selectedBook.value = null
-  document.body.style.overflow = 'auto'
-}
+  selectedBook.value = null;
+  document.body.style.overflow = 'auto';
+};
 
 // Format date
 const formatDate = (dateString) => {
-  if (!dateString) return '—'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 // Category styling
 const getCategoryStyle = (category) => {
   switch (category?.toLowerCase()) {
     case 'history':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-100 text-yellow-800';
     case 'programming':
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-100 text-blue-800';
     case 'fiction':
-      return 'bg-purple-100 text-purple-800'
+      return 'bg-purple-100 text-purple-800';
     case 'biography':
-      return 'bg-green-100 text-green-800'
+      return 'bg-green-100 text-green-800';
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 text-gray-800';
   }
-}
+};
 
 // Borrow and Return functions
 const handleBorrowBook = async (bookId) => {
   try {
-    isLoading.value = true
-    const response = await borrowBook(bookId, { user: { name: 'Current User', email: 'user@example.com' } })
-    console.log('Borrow Response:', response.data)
-    const newRecord = response.data
-    const bookIndex = books.value.findIndex(book => book.id === bookId)
+    isLoading.value = true;
+    const response = await borrowBook(bookId, { user: { name: 'Current User', email: 'user@example.com' } });
+    console.log('Borrow Response:', response.data);
+    const newRecord = response.data;
+    const bookIndex = books.value.findIndex(book => book.id === bookId);
     if (bookIndex !== -1) {
-      const updatedBook = { ...books.value[bookIndex] }
+      const updatedBook = { ...books.value[bookIndex] };
       updatedBook.borrowHistory.push({
         user: { name: newRecord.user?.name || 'Current User' },
         borrow_date: newRecord.borrow_date,
         return_date: newRecord.return_date,
         librarian: { name: newRecord.librarian?.name || 'Unknown' },
-        status: newRecord.status || 'borrowed'
-      })
-      updatedBook.isAvailable = newRecord.status === 'returned'
-      updatedBook.borrower = newRecord.user?.name || 'Current User'
-      updatedBook.return_date = newRecord.return_date
-      books.value[bookIndex] = updatedBook
+        status: newRecord.status || 'borrowed',
+      });
+      updatedBook.isAvailable = newRecord.status === 'returned';
+      updatedBook.borrower = newRecord.user?.name || 'Current User';
+      updatedBook.return_date = newRecord.return_date;
+      books.value[bookIndex] = updatedBook;
       if (selectedBook.value?.id === bookId) {
-        selectedBook.value = updatedBook
+        selectedBook.value = updatedBook;
       }
     } else {
-      console.warn(`Book with ID ${bookId} not found`)
-      error.value = `Book with ID ${bookId} not found`
+      console.warn(`Book with ID ${bookId} not found`);
+      error.value = `Book with ID ${bookId} not found`;
     }
   } catch (err) {
-    error.value = `Failed to borrow book: ${err.message}`
-    console.error('Borrow Error:', err.message, err.response?.data)
+    error.value = `Failed to borrow book: ${err.message}`;
+    console.error('Borrow Error:', err.message, err.response?.data);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const handleReturnBook = async (bookId) => {
   try {
-    isLoading.value = true
-    const response = await returnBook(bookId)
-    console.log('Return Response:', response.data)
-    const updatedRecord = response.data
-    const bookIndex = books.value.findIndex(book => book.id === bookId)
+    isLoading.value = true;
+    const response = await returnBook(bookId);
+    console.log('Return Response:', response.data);
+    const updatedRecord = response.data;
+    const bookIndex = books.value.findIndex(book => book.id === bookId);
     if (bookIndex !== -1) {
-      const updatedBook = { ...books.value[bookIndex] }
+      const updatedBook = { ...books.value[bookIndex] };
       const historyIndex = updatedBook.borrowHistory.findIndex(
         record => record.borrow_date === updatedRecord.borrow_date && !record.return_date
-      )
+      );
       if (historyIndex !== -1) {
         updatedBook.borrowHistory[historyIndex] = {
           user: { name: updatedRecord.user?.name || 'Current User' },
           borrow_date: updatedRecord.borrow_date,
           return_date: updatedRecord.return_date,
           librarian: { name: updatedRecord.librarian?.name || 'Unknown' },
-          status: updatedRecord.status || 'returned'
-        }
-        updatedBook.isAvailable = updatedRecord.status === 'returned'
-        updatedBook.borrower = updatedRecord.user?.name || 'Current User'
-        updatedBook.return_date = updatedRecord.return_date
-        books.value[bookIndex] = updatedBook
+          status: updatedRecord.status || 'returned',
+        };
+        updatedBook.isAvailable = updatedRecord.status === 'returned';
+        updatedBook.borrower = updatedRecord.user?.name || 'Current User';
+        updatedBook.return_date = updatedRecord.return_date;
+        books.value[bookIndex] = updatedBook;
         if (selectedBook.value?.id === bookId) {
-          selectedBook.value = updatedBook
+          selectedBook.value = updatedBook;
         }
       } else {
-        console.warn(`Active borrow record for book ID ${bookId} not found`)
-        error.value = `No active borrow record found for book ID ${bookId}`
+        console.warn(`Active borrow record for book ID ${bookId} not found`);
+        error.value = `No active borrow record found for book ID ${bookId}`;
       }
     } else {
-      console.warn(`Book with ID ${bookId} not found`)
-      error.value = `Book with ID ${bookId} not found`
+      console.warn(`Book with ID ${bookId} not found`);
+      error.value = `Book with ID ${bookId} not found`;
     }
   } catch (err) {
-    error.value = `Failed to return book: ${err.message}`
-    console.error('Return Error:', err.message, err.response?.data)
+    error.value = `Failed to return book: ${err.message}`;
+    console.error('Return Error:', err.message, err.response?.data);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>
-
-<style scoped>
-/* Add animations for cards */
-@keyframes card-appear {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.grid-cols-1 > div {
-  animation: card-appear 0.3s ease-out forwards;
-  animation-delay: calc(var(--index) * 0.1s);
-}
-
-.grid-cols-1 > div:nth-child(1) { --index: 1; }
-.grid-cols-1 > div:nth-child(2) { --index: 2; }
-.grid-cols-1 > div:nth-child(3) { --index: 3; }
-
-/* Modal animation */
-@keyframes slide-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.max-w-2xl {
-  animation: slide-up 0.3s ease-out;
-}
-</style>

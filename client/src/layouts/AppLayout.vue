@@ -395,7 +395,7 @@ onMounted(() => {
       </header>
 
       <!-- Page Content -->
-      <main class="p-6">
+      <main>
         <RouterView v-if="!isLoading" />
         <div v-else class="flex justify-center items-center h-full">
           <p class="text-gray-600" :class="{ 'font-khmer': language === 'kh' }">

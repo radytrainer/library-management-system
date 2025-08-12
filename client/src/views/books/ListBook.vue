@@ -38,7 +38,7 @@
       </div>
     </transition>
 
-    <div class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-1 py-5 space-y-2">
+    <div class="max-w-7xl mx-auto px-8 sm:px-6 lg:px-1 py-8 space-y-2">
       <BookHeader />
 
       <BookTable :books="books" :categories="categories" :languages="languages" :openActionMenu="openActionMenu"

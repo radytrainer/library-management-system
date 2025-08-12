@@ -233,7 +233,7 @@ async function submitForm() {
 </script>
 
 <template>
-  <div class="p-8">
+  <div class="p-8 bg-[#F8F8F8]">
     <div class="flex justify-between items-center mb-2">
       <div>
         <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>
