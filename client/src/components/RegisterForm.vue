@@ -56,11 +56,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore} from '@/stores/userStore'
-import { registerUser } from '@/services/Api/user'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
-const authStore =useUserStore()
+const authStore = useUserStore()
 
 const form = ref({
   username: '',
@@ -79,7 +78,6 @@ const handleSubmit = async () => {
   formError.value = ''
   isSubmitting.value = true
 
-  // ✅ Check password confirmation
   if (form.value.password !== form.value.confirmPassword) {
     formError.value = 'Passwords do not match'
     isSubmitting.value = false
@@ -87,24 +85,18 @@ const handleSubmit = async () => {
   }
 
   try {
-    const user = await registerUser(form.value)
-
-    // ✅ Save to Pinia store
-    authStore.setUser({
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email
-    })
-
-    // ✅ Redirect by role
-    router.push(user.role === 'admin' ? '/dashboard' : '/books')
-
+    const result = await authStore.register(form.value)
+    if (result.success) {
+      console.log('Registration successful, redirecting to login...')
+      router.push('/login')
+    } else {
+      throw new Error(result.error || 'Registration failed')
+    }
   } catch (err) {
-    formError.value = err.response?.data?.message || 'Something went wrong!'
+    console.error('Registration error:', err)
+    formError.value = err.message || 'Something went wrong!'
   } finally {
     isSubmitting.value = false
   }
 }
 </script>
-

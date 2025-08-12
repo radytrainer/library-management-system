@@ -37,7 +37,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { loginUser } from '@/services/Api/user'
 
 const router = useRouter()
 const authStore = useUserStore()
@@ -49,43 +48,26 @@ const isLoading = ref(false)
 const goToRegister = () => router.push('/register')
 
 const handleLogin = async () => {
-  console.log('Login started with email:', form.value.email);
-  errorMessage.value = '';
-  isLoading.value = true;
+  console.log('Login started with email:', form.value.email)
+  errorMessage.value = ''
+  isLoading.value = true
 
   try {
-    const response = await loginUser(form.value.email, form.value.password);
-    console.log('Login response:', response);
-
-    // Adjust according to API response structure:
-    const user = response.user || response;
-    console.log('User extracted from response:', user);
-
-    const userData = {
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email,
-      profile_image: user.profile_image || ''
-    };
-    console.log('User data prepared for store:', userData);
-
-    authStore.setUser(userData);
-    localStorage.setItem('token', user.accessToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    console.log('User data saved to store and localStorage');
-    console.log('Redirecting to:', user.role === 'admin' ? '/dashboard' : '/books');
-
-    router.push(user.role === 'admin' ? '/dashboard' : '/books');
-
+    const result = await authStore.login(form.value.email, form.value.password)
+    console.log('Login result:', result)
+    if (result.success) {
+      console.log('Login successful, redirecting...')
+      const role = authStore.user?.role
+      router.push(role === 'admin' ? '/dashboard' : '/books')
+    } else {
+      throw new Error(result.error || 'Login failed')
+    }
   } catch (err) {
-    console.error('Login error:', err);
-    errorMessage.value = err.response?.data?.message || 'Invalid email or password!';
+    console.error('Login error:', err)
+    errorMessage.value = err.message || 'Invalid email or password!'
   } finally {
-    isLoading.value = false;
-    console.log('Login process finished');
+    isLoading.value = false
+    console.log('Login process finished')
   }
-};
-
+}
 </script>

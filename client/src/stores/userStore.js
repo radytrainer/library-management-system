@@ -11,16 +11,16 @@ import {
   getProfile,
   getUserBarcodeImage,
 } from '@/services/Api/user'
-import router from '@/router' 
+import router from '@/router'
 import Swal from 'sweetalert2'
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    user:  null,
-    token:  null,
-    profileImage: localStorage.getItem('profile_image') || null, // ✅ load cached
+    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null,
+    token: localStorage.getItem('token') || null,
+    profileImage: localStorage.getItem('profile_image') || null,
     users: [],
     roles: [],
     viewedUser: null,
@@ -92,44 +92,72 @@ export const useUserStore = defineStore('user', {
         this.loading = false
       }
     },
+    async login(email, password) {
+      this.loading = true
+      this.error = ''
+      try {
+        const response = await loginUser(email, password)
+        console.log('Login API Response:', response)
 
-async login(email, password) {
-  this.loading = true;
-  this.error = '';
-  try {
-    const response = await loginUser(email, password);
-    console.log('Login API response:', response);
+        // Adjust for possible 'accessToken' key
+        const token = response.token || response.accessToken || response.user?.accessToken
+        const user = response.user || response
 
-    const user = response.user;
-    const token = response.token;
+        if (!token || !user) {
+          throw new Error('Invalid response: Token or user missing')
+        }
 
-    if (!token) {
-      throw new Error('No token received from API');
+        this.setUser(user)
+        this.setToken(token)
+
+        if (user.profile_image) {
+          localStorage.setItem('profile_image', user.profile_image)
+          console.log('Profile image saved:', user.profile_image)
+        } else {
+          localStorage.removeItem('profile_image')
+        }
+
+        console.log('Login successful, token stored:', token)
+        return { success: true, user }
+      } catch (error) {
+        console.error('Login error:', error.message, error.response?.data)
+        this.error = error.response?.data?.message || 'Login failed'
+        this.resetAuth()
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
     }
+    ,
+    async fetchUserProfile() {
+      // If no token, redirect to login (or skip if already on login handled elsewhere)
+      if (!this.token) {
+        console.log('No token found, redirecting to login')
+        await router.push('/login')
+        return { success: false }
+      }
 
-    this.setUser(user);
-    this.setToken(token);
+      this.loading = true
+      try {
+        // Call your API service
+        const res = await getProfile()  // assuming getProfile() returns profile data
 
-    if (user.profile_image) {
-      localStorage.setItem('profile_image', user.profile_image);
-      console.log('Profile image saved:', user.profile_image);
-    } else {
-      localStorage.removeItem('profile_image');
-      console.log('No profile image in response, cleared cache');
-    }
+        if (!res || !res.data) {
+          console.log('Failed to fetch profile, redirecting to login')
+          await router.push('/login')
+          return { success: false }
+        }
 
-    return { success: true, user };
-  } catch (error) {
-    console.error('Login error:', error);
-    this.error = error.response?.data?.message || 'Login failed';
-    localStorage.removeItem('profile_image');
-    return { success: false, error: this.error };
-  } finally {
-    this.loading = false;
-  }
-}
-,
-
+        this.userProfile = this.normalizeUser(res.data)
+        return { success: true, data: this.userProfile }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+        await router.push('/login')
+        return { success: false, error }
+      } finally {
+        this.loading = false
+      }
+    },
     async fetchRoles() {
       this.loading = true;
       this.error = '';
@@ -217,40 +245,6 @@ async login(email, password) {
         this.loading = false
       }
     },
-  async fetchProfile() {
-  this.loading = true
-  this.error = ''
-  try {
-    const res = await getProfile()
-
-    if (res.data.user) {
-      const normalizedUser = this.normalizeUser(res.data.user)
-      this.userProfile = normalizedUser
-      this.setUser(normalizedUser) // keep user in sync
-
-      // ✅ Cache profile_image if valid
-      if (normalizedUser.profile_image) {
-        localStorage.setItem('profile_image', normalizedUser.profile_image)
-      } else {
-        localStorage.removeItem('profile_image')
-      }
-    } else {
-      this.userProfile = null
-      localStorage.removeItem('profile_image')
-    }
-
-    return { success: true }
-  } catch (error) {
-    this.error = error.response?.data?.message || 'Failed to fetch profile'
-    localStorage.removeItem('profile_image')
-    return { success: false, error: this.error }
-  } finally {
-    this.loading = false
-  }
-},
-
-
-
     async fetchUserBarcodeImage(id) {
       this.loading = true
       this.error = ''
@@ -268,13 +262,13 @@ async login(email, password) {
       }
     },
 
-  logout() {
-  useUserStore.resetAuth()  // should clear user and token
-  localStorage.removeItem('profile_image')
-  localStorage.removeItem('token') // <-- clear token too
-  localStorage.removeItem('user')
-  router.push('/login')
-}
+    logout() {
+      this.resetAuth();
+      localStorage.removeItem('profile_image');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      router.push('/login');
+    }
 
   },
 })

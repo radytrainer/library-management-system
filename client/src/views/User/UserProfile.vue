@@ -20,17 +20,25 @@ const previewImage = ref(null)
 const imageFile = ref(null)
 const editMode = ref(false)
 const isSubmitting = ref(false)
+const isLoading = ref(true) // <-- NEW loading state
 
 onMounted(async () => {
-  await userStore.fetchProfile()
-  if (userStore.userProfile) {
-    Object.assign(editForm.value, {
-      username: userStore.userProfile.username || '',
-      email: userStore.userProfile.email || '',
-      phone: userStore.userProfile.phone || '',
-      date_of_birth: userStore.userProfile.date_of_birth || '',
-    })
-    previewImage.value = userStore.userProfile.profile_image || null
+  try {
+    await userStore.fetchUserProfile()
+
+    if (userStore.userProfile && Object.keys(userStore.userProfile).length > 0) {
+      Object.assign(editForm.value, {
+        username: userStore.userProfile.username || '',
+        email: userStore.userProfile.email || '',
+        phone: userStore.userProfile.phone || '',
+        date_of_birth: userStore.userProfile.date_of_birth || '',
+      })
+      previewImage.value = userStore.userProfile.profile_image || null
+    }
+  } catch (err) {
+    console.error('Failed to load user profile:', err)
+  } finally {
+    isLoading.value = false // <-- stop loading
   }
 })
 
@@ -54,19 +62,11 @@ const handleImageChange = (e) => {
 
 const validateForm = () => {
   if (!editForm.value.username) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Error',
-      text: 'Username is required',
-    })
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Username is required' })
     return false
   }
   if (!editForm.value.email || !/\S+@\S+\.\S+/.test(editForm.value.email)) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Error',
-      text: 'A valid email is required',
-    })
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'A valid email is required' })
     return false
   }
   return true
@@ -90,11 +90,7 @@ const updateProfile = async () => {
 
   const userId = userStore.userProfile?.id
   if (!userId) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'User ID not found',
-    })
+    Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
     isSubmitting.value = false
     return
   }
@@ -109,16 +105,11 @@ const updateProfile = async () => {
       showConfirmButton: false,
     })
     editMode.value = false
-    await userStore.fetchProfile()
+    await userStore.fetchUserProfile()
     imageFile.value = null
-    // Reset preview to updated profile image or null
     previewImage.value = userStore.userProfile?.profile_image || null
   } else {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: result.error || 'Failed to update profile',
-    })
+    Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to update profile' })
   }
   isSubmitting.value = false
 }
@@ -128,9 +119,10 @@ const goBack = () => {
 }
 
 const handleImageError = (event) => {
-  event.target.src = '/placeholder.png' // fallback placeholder
+  event.target.src = '/placeholder.png'
 }
 </script>
+
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
