@@ -67,13 +67,13 @@ const routes = [
       { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian','user'] } },
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
-      {path:'profile',name:'profile',component:UserProfile}
+      {path:'profile',name:'profile',component:UserProfile, meta: { roles: ['admin', 'librarian', 'user'] }}
 
     ],
   },
 
   // Fallback
-  { path: '/:pathMatch(.*)*', redirect: '/login' },
+  // { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -81,31 +81,66 @@ const router = createRouter({
   routes,
 })
 
-// Global Navigation Guard
-router.beforeEach((to, from, next) => {
+// Global Navigation Guard with logging
+router.beforeEach(async (to, from, next) => {
+  console.log('--- Navigation Attempt ---')
+  console.log('From:', from.fullPath)
+  console.log('To:', to.fullPath)
+
   const authStore = useUserStore()
+  const token = localStorage.getItem('token')
+
+  console.log('Token from localStorage:', token)
+
+  if (!authStore.user && token) {
+    console.log('No user in store but token exists, fetching profile...')
+    const result = await authStore.fetchProfile()
+    console.log('Profile fetch result:', result)
+    if (!result.success) {
+      console.log('Invalid token, clearing token and redirecting to login')
+      localStorage.removeItem('token')
+      return next('/login')
+    }
+  }
+
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
+  console.log('Is Logged In:', isLoggedIn)
+  console.log('User Role:', userRole)
+  console.log('Route requires auth:', to.meta.requiresAuth)
+  console.log('Route roles:', to.meta.roles)
+
+  // Public pages (login/register) when logged in redirect
   if (to.meta.requiresAuth === false) {
-    if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+    if  (to.meta.requiresAuth === false) {
+      console.log('User already logged in, redirecting based on role...')
       if (userRole === 'admin') return next('/dashboard')
       if (userRole === 'librarian' || userRole === 'user') return next('/books')
     }
     return next()
   }
 
+  // Protected routes require login
   if (to.meta.requiresAuth && !isLoggedIn) {
+    console.log('Not logged in but route requires auth, redirecting to login')
     return next('/login')
   }
 
+  // Role-based access control
   if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+    console.log('User role not authorized for this route.')
     if (userRole === 'admin') return next('/dashboard')
     if (userRole === 'librarian' || userRole === 'user') return next('/books')
     return next('/login')
   }
 
+  console.log('Navigation allowed')
   next()
 })
+
+
+
+
 
 export default router

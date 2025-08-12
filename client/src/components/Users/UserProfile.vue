@@ -25,25 +25,26 @@ onMounted(async () => {
   await userStore.fetchProfile()
   if (userStore.userProfile) {
     Object.assign(editForm.value, {
-      username: userStore.userProfile.username,
-      email: userStore.userProfile.email,
+      username: userStore.userProfile.username || '',
+      email: userStore.userProfile.email || '',
       phone: userStore.userProfile.phone || '',
       date_of_birth: userStore.userProfile.date_of_birth || '',
     })
+    previewImage.value = userStore.userProfile.profile_image || null
   }
 })
 
 onUnmounted(() => {
-  if (previewImage.value) {
+  if (previewImage.value && previewImage.value.startsWith('blob:')) {
     URL.revokeObjectURL(previewImage.value)
-    previewImage.value = null
   }
+  previewImage.value = null
 })
 
 const handleImageChange = (e) => {
   const file = e.target.files[0]
   if (file) {
-    if (previewImage.value) {
+    if (previewImage.value && previewImage.value.startsWith('blob:')) {
       URL.revokeObjectURL(previewImage.value)
     }
     imageFile.value = file
@@ -109,6 +110,9 @@ const updateProfile = async () => {
     })
     editMode.value = false
     await userStore.fetchProfile()
+    imageFile.value = null
+    // Reset preview to updated profile image or null
+    previewImage.value = userStore.userProfile?.profile_image || null
   } else {
     Swal.fire({
       icon: 'error',
@@ -124,7 +128,7 @@ const goBack = () => {
 }
 
 const handleImageError = (event) => {
-  event.target.src = '/placeholder.png'
+  event.target.src = '/placeholder.png' // fallback placeholder
 }
 </script>
 
@@ -144,8 +148,8 @@ const handleImageError = (event) => {
       <!-- Profile Card -->
       <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- Cover Section -->
-        <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-          <img class="justify-end flex w-20" src="/logo.png" alt="Logo" />
+        <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex justify-end items-center pr-4">
+          <img class="w-20" src="/logo.png" alt="Logo" />
         </div>
         
         <!-- Profile Content -->
@@ -194,7 +198,7 @@ const handleImageError = (event) => {
                 </div>
                 <div class="flex items-center gap-2 text-slate-600 mb-1">
                   <Calendar class="w-4 h-4" />
-                  <span>{{ userStore.userProfile?.dob || 'Not provided' }}</span>
+                  <span>{{ userStore.userProfile?.date_of_birth || 'Not provided' }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-slate-600">
                   <Shield class="w-4 h-4" />
@@ -350,5 +354,5 @@ const handleImageError = (event) => {
 </template>
 
 <style scoped>
-/* Custom styles are handled by Tailwind classes */
+/* No changes needed here */
 </style>

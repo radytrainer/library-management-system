@@ -33,8 +33,27 @@ const navItems = [
 
 // Filter nav based on user role
 const filteredNav = computed(() => {
-  return navItems.filter(item => userStore.user?.role ? item.roles.includes(userStore.user.role) : false)
+  const role = userStore.user?.role
+  console.log('Current user role:', role)
+  navItems.forEach(item => console.log(item.path, item.roles))
+
+  if (!role) {
+    console.log('No role found, returning empty array')
+    return []
+  }
+
+  if (role === 'admin') {
+    console.log('Role is admin, returning all nav items')
+    return navItems
+  }
+
+  const filtered = navItems.filter(item => item.roles.includes(role))
+  console.log('Filtered nav items:', filtered)
+  return filtered
 })
+
+
+
 
 // User initial fallback (first letter of email)
 const profileInitial = computed(() => {
@@ -68,8 +87,9 @@ const pageTitle = computed(() => {
     users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
     authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
     categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },  
     history: { en: 'History', kh: 'ប្រវត្តិការខ្ចី' },
+    profile: { en: 'profile', kh: 'ប្រវិត្តរូប' },
   }
   const key = route.name
   return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
@@ -125,11 +145,11 @@ async function fetchUserProfile() {
     const { success } = await userStore.fetchProfile()
     if (!success) {
       console.log('Failed to fetch profile, redirecting to login')
-      router.push('/login')
+      // router.push('/login')
     }
   } catch (error) {
     console.error('Error fetching profile:', error)
-    router.push('/login')
+    // router.push('/login')
   } finally {
     isLoading.value = false
   }

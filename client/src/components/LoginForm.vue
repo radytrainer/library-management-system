@@ -88,6 +88,4 @@ const handleLogin = async () => {
   }
 };
 
-
-
 </script>

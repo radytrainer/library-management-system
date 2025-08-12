@@ -11,14 +11,16 @@ import {
   getProfile,
   getUserBarcodeImage,
 } from '@/services/Api/user'
+import router from '@/router' 
 import Swal from 'sweetalert2'
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
-    token: localStorage.getItem('token') || null,
+    user:  null,
+    token:  null,
+    profileImage: localStorage.getItem('profile_image') || null, // ✅ load cached
     users: [],
     roles: [],
     viewedUser: null,
@@ -47,6 +49,9 @@ export const useUserStore = defineStore('user', {
     setToken(token) {
       this.token = token
       localStorage.setItem('token', token)
+      console.log('Token:', localStorage.getItem('token'))
+      console.log('User:', JSON.parse(localStorage.getItem('user')))
+
     },
 
     resetAuth() {
@@ -54,7 +59,7 @@ export const useUserStore = defineStore('user', {
       this.token = null
       localStorage.removeItem('user')
       localStorage.removeItem('token')
-      
+
     },
 
     normalizeUser(user) {
@@ -88,35 +93,57 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async login(email, password) {
-      this.loading = true
-      this.error = ''
-      try {
-        const user = await loginUser(email, password)
-        this.setUser(user)
-        this.setToken(user.accessToken)
-        return { success: true, user }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Login failed'
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
-    },
-    async fetchRoles() {
+async login(email, password) {
   this.loading = true;
   this.error = '';
   try {
-    const res = await getRoles();
-    this.roles = Array.isArray(res.data.roles) ? res.data.roles : [];
-    return { success: true, data: this.roles };
+    const response = await loginUser(email, password);
+    console.log('Login API response:', response);
+
+    const user = response.user;
+    const token = response.token;
+
+    if (!token) {
+      throw new Error('No token received from API');
+    }
+
+    this.setUser(user);
+    this.setToken(token);
+
+    if (user.profile_image) {
+      localStorage.setItem('profile_image', user.profile_image);
+      console.log('Profile image saved:', user.profile_image);
+    } else {
+      localStorage.removeItem('profile_image');
+      console.log('No profile image in response, cleared cache');
+    }
+
+    return { success: true, user };
   } catch (error) {
-    this.error = error.response?.data?.message || 'Failed to fetch roles';
+    console.error('Login error:', error);
+    this.error = error.response?.data?.message || 'Login failed';
+    localStorage.removeItem('profile_image');
     return { success: false, error: this.error };
   } finally {
     this.loading = false;
   }
-},
+}
+,
+
+    async fetchRoles() {
+      this.loading = true;
+      this.error = '';
+      try {
+        const res = await getRoles();
+        this.roles = Array.isArray(res.data.roles) ? res.data.roles : [];
+        return { success: true, data: this.roles };
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch roles';
+        return { success: false, error: this.error };
+      } finally {
+        this.loading = false;
+      }
+    },
 
     async fetchUsers() {
       this.loading = true
@@ -190,7 +217,7 @@ export const useUserStore = defineStore('user', {
         this.loading = false
       }
     },
-async fetchProfile() {
+  async fetchProfile() {
   this.loading = true
   this.error = ''
   try {
@@ -223,6 +250,7 @@ async fetchProfile() {
 },
 
 
+
     async fetchUserBarcodeImage(id) {
       this.loading = true
       this.error = ''
@@ -240,14 +268,13 @@ async fetchProfile() {
       }
     },
 
-    logout() {
-      this.resetAuth()
-      this.users = []
-      this.roles = []
-      this.viewedUser = null
-      this.userProfile = null
-      this.userBarcodeImageUrl = null
-      this.error = ''
-    },
+  logout() {
+  useUserStore.resetAuth()  // should clear user and token
+  localStorage.removeItem('profile_image')
+  localStorage.removeItem('token') // <-- clear token too
+  localStorage.removeItem('user')
+  router.push('/login')
+}
+
   },
 })

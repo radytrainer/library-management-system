@@ -15,9 +15,20 @@ export const registerUser = async (form) => {
 }
 
 export const loginUser = async (email, password) => {
-  const response = await api.post('/auth/signin', { email, password })
-  return response.data.user
-}
+  const response = await api.post('/auth/signin', { email, password });
+  console.log('Full API response:', response);
+  console.log('API response data:', response.data);
+
+  const user = response.data.user || response.data.data?.user || response.data;
+  const token = response.data.accessToken || response.data.token || response.data.data?.accessToken || response.data.data?.token;
+
+  console.log('Extracted user:', user);
+  console.log('Extracted token:', token);
+
+  return { user, token };
+};
+
+
 
 export function createUser(formData) {
   return api.post('/user/create', formData, {
@@ -50,6 +61,7 @@ export function deleteUser(id) {
 export function getProfile() {
   return api.get('/user/profile/me');
 }
+
 
 export function getUserBarcodeImage(id) {
   return api.get(`/user/${id}/barcode`, {
