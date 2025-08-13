@@ -7,10 +7,10 @@
         :limit="limit" :selected-status="selectedStatus" :selected-category="selectedCategory"
         :total-filtered-items="totalFilteredItems" :total-pages="totalPages" :open-dropdown="openDropdown"
         :get-item-status="getItemStatus" :format-date="formatDate" @update:current-page="currentPage = $event"
-        @update:limit="limit = $event" @update:selected-status="selectedStatus = $event"
+        @update:limit="limit = $event" @update:selected-status="updateSelectedStatus($event)"
         @update:selected-category="selectedCategory = $event" @toggle-dropdown="toggleDropdown" @show-book="handleShow"
         @confirm-return="confirmReturn" @update-record="openUpdateModal" @delete-record="handleDelete"
-        @add-borrow="showModal = true"@exportBorrowDataToExcel="exportBorrowDataToExcel"@exportBorrowDataToPDF="exportBorrowDataToPDF" />
+        @add-borrow="showModal = true" @exportBorrowDataToExcel="exportBorrowDataToExcel" @exportBorrowDataToPDF="exportBorrowDataToPDF" />
 
       <BookDetailModal v-if="showBookDetail" :book="selectedBook" :get-item-status="getItemStatus"
         :get-days-left="getDaysLeft" :format-date="formatDate" @close="showBookDetail = false" />
@@ -29,6 +29,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import HeaderSection from "./HeaderSection.vue";
 import StatsCards from "./StatsCards.vue";
 import BorrowTable from "./BorrowTable.vue";
@@ -39,8 +40,10 @@ import ConfirmModal from "./ConfirmModal.vue";
 import ToastNotification from "./ToastNotification.vue";
 import { exportToExcel } from "@/utils/exportToExcel";
 import { exportToPDF } from "@/utils/exportToPDF";
-
 import { useBorrowManagement } from "@/composables/useBorrowManagement";
+
+const route = useRoute();
+const router = useRouter();
 
 const {
   borrowData,
@@ -83,16 +86,25 @@ const {
   handleConfirmReturn,
 } = useBorrowManagement();
 
-const exportBorrowDataToExcel = () => {
-  exportToExcel(filteredBorrowData.value || filteredBorrowData); 
-};
-const exportBorrowDataToPDF = () => {
-  exportToPDF(filteredBorrowData.value || filteredBorrowData);
+// Function to update selectedStatus and sync with query parameter
+const updateSelectedStatus = (value) => {
+  console.log('Updating selectedStatus:', value); // Debug log
+  selectedStatus.value = value;
+  router.replace({
+    name: 'borrows',
+    query: { ...route.query, status: value || undefined },
+  });
 };
 
+// Read query parameter on mount
 onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
   console.log("Initial booksData:", booksData.value); // Debug log
+  const status = route.query.status;
+  console.log('Query status on mount:', status); // Debug log
+  if (status && ['borrowed', 'overdue', 'returned'].includes(status)) {
+    selectedStatus.value = status;
+  }
 });
 
 watch(booksData, (newBooksData) => {
@@ -100,12 +112,25 @@ watch(booksData, (newBooksData) => {
 });
 
 watch([selectedCategory, selectedStatus, search, limit], () => {
+  console.log('Filters changed, resetting currentPage to 1'); // Debug log
   currentPage.value = 1;
+  router.replace({
+    name: 'borrows',
+    query: { ...route.query, status: selectedStatus.value || undefined, category: selectedCategory.value || undefined },
+  });
 });
 
 watch(totalPages, (newTotal) => {
   if (currentPage.value > newTotal) currentPage.value = newTotal;
 });
+
+const exportBorrowDataToExcel = () => {
+  exportToExcel(filteredBorrowData.value || filteredBorrowData);
+};
+
+const exportBorrowDataToPDF = () => {
+  exportToPDF(filteredBorrowData.value || filteredBorrowData);
+};
 </script>
 
 <style scoped>

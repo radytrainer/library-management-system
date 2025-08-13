@@ -56,7 +56,8 @@
 </template>
 
 <script setup>
-import { ref, watch, defineEmits, defineProps } from 'vue'
+import { ref, watch, defineEmits, defineProps, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps({
   categories: { type: Array, default: () => [] },
@@ -66,10 +67,22 @@ const props = defineProps({
 
 const emit = defineEmits(['update:searchQuery', 'update:selectedCategory', 'update:selectedStatus', 'update:selectedLanguage', 'statusChanged'])
 
+const router = useRouter()
+const route = useRoute()
+
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedStatus = ref('all')
 const selectedLanguage = ref('')
+
+onMounted(() => {
+  const status = route.query.status
+  if (status && ['all', 'new', 'available', 'limited'].includes(status)) {
+    selectedStatus.value = status
+    emit('update:selectedStatus', status)
+    emit('statusChanged')
+  }
+})
 
 watch(searchQuery, val => emit('update:searchQuery', val))
 watch(selectedCategory, val => emit('update:selectedCategory', val))

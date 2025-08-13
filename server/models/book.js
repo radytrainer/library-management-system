@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define('Book', {
+  const Book = sequelize.define('Book', {
     title: DataTypes.STRING,
     isbn: DataTypes.STRING,
     quantity: DataTypes.INTEGER,
@@ -11,31 +11,36 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-    // --- ADD THESE EXPLICIT FOREIGN KEY DEFINITIONS ---
     AuthorId: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Assuming a book must have an author
+      allowNull: false,
       references: {
-        model: 'Authors', // This should match the table name of your Author model
+        model: 'Authors',
         key: 'id',
       },
     },
     CategoryId: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Assuming a book must have a category
+      allowNull: false,
       references: {
-        model: 'Categories', // This should match the table name of your Category model
+        model: 'Categories',
         key: 'id',
       },
     },
-    language_id: { // Use language_id as per your association
+    language_id: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Assuming a book must have a language
+      allowNull: false,
       references: {
-        model: 'Languages', // This should match the table name of your Language model
+        model: 'Languages',
         key: 'id',
       },
     },
-    // --- END OF ADDITIONS ---
   });
+  Book.associate = (models) => {
+    Book.belongsTo(models.Author, { foreignKey: 'AuthorId' });
+    Book.belongsTo(models.Category, { foreignKey: 'CategoryId' });
+    Book.belongsTo(models.Language, { foreignKey: 'language_id' });
+  };
+
+  return Book;
 };
