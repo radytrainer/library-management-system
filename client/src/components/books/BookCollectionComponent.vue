@@ -1,58 +1,33 @@
 <template>
   <div>
-    <BookOverviewStats
-      :totalBooks="totalBooks"
-      :availableBooks="availableBooks"
-      :categories="categories"
-      :unavailableBooks="unavailableBooks"
-    />
+    <BookOverviewStats :totalBooks="totalBooks" :availableBooks="availableBooks" :categories="categories"
+      :unavailableBooks="unavailableBooks" />
 
     <div class="px-6 mb-6">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div
-          class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6"
-        >
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
             <h2 class="text-xl font-semibold text-gray-800">Book Collection</h2>
             <p class="text-gray-500 text-sm mt-1">Manage your library books</p>
           </div>
 
-          <AddBookDropdown
-            @openForm="handleAddByForm"
-            @addByImport="handleAddByImport"
-          />
-          <ImportModal
-            :visible="showImportModal"
-            @close="showImportModal = false"
-            @importSuccess="handleImportSuccess"
-          />
+          <AddBookDropdown @openForm="handleAddByForm" @addByImport="handleAddByImport" />
+          <ImportModal :visible="showImportModal" @close="showImportModal = false"
+            @importSuccess="handleImportSuccess" />
         </div>
 
-        <BookFilters
-          :categories="categories"
-          :languages="languages"
-          v-model:searchQuery="searchQuery"
-          v-model:selectedCategory="selectedCategory"
-          v-model:selectedStatus="selectedStatus"
-          v-model:selectedLanguage="selectedLanguage"
-          @statusChanged="onStatusChange"
-        />
+        <BookFilters :categories="categories" :languages="languages" v-model:searchQuery="searchQuery"
+          v-model:selectedCategory="selectedCategory" v-model:selectedStatus="selectedStatus"
+          v-model:selectedLanguage="selectedLanguage" @statusChanged="onStatusChange" />
       </div>
     </div>
 
     <div class="px-6 pb-10">
       <div class="grid gap-4">
-        <BookCard
-          v-for="book in filteredBooks"
-          :key="book.id"
-          :book="book"
-          :openActionMenu="openActionMenu"
-          @viewBook="$emit('viewBook', $event)"
-          @openForm="$emit('openForm', $event)"
-          @deleteBookById="confirmDeleteBook"
-          @toggleActionMenu="$emit('toggleActionMenu', $event)"
-          @bookUpdated="updateBook"
-        />
+        <BookCard v-for="book in filteredBooks" :key="book.id" :book="book" :openActionMenu="openActionMenu"
+          @viewBook="$emit('viewBook', $event)" @openForm="$emit('openForm', $event)"
+          @deleteBookById="confirmDeleteBook" @toggleActionMenu="$emit('toggleActionMenu', $event)"
+          @bookUpdated="updateBook" />
       </div>
       <EmptyState v-if="filteredBooks.length === 0" @addBook="handleAddByForm" />
     </div>
@@ -77,7 +52,7 @@ const props = defineProps({
   openActionMenu: [Number, String, null],
   categories: { type: Array, default: () => [] },
   languages: { type: Array, default: () => [] },
-  "fetch-books": { type: Function, default: () => () => {} },
+  "fetch-books": { type: Function, default: () => () => { } },
 });
 
 const emit = defineEmits([
@@ -123,13 +98,13 @@ const handleImportSuccess = async (formData, callback) => {
             <summary class="text-sm text-gray-600 cursor-pointer">Show errors</summary>
             <ul class="text-xs text-red-500 mt-1 space-y-1">
               ${response.data.errors
-                .map((err) => {
-                  if (typeof err === "object") {
-                    return `<li><strong>Row ${err.row}:</strong> ${err.error}</li>`;
-                  }
-                  return `<li>${err}</li>`;
-                })
-                .join("")}
+            .map((err) => {
+              if (typeof err === "object") {
+                return `<li><strong>Row ${err.row}:</strong> ${err.error}</li>`;
+              }
+              return `<li>${err}</li>`;
+            })
+            .join("")}
             </ul>
           </details>
         `;

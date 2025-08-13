@@ -13,6 +13,8 @@ const borrowController = require('../controllers/borrowController');
 const languageBook = require('../controllers/langaugeBook');
 const donationController = require('../controllers/donationController');
 
+router.get('/books/last-month', bookController.getBooksLastMonth);
+
 // Upload base folder
 const uploadDir = path.join(__dirname, '../Uploads');
 
@@ -63,8 +65,9 @@ const resources = [
   }),
 ];
 
-// const upload = multer({ storage: multer.memoryStorage() });
-router.post('/api/books/preview', upload.single('excelFile'), bookController.previewImport);
+// Custom route for monthly borrow activity
+router.get('/borrows/activity', borrowController.activity);
+router.get('/borrows/top-borrowers', borrowController.topBorrowers);
 
 router.get("/api/reminder-test", borrowController.sendReturnReminders);
 
