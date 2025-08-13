@@ -19,11 +19,12 @@ const localForm = ref({
   email: '',
   password: '',
   phone: '',
-  roleId: '',
+  RoleId: '', // Changed from roleId to RoleId
   date_of_birth: '',
   profile_image: '',
   profile_image_file: null,
   profile_image_preview: null,
+  status: 'active', // Added status field
 });
 
 const errorMessage = ref('');
@@ -46,11 +47,12 @@ watch(
         email: val.email || '',
         password: '',
         phone: val.phone || '',
-        roleId: val.roleId || '',
+        RoleId: val.RoleId || '', // Changed from roleId to RoleId
         date_of_birth: val.date_of_birth || '',
         profile_image: val.profile_image || '',
         profile_image_file: null,
         profile_image_preview: val.profile_image || null,
+        status: val.status || 'active', // Added status
       };
     }
   },
@@ -82,7 +84,7 @@ function triggerFileInput() {
 
 async function submitForm() {
   errorMessage.value = '';
-  
+
   if (!props.isEditing) {
     if (!localForm.value.username || !localForm.value.email || !localForm.value.password) {
       errorMessage.value = 'Please provide a username, email, and password';
@@ -99,8 +101,8 @@ async function submitForm() {
   if (localForm.value.phone) {
     formData.append('phone', localForm.value.phone);
   }
-  if (localForm.value.roleId) {
-    formData.append('roleId', localForm.value.roleId);
+  if (localForm.value.RoleId) { // Changed from roleId to RoleId
+    formData.append('RoleId', localForm.value.RoleId);
   }
   if (localForm.value.date_of_birth) {
     formData.append('date_of_birth', localForm.value.date_of_birth);
@@ -108,32 +110,35 @@ async function submitForm() {
   if (localForm.value.profile_image_file) {
     formData.append('profile_image', localForm.value.profile_image_file);
   }
+  formData.append('status', localForm.value.status); // Added status
 
   let result;
-  if (props.isEditing) {
-    result = await userStore.updateUser(props.userId, formData);
-  } else {
-    result = await userStore.createUser(formData);
-    if (result.success) {
-      newUser.value = result.data;
-      console.log('New user created:', newUser.value);
-      if (idCardRef.value) {
-        await nextTick(); // Wait for DOM update
-        console.log('Generating card for user:', newUser.value.id);
-        idCardRef.value.generateCard(); // Trigger card generation and auto-print
-      } else {
-        console.error('idCardRef is not initialized');
-      }
+  try {
+    if (props.isEditing) {
+      result = await userStore.updateUser(props.userId, formData);
     } else {
-      console.error('User creation failed:', result.error);
+      result = await userStore.createUser(formData);
+      if (result.success) {
+        newUser.value = result.data;
+        console.log('New user created:', newUser.value);
+        if (idCardRef.value) {
+          await nextTick();
+          console.log('Generating card for user:', newUser.value.id);
+          idCardRef.value.generateCard();
+        } else {
+          console.error('idCardRef is not initialized');
+        }
+      }
     }
-  }
 
-  if (result.success) {
-    emits('submit-success', localForm.value);
-    closeModal();
-  } else {
-    errorMessage.value = result.error || 'Failed to save user. Please try again.';
+    if (result.success) {
+      emits('submit-success', localForm.value);
+      closeModal();
+    } else {
+      errorMessage.value = result.error || 'Failed to save user. Please try again.';
+    }
+  } catch (error) {
+    errorMessage.value = error.message || 'An unexpected error occurred.';
   }
 }
 
@@ -147,11 +152,12 @@ function closeModal() {
     email: '',
     password: '',
     phone: '',
-    roleId: '',
+    RoleId: '', // Changed from roleId to RoleId
     date_of_birth: '',
     profile_image: '',
     profile_image_file: null,
     profile_image_preview: null,
+    status: 'active', // Added status
   };
   errorMessage.value = '';
   newUser.value = null;
@@ -335,7 +341,7 @@ function closeModal() {
                     </label>
                     <div class="relative">
                       <select 
-                        v-model="localForm.roleId" 
+                        v-model="localForm.RoleId" 
                         required 
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white hover:border-gray-300 appearance-none cursor-pointer"
                       >
@@ -343,6 +349,27 @@ function closeModal() {
                         <option v-for="role in userStore.roles" :key="role.id" :value="role.id">
                           {{ role.name }}
                         </option>
+                      </select>
+                      <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-gray-700">
+                      Status <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <div class="relative">
+                      <select 
+                        v-model="localForm.status" 
+                        required 
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white hover:border-gray-300 appearance-none cursor-pointer"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                       </select>
                       <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,7 +410,7 @@ function closeModal() {
             <button 
               type="submit" 
               class="px-10 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
-              :disabled="userStore.loading || (!isEditing && (!localForm.username || !localForm.email || !localForm.password))"
+              :disabled="userStore.loading || (!isEditing && (!localForm.username || !localForm.email || !localForm.password || !localForm.RoleId))"
             >
               <svg 
                 v-if="userStore.loading" 
@@ -405,6 +432,7 @@ function closeModal() {
     </div>
   </div>
   <UserCard
+    v-if="newUser"
     ref="idCardRef"
     :user="newUser"
     systemName="Library Digital"

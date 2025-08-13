@@ -29,10 +29,33 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
       include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"], required: false }],
-      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
+      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt", "status"],
       order: [["createdAt", "ASC"]],
     });
-    res.status(200).json({ users });
+
+    // Map users to include the full profile image URL and role details
+    const formattedUsers = users.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      date_of_birth: user.date_of_birth,
+      profile_image: getProfileImageUrl(req, user.profile_image), // Assuming this function generates the full URL
+      phone: user.phone,
+      barcode: user.barcode,
+      barcode_image: user.barcode_image,
+      role: user.Role
+        ? {
+            id: user.Role.id,
+            name: user.Role.name,
+       
+          }
+        : null,
+      status: user.status, // Include status in the response
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }));
+
+    res.status(200).json({ users: formattedUsers });
   } catch (error) {
     console.error('Error in getAllUsers:', error);
     res.status(500).json({ message: 'Failed to fetch users', error: error.message });
@@ -45,7 +68,7 @@ const getUserById = async (req, res) => {
 
     const user = await User.findByPk(id, {
       include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"], required: false }],
-      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt"],
+      attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt", "status"],
     });
 
     if (!user) return res.status(404).json({ message: "User not found!" });
@@ -61,13 +84,8 @@ const getUserById = async (req, res) => {
         phone: user.phone,
         barcode: user.barcode,
         barcode_image: user.barcode_image,
-        role: user.Role
-          ? {
-              id: user.Role.id,
-              name: user.Role.name,
-              description: user.Role.description,
-            }
-          : null,
+        role: user.Role.name||null,
+        status: user.status, // Include status in the response
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -205,7 +223,6 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: "Failed to update user", error: error.message });
   }
 };
-
 
 const deleteUserById = async (req, res) => {
   try {

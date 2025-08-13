@@ -32,7 +32,12 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-    activeUsersCount: (state) => state.users.filter(u => u.isActive).length,
+     activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
+    newUsersCount: (state) => {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return state.users.filter(user => new Date(user.createdAt) >= firstDayOfMonth).length;
+    },
     newUsersCount: (state) => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -41,18 +46,25 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    setUser(user) {
-      this.user = user
-      localStorage.setItem('user', JSON.stringify(user))
-    },
+//    setUser(user) {
+//   const normalizedUser = this.normalizeUser(user)
+//   this.user = normalizedUser
+//   localStorage.setItem('user', JSON.stringify(normalizedUser))
 
-    setToken(token) {
-      this.token = token
-      localStorage.setItem('token', token)
-      console.log('Token:', localStorage.getItem('token'))
-      console.log('User:', JSON.parse(localStorage.getItem('user')))
+//   if (normalizedUser.profile_image) {
+//     localStorage.setItem('profile_image', normalizedUser.profile_image)
+//     this.profileImage = normalizedUser.profile_image
+//   } else {
+//     localStorage.removeItem('profile_image')
+//     this.profileImage = null
+//   }
+// },
 
-    },
+// If you update the token as well, keep this unchanged
+setToken(token) {
+  this.token = token
+  localStorage.setItem('token', token)
+},
 
     resetAuth() {
       this.user = null
@@ -62,19 +74,33 @@ export const useUserStore = defineStore('user', {
 
     },
 
-    normalizeUser(user) {
+     normalizeUser(user) {
       return {
         ...user,
         profile_image: user.profile_image
-          ? user.profile_image.startsWith('http')
-            ? user.profile_image
-            : `${apiBase}/uploads/profile/${user.profile_image}`
+          ? (user.profile_image.startsWith('http')
+              ? user.profile_image
+              : `${apiBase}/uploads/profile/${user.profile_image}`)
           : null,
         barcode_image: user.barcode_image
-          ? user.barcode_image.startsWith('http')
-            ? user.barcode_image
-            : `${apiBase}/uploads/barcodes/${user.barcode_image}`
+          ? (user.barcode_image.startsWith('http')
+              ? user.barcode_image
+              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
+      }
+    },
+
+    setUser(user) {
+      const normalizedUser = this.normalizeUser(user)
+      this.user = normalizedUser
+      localStorage.setItem('user', JSON.stringify(normalizedUser))
+
+      if (normalizedUser.profile_image) {
+        localStorage.setItem('profile_image', normalizedUser.profile_image)
+        this.profileImage = normalizedUser.profile_image
+      } else {
+        localStorage.removeItem('profile_image')
+        this.profileImage = null
       }
     },
 

@@ -1,10 +1,9 @@
-<!-- UserTable.vue -->
 <script setup>
 import { ref } from 'vue';
 
 const props = defineProps({
   users: Array,
-  roles: Array,
+  roles: Array, 
 });
 
 const emits = defineEmits(['edit-user', 'delete-user', 'view-user', 'print-user']);
@@ -45,7 +44,7 @@ const toggleMenu = (id) => {
           <td class="px-4 py-3">{{ user.phone || '-' }}</td>
           <td class="px-4 py-3">
             <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-              {{ user.role || user.Role?.name || 'User' }}
+              {{ user.role?.name || 'User' }}
             </span>
           </td>
           <td class="px-4 py-3">{{ user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : '-' }}</td>
@@ -58,11 +57,11 @@ const toggleMenu = (id) => {
             <span
               :class="{
                 'px-2 py-1 rounded-full text-xs': true,
-                'bg-green-100 text-green-800': user.isActive,
-                'bg-red-100 text-red-800': !user.isActive,
+                'bg-green-100 text-green-800': user.status === 'active',
+                'bg-red-100 text-red-800': user.status === 'inactive',
               }"
             >
-              {{ user.isActive ? 'Active' : 'Inactive' }}
+              {{ user.status === 'active' ? 'Active' : 'Inactive' }}
             </span>
           </td>
           <td class="px-4 py-3 text-right relative">
@@ -71,7 +70,7 @@ const toggleMenu = (id) => {
             </button>
             <div v-if="openMenuId === user.id" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow-md z-50">
               <button @click="$emit('view-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-500">View</button>
-              <button @click="$emit('edit-user', user)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-green-500">Edit</button>
+              <button @click="$emit('edit-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-green-500">Edit</button>
               <button @click="$emit('delete-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">Delete</button>
               <button @click="$emit('print-user', user.id)" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">Print</button>
             </div>

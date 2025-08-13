@@ -66,7 +66,7 @@ const routes = [
   },
 
   // Fallback to login for unmatched routes (optional)
-  // { path: '/:pathMatch(.*)*', redirect: '/login' },
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -85,7 +85,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (!authStore.user && localStorage.getItem('token')) {
     console.log('Attempting to fetch profile with token:', localStorage.getItem('token'))
-    const result = await authStore.fetchProfile()
+    const result = await authStore.fetchUserProfile()
     console.log('Fetch Profile Result:', result)
     if (!result.success) {
       console.log('Profile fetch failed, clearing auth and redirecting')
