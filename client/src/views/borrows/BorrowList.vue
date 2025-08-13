@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-100">
-    <div class="p-6">
+    <div class="p-8">
       <HeaderSection v-model:search="search" />
       <StatsCards :borrow-data="borrowData" :get-item-status="getItemStatus" />
       <BorrowTable :filtered-borrow-data="filteredBorrowData" :categories="categories" :current-page="currentPage"

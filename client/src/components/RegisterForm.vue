@@ -5,7 +5,7 @@
       <!-- Full Name -->
       <div>
         <label class="block text-sm font-medium text-white mb-1">Full Name</label>
-        <input v-model="form.name" type="text" required placeholder="Your Full Name"
+        <input v-model="form.username" type="text" required placeholder="Your Full Name"
           class="w-full px-4 py-2 bg-transparent text-white border border-white/50 rounded-xl focus:ring-4 focus:ring-blue-300"/>
       </div>
 
@@ -56,13 +56,19 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import api from '@/services/axios'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const authStore = useUserStore()
 
-const form = ref({ name:'', email:'', phone:'', password:'', confirmPassword:'' })
+const form = ref({
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: ''
+})
+
 const formError = ref('')
 const isSubmitting = ref(false)
 
@@ -72,7 +78,6 @@ const handleSubmit = async () => {
   formError.value = ''
   isSubmitting.value = true
 
-  // ✅ Check password confirmation
   if (form.value.password !== form.value.confirmPassword) {
     formError.value = 'Passwords do not match'
     isSubmitting.value = false
@@ -80,35 +85,16 @@ const handleSubmit = async () => {
   }
 
   try {
-    const formData = new FormData()
-    formData.append('username', form.value.name)
-    formData.append('email', form.value.email)
-    formData.append('phone', form.value.phone)
-    formData.append('password', form.value.password)
-
-    const response = await api.post('/auth/signup', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-
-    const user = response.data.user
-
-    // ✅ Save token and role into Pinia store
-    authStore.setUser({
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email
-    })
-
-    // ✅ Redirect based on role
-    if (user.role === 'admin') {
-      router.push('/dashboard')
+    const result = await authStore.register(form.value)
+    if (result.success) {
+      console.log('Registration successful, redirecting to login...')
+      router.push('/login')
     } else {
-      router.push('/books')
+      throw new Error(result.error || 'Registration failed')
     }
-
   } catch (err) {
-    formError.value = err.response?.data?.message || 'Something went wrong!'
+    console.error('Registration error:', err)
+    formError.value = err.message || 'Something went wrong!'
   } finally {
     isSubmitting.value = false
   }

@@ -36,11 +36,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import api from '@/services/axios'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const authStore = useUserStore()
 
 const form = ref({ email: '', password: '' })
 const errorMessage = ref('')
@@ -49,46 +48,26 @@ const isLoading = ref(false)
 const goToRegister = () => router.push('/register')
 
 const handleLogin = async () => {
+  console.log('Login started with email:', form.value.email)
   errorMessage.value = ''
   isLoading.value = true
 
   try {
-    const response = await api.post('/auth/signin', {
-      email: form.value.email,
-      password: form.value.password,
-    })
-
-    const user = response.data.user
-
-    // ✅ Save token & role into Pinia store
-    authStore.setUser({
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email,
-      profile_image: user.profile_image || ''
-    })
-
-    // ✅ Save user to localStorage (important)
-    localStorage.setItem('user', JSON.stringify({
-      token: user.accessToken,
-      role: user.role,
-      name: user.username,
-      email: user.email,
-      profile_image: user.profile_image || ''
-    }))
-
-    // ✅ Redirect based on role
-    if (user.role === 'admin') {
-      router.push('/dashboard')
+    const result = await authStore.login(form.value.email, form.value.password)
+    console.log('Login result:', result)
+    if (result.success) {
+      console.log('Login successful, redirecting...')
+      const role = authStore.user?.role
+      router.push(role === 'admin' ? '/dashboard' : '/books')
     } else {
-      router.push('/books')
+      throw new Error(result.error || 'Login failed')
     }
-
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || 'Invalid email or password!'
+    console.error('Login error:', err)
+    errorMessage.value = err.message || 'Invalid email or password!'
   } finally {
     isLoading.value = false
+    console.log('Login process finished')
   }
 }
 </script>

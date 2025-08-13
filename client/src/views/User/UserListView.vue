@@ -5,6 +5,7 @@ import UserTable from '@/components/Users/UserTable.vue';
 import UserForm from '@/components/Users/UserForm.vue';
 import UserViewModal from '@/components/Users/UserViewModal.vue';
 import UserCard from '@/components/Users/UserCard.vue';
+import Swal from 'sweetalert2';
 
 const userStore = useUserStore();
 
@@ -21,15 +22,42 @@ const activeStatusFilter = ref('all'); // Options: 'all', 'active', 'inactive'
 const borrowingStatusFilter = ref('all'); // Options: 'all', 'borrowing', 'not-borrowing'
 
 onMounted(() => {
-  userStore.fetchUsers();
-  userStore.fetchRoles();
+  userStore.fetchUsers().catch((e) => {
+    Swal.fire({
+      toast: true,
+      position: 'bottom-end',
+
+      icon: 'error',
+      title: e.message || 'Failed to load users',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
+  });
+  userStore.fetchRoles().catch((e) => {
+    Swal.fire({
+      toast: true,
+          position: 'bottom-end',
+
+      icon: 'error',
+      title: e.message || 'Failed to load roles',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
+  });
 });
 
 // Computed property to filter users based on search query and status filters
 const filteredUsers = computed(() => {
   let filtered = userStore.users;
 
-  // Apply name/ID search filter
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim();
     filtered = filtered.filter(user =>
@@ -38,14 +66,12 @@ const filteredUsers = computed(() => {
     );
   }
 
-  // Apply active status filter
   if (activeStatusFilter.value !== 'all') {
     filtered = filtered.filter(user =>
       activeStatusFilter.value === 'active' ? user.isActive : !user.isActive
     );
   }
 
-  // Apply borrowing status filter
   if (borrowingStatusFilter.value !== 'all') {
     filtered = filtered.filter(user =>
       borrowingStatusFilter.value === 'borrowing' ? user.hasActiveLoans : !user.hasActiveLoans
@@ -76,47 +102,138 @@ function openViewUser(user) {
 
 function handleFormSubmitSuccess() {
   showFormModal.value = false;
-  userStore.fetchUsers();
+  userStore.fetchUsers().catch((e) => {
+    Swal.fire({
+      toast: true,
+          position: 'bottom-end',
+
+      icon: 'error',
+      title: e.message || 'Failed to reload users',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
+  });
 }
 
 async function confirmDeleteUser(id) {
-  if (!confirm('Are you sure you want to delete this user?')) return;
+const result = await Swal.fire({
+  title: 'Are you sure?',
+  text: "This action cannot be undone!",
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonColor: '#d33',
+  cancelButtonColor: '#3085d6',
+  confirmButtonText: 'Yes, delete it!',
+  background: '#fff',
+
+  willClose: () => {
+    // Remove blur from body when modal closes
+    document.body.style.filter = 'none';
+  }
+});
+
+
+  if (!result.isConfirmed) return;
+
   const res = await userStore.deleteUser(id);
   if (res.success) {
-    console.log('User deleted!');
+    Swal.fire({
+      toast: true,
+          position: 'bottom-end',
+
+      icon: 'success',
+      title: 'User has been deleted.',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
   } else {
-    console.error('Error:', res.error);
+    Swal.fire({
+      toast: true,
+         position: 'bottom-end',
+
+      icon: 'error',
+      title: res.error || 'Failed to delete user',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
   }
 }
 
 const handlePrintUser = async (userId) => {
-  console.log('Print user:', userId);
   const user = userStore.users.find(u => u.id === userId);
   if (user) {
     selectedUserForPrint.value = user;
     await nextTick();
     if (printCardRef.value) {
-      console.log('Generating card for PDF');
       printCardRef.value.generateCard();
       setTimeout(() => {
         if (printCardRef.value && printCardRef.value.generatePDF) {
-          console.log('Attempting to generate PDF');
           printCardRef.value.generatePDF();
           setTimeout(() => {
             selectedUserForPrint.value = null;
           }, 500);
-        } else {
-          console.error('printCardRef not ready for PDF');
         }
       }, 2000);
-    } else {
-      console.error('printCardRef is not initialized');
     }
   }
 };
+
+// Updated submitForm with toast style notifications
+async function submitForm() {
+  let res;
+  if (isEditing.value) {
+    res = await userStore.updateUser(selectedUserId.value, formUserData.value);
+  } else {
+    res = await userStore.createUser(formUserData.value);
+  }
+
+  if (res.success) {
+    Swal.fire({
+      toast: true,
+          position: 'bottom-end',
+
+      icon: 'success',
+      title: isEditing.value ? 'User updated successfully.' : 'User created successfully.',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
+    handleFormSubmitSuccess();
+  } else {
+    Swal.fire({
+      toast: true,
+    position: 'bottom-end',
+
+      icon: 'error',
+      title: res.error || 'Something went wrong',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      width: '300px',
+      padding: '0.5em 1em',
+      background: '#fff',
+    });
+  }
+}
 </script>
+
 <template>
-  <div class="p-8">
+  <div class="p-8 bg-[#F8F8F8]">
     <div class="flex justify-between items-center mb-2">
       <div>
         <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>

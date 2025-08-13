@@ -263,9 +263,9 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { inject } from "vue";
-import { useAuthStore } from '@/stores/auth';
+import { useUserStore } from '@/stores/userStore';
 
-const authStore = useAuthStore()
+const authStore = useUserStore()
 const props = defineProps({
   modelValue: {
     type: Object,

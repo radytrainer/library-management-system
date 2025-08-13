@@ -1,14 +1,22 @@
 import './assets/tailwind.css'
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import router from './router';
+import { useUserStore } from './stores/userStore';
 
-import App from './App.vue'
-import router from './router'
+const app = createApp(App);
+const pinia = createPinia();
 
-const app = createApp(App)
+app.use(pinia);
+app.use(router);
 
-app.use(createPinia())
-app.use(router)
+// Initialize store state from localStorage
+const userStore = useUserStore();
+if (localStorage.getItem('token') && localStorage.getItem('user')) {
+  userStore.setToken(localStorage.getItem('token'));
+  userStore.setUser(JSON.parse(localStorage.getItem('user')));
+}
 
-app.mount('#app')
+app.mount('#app');

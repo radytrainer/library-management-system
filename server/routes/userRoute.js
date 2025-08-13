@@ -78,6 +78,11 @@ router.delete(
   userController.deleteUserById
 );
 
+router.post(
+  "/:id/upload-image",
+  [authJwt.verifyToken, uploadOptional],
+  userController.uploadProfileImage
+);
 // Profile routes
 router.get("/profile/me", [authJwt.verifyToken], userController.getUserProfile);
 router.delete("/profile/me", [authJwt.verifyToken], userController.deleteAccount);
