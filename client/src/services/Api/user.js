@@ -15,18 +15,14 @@ export const registerUser = async (form) => {
 }
 
 export const loginUser = async (email, password) => {
-  const response = await api.post('/auth/signin', { email, password });
-  console.log('Full API response:', response);
-  console.log('API response data:', response.data);
-
-  const user = response.data.user || response.data.data?.user || response.data;
-  const token = response.data.accessToken || response.data.token || response.data.data?.accessToken || response.data.data?.token;
-
-  console.log('Extracted user:', user);
-  console.log('Extracted token:', token);
-
-  return { user, token };
-};
+  try {
+    const response = await api.post('/auth/signin', { email, password })
+    return response.data
+  } catch (err) {
+    console.error('loginUser error:', err.response?.data || err.message)
+    throw err
+  }
+}
 
 
 

@@ -5,7 +5,7 @@ const { createCanvas } = require('canvas');
 const JsBarcode = require('jsbarcode');
 const fs = require('fs');
 const path = require('path');
-const db = require('../models');
+const db = require('../models/index');
 const authConfig = require('../config/auth.config');
 
 // Store active user IDs and their last activity timestamp
@@ -58,18 +58,18 @@ const initSocket = (server) => {
 
 // Broadcast active user count and list
 const broadcastActiveUsers = () => {
+  if (!io) return; // prevent errors if io not initialized
   const now = Date.now();
-  const activeThreshold = 5 * 60 * 1000; // 5 minutes
+  const activeThreshold = 5 * 60 * 1000;
   for (const [userId, lastActive] of activeUsers) {
-    if (now - lastActive > activeThreshold) {
-      activeUsers.delete(userId);
-    }
+    if (now - lastActive > activeThreshold) activeUsers.delete(userId);
   }
   io.emit('active-users', {
     count: activeUsers.size,
-    userIds: Array.from(activeUsers.keys())
+    userIds: Array.from(activeUsers.keys()),
   });
 };
+
 
 const signin = async (req, res) => {
   try {
@@ -99,6 +99,7 @@ const signin = async (req, res) => {
       return res.status(401).json({ accessToken: null, message: "Invalid password!" });
     }
 
+    // Check inactive account
     const inactiveThreshold = 30 * 24 * 60 * 60 * 1000; // 30 days
     const currentTime = new Date();
     if (user.lastActive && (currentTime - new Date(user.lastActive) > inactiveThreshold)) {
@@ -107,9 +108,8 @@ const signin = async (req, res) => {
     }
 
     await user.update({ lastActive: currentTime, isActive: true });
-    activeUsers.set(user.id, Date.now());
-    broadcastActiveUsers();
 
+    // Generate token
     const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
 
     res.status(200).json({
@@ -122,14 +122,20 @@ const signin = async (req, res) => {
         isActive: user.isActive,
         barcode: user.barcode,
         barcode_image: user.barcode_image,
+        profile_image: user.profile_image
+          ? `${req.protocol}://${req.get('host')}/uploads/profile/${user.profile_image}`
+          : null,
         accessToken: token,
       },
     });
+
   } catch (error) {
     console.error("Signin error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 const signup = async (req, res) => {
   try {

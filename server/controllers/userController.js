@@ -385,54 +385,60 @@ const getProfileImageUrl = (req, filename) => {
 
 const createUser = async (req, res) => {
   try {
-    console.log('Incoming body:', req.body);
-    console.log('File info:', req.file);
+    const { username, email, password, date_of_birth, phone, RoleId } = req.body;
+    const profile_image = req.file ? req.file.filename : null;
 
-    // 1. Only 'admin' or 'librarian' can create users
+    // Check required fields
+    if (!username || !email || !password || !RoleId) {
+      return res.status(400).json({ message: 'Username, email, password, and role are required' });
+    }
+
+    // Only admin or librarian can create users
     if (!['admin', 'librarian'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Only admins or librarians can create users' });
     }
 
-    const { username, email, password, date_of_birth, phone, RoleId } = req.body; // Changed to RoleId
-    const profile_image = req.file ? req.file.filename : null;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: 'Username, email, and password are required' });
-    }
-
+    // Check email uniqueness
     const existingEmail = await User.findOne({ where: { email } });
     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    const targetRole = await Role.findByPk(RoleId); // Use RoleId here
+    // Check Role
+    const targetRole = await Role.findByPk(RoleId);
     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
-    // 🚫 No one can create users with admin role
     if (targetRole.name === 'admin') {
-      return res.status(403).json({ message: 'Creating users with admin role is not allowed' });
+      return res.status(403).json({ message: 'Cannot assign admin role' });
     }
 
-    // 🚫 Librarians can only assign "user" role
     if (req.user.role === 'librarian' && targetRole.name !== 'user') {
-      return res.status(403).json({ message: 'Librarians can only create users with the "user" role' });
+      return res.status(403).json({ message: 'Librarians can only assign "user" role' });
     }
 
-    // ✅ Generate unique barcode
+    // Generate unique barcode
     let barcode, isUnique = false;
     while (!isUnique) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-      const existingUser = await User.findOne({ where: { barcode } });
-      if (!existingUser) isUnique = true;
+      const exist = await User.findOne({ where: { barcode } });
+      if (!exist) isUnique = true;
     }
 
-    // ✅ Create user
+    // Create user
     const user = await User.create({
-      username, email, password: hashedPassword, date_of_birth, phone,
-      profile_image, roleId: RoleId, barcode, barcode_image: null // Use RoleId here
+      username,
+      email,
+      password: hashedPassword,
+      date_of_birth,
+      phone,
+      profile_image,
+      roleId: RoleId,
+      barcode,
+      barcode_image: null
     });
 
-    // ✅ Generate barcode image
+    // Generate barcode image
     const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
@@ -454,7 +460,6 @@ const createUser = async (req, res) => {
     user.barcode_image = barcodeImageUrl;
     await user.save();
 
-    // ✅ Return response
     res.status(201).json({
       message: 'User created successfully',
       user: {
@@ -477,6 +482,8 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during user creation', error: error.message });
   }
 };
+
+
 const getUserBarcode = async (req, res) => {
   try {
     const userId = req.params.id;

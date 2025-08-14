@@ -81,48 +81,44 @@ function triggerFileInput() {
     fileInput.click();
   }
 }
-
 async function submitForm() {
   errorMessage.value = '';
 
+  // Validation for new user
   if (!props.isEditing) {
-    if (!localForm.value.username || !localForm.value.email || !localForm.value.password) {
-      errorMessage.value = 'Please provide a username, email, and password';
+    if (!localForm.value.username || !localForm.value.email || !localForm.value.password || !localForm.value.RoleId) {
+      errorMessage.value = 'Please provide a username, email, password, and role';
       return;
     }
   }
 
-  const formData = new FormData();
-  formData.append('username', localForm.value.username);
-  formData.append('email', localForm.value.email);
-  if (localForm.value.password) {
-    formData.append('password', localForm.value.password);
-  }
-  if (localForm.value.phone) {
-    formData.append('phone', localForm.value.phone);
-  }
-  if (localForm.value.RoleId) {
-    formData.append('roleId', localForm.value.RoleId); // ✅ lowercase r
-  }
+  // Prepare FormData
+  // Append form data correctly
+const formData = new FormData();
+formData.append('username', localForm.value.username);
+formData.append('email', localForm.value.email);
+formData.append('password', localForm.value.password);
+formData.append('RoleId', Number(localForm.value.RoleId)); // Must be number
+if (localForm.value.phone) formData.append('phone', localForm.value.phone);
+if (localForm.value.date_of_birth) formData.append('date_of_birth', localForm.value.date_of_birth);
+if (localForm.value.profile_image_file) formData.append('profile_image', localForm.value.profile_image_file);
+formData.append('status', localForm.value.status);
 
-  if (localForm.value.date_of_birth) {
-    formData.append('date_of_birth', localForm.value.date_of_birth);
-  }
-  if (localForm.value.profile_image_file) {
-    formData.append('profile_image', localForm.value.profile_image_file);
-  }
-  formData.append('status', localForm.value.status);
+// Call store action
+const result = await userStore.createUser(formData);
 
-  let result;
+
+  // let result;
   try {
     if (props.isEditing) {
+      // Update existing user
       result = await userStore.updateUser(props.userId, formData);
     } else {
+      // Create new user
       result = await userStore.createUser(formData);
       if (result.success) {
         newUser.value = result.data;
         console.log('New user created:', newUser.value);
-        // Removed generateCard call
       }
     }
 
@@ -132,10 +128,12 @@ async function submitForm() {
     } else {
       errorMessage.value = result.error || 'Failed to save user. Please try again.';
     }
-  } catch (error) {
-    errorMessage.value = error.message || 'An unexpected error occurred.';
+  } catch (err) {
+    console.error('Submit error:', err);
+    errorMessage.value = err.message || 'An unexpected error occurred';
   }
 }
+
 
 function closeModal() {
   emits('close');

@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-    activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
+     activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
     newUsersCount: (state) => {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -46,25 +46,25 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    //    setUser(user) {
-    //   const normalizedUser = this.normalizeUser(user)
-    //   this.user = normalizedUser
-    //   localStorage.setItem('user', JSON.stringify(normalizedUser))
+//    setUser(user) {
+//   const normalizedUser = this.normalizeUser(user)
+//   this.user = normalizedUser
+//   localStorage.setItem('user', JSON.stringify(normalizedUser))
 
-    //   if (normalizedUser.profile_image) {
-    //     localStorage.setItem('profile_image', normalizedUser.profile_image)
-    //     this.profileImage = normalizedUser.profile_image
-    //   } else {
-    //     localStorage.removeItem('profile_image')
-    //     this.profileImage = null
-    //   }
-    // },
+//   if (normalizedUser.profile_image) {
+//     localStorage.setItem('profile_image', normalizedUser.profile_image)
+//     this.profileImage = normalizedUser.profile_image
+//   } else {
+//     localStorage.removeItem('profile_image')
+//     this.profileImage = null
+//   }
+// },
 
-    // If you update the token as well, keep this unchanged
-    setToken(token) {
-      this.token = token
-      localStorage.setItem('token', token)
-    },
+// If you update the token as well, keep this unchanged
+setToken(token) {
+  this.token = token
+  localStorage.setItem('token', token)
+},
 
     resetAuth() {
       this.user = null
@@ -74,18 +74,18 @@ export const useUserStore = defineStore('user', {
 
     },
 
-    normalizeUser(user) {
+     normalizeUser(user) {
       return {
         ...user,
         profile_image: user.profile_image
           ? (user.profile_image.startsWith('http')
-            ? user.profile_image
-            : `${apiBase}/uploads/profile/${user.profile_image}`)
+              ? user.profile_image
+              : `${apiBase}/uploads/profile/${user.profile_image}`)
           : null,
         barcode_image: user.barcode_image
           ? (user.barcode_image.startsWith('http')
-            ? user.barcode_image
-            : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
+              ? user.barcode_image
+              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
       }
     },
@@ -118,42 +118,37 @@ export const useUserStore = defineStore('user', {
         this.loading = false
       }
     },
-    async login(email, password) {
-      this.loading = true
-      this.error = ''
-      try {
-        const response = await loginUser(email, password)
-        console.log('Login API Response:', response)
+async login(email, password) {
+  this.loading = true
+  this.error = ''
 
-        // Adjust for possible 'accessToken' key
-        const token = response.token || response.accessToken || response.user?.accessToken
-        const user = response.user || response
+  try {
+    const response = await loginUser(email, password)
 
-        if (!token || !user) {
-          throw new Error('Invalid response: Token or user missing')
-        }
+    // Adjust to handle different API responses
+    const token = response.accessToken || response.token
+    const user = response.user || response
 
-        this.setUser(user)
-        this.setToken(token)
+    if (!token || !user) throw new Error('Invalid response from server')
 
-        if (user.profile_image) {
-          localStorage.setItem('profile_image', user.profile_image)
-          console.log('Profile image saved:', user.profile_image)
-        } else {
-          localStorage.removeItem('profile_image')
-        }
+    // Store token & normalized user
+    this.setToken(token)
+    this.setUser(user)
 
-        console.log('Login successful, token stored:', token)
-        return { success: true, user }
-      } catch (error) {
-        console.error('Login error:', error.message, error.response?.data)
-        this.error = error.response?.data?.message || 'Login failed'
-        this.resetAuth()
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
-    }
+    console.log('Login successful:', user, 'Token:', token)
+    return { success: true, user }
+  } catch (err) {
+    console.error('Login error:', err.response?.data || err.message)
+    this.error = err.response?.data?.message || 'Login failed'
+    this.resetAuth()
+    return { success: false, error: this.error }
+  } finally {
+    this.loading = false
+  }
+}
+
+
+
     ,
     async fetchUserProfile() {
       // If no token, redirect to login (or skip if already on login handled elsewhere)
@@ -216,46 +211,61 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async createUser(formData) {
+async createUser(formData) {
+  this.loading = true;
+  this.error = '';
+
+  // Ensure required fields
+  if (!formData.get('username') || !formData.get('email') || !formData.get('password') || !formData.get('RoleId')) {
+    this.error = 'Username, email, password, and role are required';
+    Swal.fire({ icon: 'error', title: 'Error', text: this.error });
+    this.loading = false;
+    return { success: false, error: this.error };
+  }
+
+  try {
+    const res = await createUser(formData); // Call backend
+    const newUser = this.normalizeUser(res.data.user);
+
+    this.users.push(newUser);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'User created!',
+      text: 'The user was created successfully.',
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    return { success: true, data: newUser };
+  } catch (error) {
+    console.error('Create user error:', error.response?.data || error.message);
+    this.error = error.response?.data?.message || 'Failed to create user';
+    Swal.fire({ icon: 'error', title: 'Error', text: this.error });
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
+
+
+    async updateUser(id, formData) {
       this.loading = true
       this.error = ''
       try {
-        const res = await createUser(formData)
-        const newUser = this.normalizeUser(res.data.user)
-        this.users.push(newUser)
-        Swal.fire({
-          icon: 'success',
-          title: 'User created!',
-          text: 'The user was created successfully.',
-          timer: 2000,
-          showConfirmButton: false,
-        })
-        return { success: true, data: newUser }
+        const res = await updateUser(id, formData)
+        const updatedUser = this.normalizeUser(res.data.user)
+        const index = this.users.findIndex(u => u.id === id)
+        if (index !== -1) this.users[index] = updatedUser
+        return { success: true }
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to create user'
-        Swal.fire({ icon: 'error', title: 'Error', text: this.error })
+        this.error = error.response?.data?.message || 'Failed to update user'
         return { success: false, error: this.error }
       } finally {
         this.loading = false
       }
     },
 
-    async updateUser(id, formData) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const res = await updateUser(id, formData);
-        const updatedUser = this.normalizeUser(res.data.user);
-        const index = this.users.findIndex(u => u.id === id);
-        if (index !== -1) this.users[index] = updatedUser;
-        return { success: true };
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to update user';
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
     async deleteUser(id) {
       this.loading = true
       this.error = ''
