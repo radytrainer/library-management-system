@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-     activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
+    activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
     newUsersCount: (state) => {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -46,25 +46,25 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-//    setUser(user) {
-//   const normalizedUser = this.normalizeUser(user)
-//   this.user = normalizedUser
-//   localStorage.setItem('user', JSON.stringify(normalizedUser))
+    //    setUser(user) {
+    //   const normalizedUser = this.normalizeUser(user)
+    //   this.user = normalizedUser
+    //   localStorage.setItem('user', JSON.stringify(normalizedUser))
 
-//   if (normalizedUser.profile_image) {
-//     localStorage.setItem('profile_image', normalizedUser.profile_image)
-//     this.profileImage = normalizedUser.profile_image
-//   } else {
-//     localStorage.removeItem('profile_image')
-//     this.profileImage = null
-//   }
-// },
+    //   if (normalizedUser.profile_image) {
+    //     localStorage.setItem('profile_image', normalizedUser.profile_image)
+    //     this.profileImage = normalizedUser.profile_image
+    //   } else {
+    //     localStorage.removeItem('profile_image')
+    //     this.profileImage = null
+    //   }
+    // },
 
-// If you update the token as well, keep this unchanged
-setToken(token) {
-  this.token = token
-  localStorage.setItem('token', token)
-},
+    // If you update the token as well, keep this unchanged
+    setToken(token) {
+      this.token = token
+      localStorage.setItem('token', token)
+    },
 
     resetAuth() {
       this.user = null
@@ -74,18 +74,18 @@ setToken(token) {
 
     },
 
-     normalizeUser(user) {
+    normalizeUser(user) {
       return {
         ...user,
         profile_image: user.profile_image
           ? (user.profile_image.startsWith('http')
-              ? user.profile_image
-              : `${apiBase}/uploads/profile/${user.profile_image}`)
+            ? user.profile_image
+            : `${apiBase}/uploads/profile/${user.profile_image}`)
           : null,
         barcode_image: user.barcode_image
           ? (user.barcode_image.startsWith('http')
-              ? user.barcode_image
-              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
+            ? user.barcode_image
+            : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
       }
     },
@@ -241,22 +241,21 @@ setToken(token) {
     },
 
     async updateUser(id, formData) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
       try {
-        const res = await updateUser(id, formData)
-        const updatedUser = this.normalizeUser(res.data.user)
-        const index = this.users.findIndex(u => u.id === id)
-        if (index !== -1) this.users[index] = updatedUser
-        return { success: true }
+        const res = await updateUser(id, formData);
+        const updatedUser = this.normalizeUser(res.data.user);
+        const index = this.users.findIndex(u => u.id === id);
+        if (index !== -1) this.users[index] = updatedUser;
+        return { success: true };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to update user'
-        return { success: false, error: this.error }
+        this.error = error.response?.data?.message || 'Failed to update user';
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-
     async deleteUser(id) {
       this.loading = true
       this.error = ''

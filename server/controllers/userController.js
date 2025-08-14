@@ -169,8 +169,9 @@ const updateUser = async (req, res) => {
       updates.password = await bcrypt.hash(password, 8);
     }
 
-    // Role change (admins only)
+    // Role change with restrictions
     if (roleId) {
+      // Only admins can change roles
       if (req.userRole !== 'admin') {
         return res.status(403).json({ message: "Only admins can change roles!" });
       }
@@ -178,6 +179,17 @@ const updateUser = async (req, res) => {
       if (!targetRole) {
         return res.status(400).json({ message: "Invalid roleId!" });
       }
+
+      // Prevent assigning admin role to others
+      if (targetRole.name === 'admin' && user.id !== req.user.id) {
+        return res.status(403).json({ message: "Only the original admin can assign admin role to themselves!" });
+      }
+
+      // Restrict role updates based on current role
+      if (req.userRole === 'librarian' && targetRole.name !== 'user') {
+        return res.status(403).json({ message: "Librarians can only assign the 'user' role!" });
+      }
+
       updates.roleId = roleId;
     }
 
@@ -381,7 +393,7 @@ const createUser = async (req, res) => {
       return res.status(403).json({ message: 'Only admins or librarians can create users' });
     }
 
-    const { username, email, password, date_of_birth, phone, roleId } = req.body;
+    const { username, email, password, date_of_birth, phone, RoleId } = req.body; // Changed to RoleId
     const profile_image = req.file ? req.file.filename : null;
 
     if (!username || !email || !password) {
@@ -393,7 +405,7 @@ const createUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    const targetRole = await Role.findByPk(roleId);
+    const targetRole = await Role.findByPk(RoleId); // Use RoleId here
     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
     // 🚫 No one can create users with admin role
@@ -417,7 +429,7 @@ const createUser = async (req, res) => {
     // ✅ Create user
     const user = await User.create({
       username, email, password: hashedPassword, date_of_birth, phone,
-      profile_image, roleId, barcode, barcode_image: null
+      profile_image, roleId: RoleId, barcode, barcode_image: null // Use RoleId here
     });
 
     // ✅ Generate barcode image
@@ -465,7 +477,6 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: 'Server error during user creation', error: error.message });
   }
 };
-
 const getUserBarcode = async (req, res) => {
   try {
     const userId = req.params.id;
