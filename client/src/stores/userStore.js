@@ -216,7 +216,7 @@ async createUser(formData) {
   this.error = '';
 
   // Ensure required fields
-  if (!formData.get('username') || !formData.get('email') || !formData.get('password') || !formData.get('RoleId')) {
+  if (!formData.get('username') || !formData.get('email') || !formData.get('password') || !formData.get('roleId')) {
     this.error = 'Username, email, password, and role are required';
     Swal.fire({ icon: 'error', title: 'Error', text: this.error });
     this.loading = false;

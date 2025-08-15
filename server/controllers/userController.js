@@ -385,11 +385,11 @@ const getProfileImageUrl = (req, filename) => {
 
 const createUser = async (req, res) => {
   try {
-    const { username, email, password, date_of_birth, phone, RoleId } = req.body;
+    const { username, email, password, date_of_birth, phone, roleId } = req.body;
     const profile_image = req.file ? req.file.filename : null;
 
     // Check required fields
-    if (!username || !email || !password || !RoleId) {
+    if (!username || !email || !password || !roleId) {
       return res.status(400).json({ message: 'Username, email, password, and role are required' });
     }
 
@@ -406,7 +406,7 @@ const createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 8);
 
     // Check Role
-    const targetRole = await Role.findByPk(RoleId);
+    const targetRole = await Role.findByPk(roleId);
     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
     if (targetRole.name === 'admin') {
@@ -433,7 +433,7 @@ const createUser = async (req, res) => {
       date_of_birth,
       phone,
       profile_image,
-      roleId: RoleId,
+      roleId: roleId,
       barcode,
       barcode_image: null
     });

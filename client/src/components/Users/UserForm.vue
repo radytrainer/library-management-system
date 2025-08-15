@@ -86,29 +86,30 @@ async function submitForm() {
 
   // Validation for new user
   if (!props.isEditing) {
-    if (!localForm.value.username || !localForm.value.email || !localForm.value.password || !localForm.value.RoleId) {
+    if (
+      !localForm.value.username ||
+      !localForm.value.email ||
+      !localForm.value.password ||
+      !localForm.value.RoleId
+    ) {
       errorMessage.value = 'Please provide a username, email, password, and role';
       return;
     }
   }
 
   // Prepare FormData
-  // Append form data correctly
-const formData = new FormData();
-formData.append('username', localForm.value.username);
-formData.append('email', localForm.value.email);
-formData.append('password', localForm.value.password);
-formData.append('RoleId', Number(localForm.value.RoleId)); // Must be number
-if (localForm.value.phone) formData.append('phone', localForm.value.phone);
-if (localForm.value.date_of_birth) formData.append('date_of_birth', localForm.value.date_of_birth);
-if (localForm.value.profile_image_file) formData.append('profile_image', localForm.value.profile_image_file);
-formData.append('status', localForm.value.status);
+  const formData = new FormData();
+  formData.append('username', localForm.value.username);
+  formData.append('email', localForm.value.email);
+  formData.append('password', localForm.value.password);
+  formData.append('roleId', Number(localForm.value.RoleId)); // Must be number
+  if (localForm.value.phone) formData.append('phone', localForm.value.phone);
+  if (localForm.value.date_of_birth) formData.append('date_of_birth', localForm.value.date_of_birth);
+  if (localForm.value.profile_image_file) formData.append('profile_image', localForm.value.profile_image_file);
+  formData.append('status', localForm.value.status);
 
-// Call store action
-const result = await userStore.createUser(formData);
+  let result; // Changed to let so we can assign later
 
-
-  // let result;
   try {
     if (props.isEditing) {
       // Update existing user
@@ -133,6 +134,8 @@ const result = await userStore.createUser(formData);
     errorMessage.value = err.message || 'An unexpected error occurred';
   }
 }
+
+
 
 
 function closeModal() {
