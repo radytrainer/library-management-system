@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Edit3, Save, X, Upload, User, Mail, Phone, Calendar, Shield, Camera } from 'lucide-vue-next'
@@ -20,25 +20,41 @@ const previewImage = ref(null)
 const imageFile = ref(null)
 const editMode = ref(false)
 const isSubmitting = ref(false)
-const isLoading = ref(true) // <-- NEW loading state
+const isLoading = ref(true)
+
+// Watch for changes in userProfile to update previewImage
+watch(() => userStore.userProfile?.profile_image, (newImage) => {
+  previewImage.value = newImage ? `${newImage}?t=${new Date().getTime()}` : null // Add timestamp for cache busting
+  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), previewImage.value)
+})
 
 onMounted(async () => {
+  console.log('Starting profile fetch at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  isLoading.value = true
+  console.log('Loading state set to:', isLoading.value)
   try {
     await userStore.fetchUserProfile()
-
-    if (userStore.userProfile && Object.keys(userStore.userProfile).length > 0) {
+    console.log('Profile data fetched at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
+    if (userStore.userProfile && userStore.userProfile.user && Object.keys(userStore.userProfile.user).length > 0) {
+      const userData = userStore.userProfile.user
       Object.assign(editForm.value, {
-        username: userStore.userProfile.username || '',
-        email: userStore.userProfile.email || '',
-        phone: userStore.userProfile.phone || '',
-        date_of_birth: userStore.userProfile.date_of_birth || '',
+        username: userData.username || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        date_of_birth: userData.date_of_birth || '',
       })
-      previewImage.value = userStore.userProfile.profile_image || null
+      previewImage.value = userStore.userProfile.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : null
+      console.log('Edit form updated with:', editForm.value)
+      console.log('Nested user data:', userData)
+    } else {
+      console.warn('No user data available in profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
     }
   } catch (err) {
-    console.error('Failed to load user profile:', err)
+    console.error('Failed to load user profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
+    Swal.fire({ icon: 'error', title: 'Error', text: 'Unable to load profile data. Please try again later.' })
   } finally {
-    isLoading.value = false // <-- stop loading
+    isLoading.value = false
+    console.log('Loading state set to:', isLoading.value)
   }
 })
 
@@ -47,6 +63,7 @@ onUnmounted(() => {
     URL.revokeObjectURL(previewImage.value)
   }
   previewImage.value = null
+  console.log('Component unmounted, preview image revoked at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 })
 
 const handleImageChange = (e) => {
@@ -57,6 +74,7 @@ const handleImageChange = (e) => {
     }
     imageFile.value = file
     previewImage.value = URL.createObjectURL(file)
+    console.log('Image changed, new file:', file.name, 'preview URL:', previewImage.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   }
 }
 
@@ -69,6 +87,15 @@ const validateForm = () => {
     Swal.fire({ icon: 'error', title: 'Validation Error', text: 'A valid email is required' })
     return false
   }
+  // Optional: Validate date_of_birth (e.g., not future date)
+  if (editForm.value.date_of_birth) {
+    const dob = new Date(editForm.value.date_of_birth)
+    if (dob > new Date()) {
+      Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Date of birth cannot be in the future' })
+      return false
+    }
+  }
+  console.log('Form validated successfully with:', editForm.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   return true
 }
 
@@ -88,12 +115,13 @@ const updateProfile = async () => {
     formData.append('profile_image', imageFile.value)
   }
 
-  const userId = userStore.userProfile?.id
-  if (!userId) {
-    Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
-    isSubmitting.value = false
-    return
-  }
+ const userId = userStore.userProfile?.user?.id
+if (!userId) {
+  Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
+  isSubmitting.value = false
+  return
+}
+
 
   const result = await userStore.updateUser(userId, formData)
   if (result.success) {
@@ -114,15 +142,18 @@ const updateProfile = async () => {
   isSubmitting.value = false
 }
 
+
+
 const goBack = () => {
   router.back()
+  console.log('Navigated back at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 
 const handleImageError = (event) => {
   event.target.src = '/placeholder.png'
+  console.log('Image load failed, switched to placeholder at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 </script>
-
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
@@ -138,7 +169,10 @@ const handleImageError = (event) => {
       </div>
 
       <!-- Profile Card -->
-      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div v-if="isLoading" class="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <p class="text-slate-600">Loading profile...</p>
+      </div>
+      <div v-else class="bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- Cover Section -->
         <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex justify-end items-center pr-4">
           <img class="w-20" src="/logo.png" alt="Logo" />
@@ -178,36 +212,38 @@ const handleImageError = (event) => {
             <div class="flex-1">
               <div class="mb-6">
                 <h1 class="text-3xl font-bold text-slate-900 mb-2">
-                  {{ userStore.userProfile?.username || 'Unknown User' }}
+                  {{ userStore.userProfile?.user?.username || 'Unknown User' }}
                 </h1>
-                <div class="flex items-center gap-2 text-slate-600 mb-1">
-                  <Mail class="w-4 h-4" />
-                  <span>{{ userStore.userProfile?.email || 'Not provided' }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-slate-600 mb-1">
-                  <Phone class="w-4 h-4" />
-                  <span>{{ userStore.userProfile?.phone || 'Not provided' }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-slate-600 mb-1">
-                  <Calendar class="w-4 h-4" />
-                  <span>{{ userStore.userProfile?.date_of_birth || 'Not provided' }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-slate-600">
-                  <Shield class="w-4 h-4" />
-                  <span class="capitalize">{{ userStore.userProfile?.role?.name || 'No Role Assigned' }}</span>
+                <div v-if="!editMode" class="space-y-2 text-slate-600">
+                  <div class="flex items-center gap-2">
+                    <Mail class="w-4 h-4" />
+                    <span>{{ userStore.userProfile?.user?.email || 'Not provided' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Phone class="w-4 h-4" />
+                    <span>{{ userStore.userProfile?.user?.phone || 'Not provided' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Calendar class="w-4 h-4" />
+                    <span>{{ userStore.userProfile?.user?.date_of_birth || 'Not provided' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Shield class="w-4 h-4" />
+                    <span class="capitalize">{{ userStore.userProfile?.user?.role?.name || 'No Role Assigned' }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Action Button -->
-            <div v-if="!editMode">
+            <div v-if="!editMode" class="flex-shrink-0">
               <button
                 @click="editMode = true"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl font-medium"
                 :disabled="isSubmitting"
               >
                 <Edit3 class="w-4 h-4" />
-                <span class="font-medium">Edit Profile</span>
+                <span>Edit Profile</span>
               </button>
             </div>
           </div>
@@ -344,7 +380,3 @@ const handleImageError = (event) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* No changes needed here */
-</style>

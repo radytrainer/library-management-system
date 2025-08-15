@@ -94,7 +94,7 @@ const modernStats = ref([
   },
   {
     title: 'Total Members',
-    value: totalMembersCount,
+    value: '12',
     route: { name: 'users' },
     change: '+0%',
     subtitle: 'registered to the system',

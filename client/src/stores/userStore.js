@@ -74,35 +74,37 @@ setToken(token) {
 
     },
 
-     normalizeUser(user) {
-      return {
-        ...user,
-        profile_image: user.profile_image
-          ? (user.profile_image.startsWith('http')
-              ? user.profile_image
-              : `${apiBase}/uploads/profile/${user.profile_image}`)
-          : null,
-        barcode_image: user.barcode_image
-          ? (user.barcode_image.startsWith('http')
-              ? user.barcode_image
-              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
-          : null,
-      }
-    },
+   normalizeUser(user) {
+  return {
+    ...user,
+    username: user.name || user.username || '', // map `name` to `username`
+    profile_image: user.profile_image
+      ? (user.profile_image.startsWith('http')
+          ? user.profile_image
+          : `${apiBase}/uploads/profile/${user.profile_image}`)
+      : null,
+    barcode_image: user.barcode_image
+      ? (user.barcode_image.startsWith('http')
+          ? user.barcode_image
+          : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
+      : null,
+  }
+},
+
 
     setUser(user) {
-      const normalizedUser = this.normalizeUser(user)
-      this.user = normalizedUser
-      localStorage.setItem('user', JSON.stringify(normalizedUser))
+  const normalizedUser = this.normalizeUser(user)
+  this.user = normalizedUser
+  localStorage.setItem('user', JSON.stringify(normalizedUser))
 
-      if (normalizedUser.profile_image) {
-        localStorage.setItem('profile_image', normalizedUser.profile_image)
-        this.profileImage = normalizedUser.profile_image
-      } else {
-        localStorage.removeItem('profile_image')
-        this.profileImage = null
-      }
-    },
+  if (normalizedUser.profile_image) {
+    localStorage.setItem('profile_image', normalizedUser.profile_image)
+    this.profileImage = normalizedUser.profile_image
+  } else {
+    localStorage.removeItem('profile_image')
+    this.profileImage = null
+  }
+},
 
     async register(form) {
       this.loading = true
