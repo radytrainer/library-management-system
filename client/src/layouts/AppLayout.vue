@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { debounce } from 'lodash'
@@ -17,14 +17,9 @@ const notifications = ref(3)
 const showNotifications = ref(false)
 const showProfileDropdown = ref(false)
 const isSidebarOpen = ref(true)
-const isOpen = ref(false)
+const isOpen = ref(false) // language dropdown
 const isLoading = ref(false)
 const emit = defineEmits(['profileClicked'])
-
-function handleClick(event) {
-  emit('profileClicked')
-  // Navigation still happens automatically because it's a router-link
-}
 
 // Navigation items with role-based access
 const navItems = [
@@ -42,47 +37,26 @@ const navItems = [
 // Filter nav based on user role
 const filteredNav = computed(() => {
   const role = userStore.user?.role
-  // console.log('Current user role:', role)
-  // navItems.forEach(item => console.log(item.path, item.roles))
-
-  if (!role) {
-    // console.log('No role found, returning empty array')
-    return []
-  }
-
-  // Return all nav items for admin, else filtered by role
+  if (!role) return []
   return role === 'admin'
     ? navItems
     : navItems.filter(item => item.roles.includes(role))
 })
 
-// User initial fallback (first letter of email)
-const profileInitial = computed(() => {
-  return userStore.user?.email?.charAt(0)?.toUpperCase() || '?'
-})
+const profileInitial = computed(() => userStore.user?.email?.charAt(0)?.toUpperCase() || '?')
 
-// Profile image URL with normalization, fallback and cache-busting
 const profileImageUrl = computed(() => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
   let image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
-
-  // Normalize relative path to absolute URL
-  if (image && !image.startsWith('http') && !image.startsWith('data:image')) {
-    image = `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`
-  }
-
-  // Validate URL, fallback to default if invalid or empty
+  if (image && !image.startsWith('http') && !image.startsWith('data:image')) image = `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`
   const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image'))
   const finalImage = isValidUrl ? image : '/default-profile.png'
-
-  // Add cache busting query param for HTTP URLs (avoid for data:image)
   return finalImage.startsWith('http') ? `${finalImage}?t=${new Date().getTime()}` : finalImage
 })
 
-// Page title based on route name and language
 const pageTitle = computed(() => {
   const map = {
-    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ណាល័យ' },
+    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ចាល័យ' },
     borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
     books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
     users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
@@ -93,20 +67,20 @@ const pageTitle = computed(() => {
     profile: { en: 'Profile', kh: 'ប្រវត្តិរូប' },
   }
   const key = route.name
-  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ')
+  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ចាល័យ')
 })
 
-// Language selection
+// Dropdown functions
 function selectLanguage(lang) {
   language.value = lang
   localStorage.setItem('language', lang)
   isOpen.value = false
 }
 
-// Notifications toggles
 function toggleNotifications() {
   showNotifications.value = !showNotifications.value
   showProfileDropdown.value = false
+  isOpen.value = false
 }
 
 function clearNotifications() {
@@ -114,44 +88,29 @@ function clearNotifications() {
   showNotifications.value = false
 }
 
-// Profile dropdown toggle
 function toggleProfileDropdown() {
   showProfileDropdown.value = !showProfileDropdown.value
   showNotifications.value = false
+  isOpen.value = false
 }
 
-// Sidebar toggle
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value
 }
 
-// Debounced search (placeholder for real API call)
 const performSearch = debounce(async () => {
-  if (searchQuery.value) {
-    console.log(`Searching for: ${searchQuery.value}`)
-    // TODO: implement search API call
-  }
+  if (searchQuery.value) console.log(`Searching for: ${searchQuery.value}`)
 }, 300)
 
-// Fetch user profile on mount if token exists, otherwise skip
 async function fetchUserProfile() {
-  if (!userStore.token) {
-    console.log('No token found, skipping profile fetch')
-    return false
-  }
-
+  if (!userStore.token) return false
   userStore.loading = true
   try {
     const { success } = await userStore.fetchUserProfile()
-    if (!success) {
-      console.log('Failed to fetch profile')
-      userStore.userProfile = null
-      return false
-    }
-    console.log('Profile fetched successfully')
-    return true
+    if (!success) userStore.userProfile = null
+    return success
   } catch (error) {
-    console.error('Error fetching profile:', error)
+    console.error(error)
     userStore.userProfile = null
     return false
   } finally {
@@ -159,24 +118,35 @@ async function fetchUserProfile() {
   }
 }
 
-
-// Logout function clears auth and localStorage and redirects
 function logout() {
   userStore.logout()
+  showProfileDropdown.value = false
 }
 
-// On mount: restore profile image if missing, then fetch fresh profile
-onMounted(async () => {
-  const cachedImage = localStorage.getItem('profile_image')
-  if (cachedImage && (!userStore.user?.profile_image)) {
-    userStore.user = { ...userStore.user, profile_image: cachedImage }
-  }
+// Close dropdowns when clicking outside
+function handleClickOutside(event) {
+  const dropdowns = [
+    { button: '.profile-button', menu: '.profile-menu', state: showProfileDropdown },
+    { button: '.notifications-button', menu: '.notifications-menu', state: showNotifications },
+    { button: '.language-button', menu: '.language-menu', state: isOpen },
+  ]
 
-  await fetchUserProfile()
+  dropdowns.forEach(d => {
+    const btn = document.querySelector(d.button)
+    const menu = document.querySelector(d.menu)
+    if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) d.state.value = false
+  })
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  const cachedImage = localStorage.getItem('profile_image')
+  if (cachedImage && (!userStore.user?.profile_image)) userStore.user = { ...userStore.user, profile_image: cachedImage }
+  fetchUserProfile()
 })
 
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
-
 
 <template>
   <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
@@ -188,7 +158,7 @@ onMounted(async () => {
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
         <img src="/logo.png" alt="Library Logo" class="h-20 w-23" />
         <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
-          {{ language === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ណាល័យ' }}
+          {{ language === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
       </div>
       <nav class="flex-1 overflow-y-auto">
@@ -248,7 +218,7 @@ onMounted(async () => {
           <!-- Language Switch -->
           <div class="relative">
             <button @click="isOpen = !isOpen"
-              class="border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
+              class="language-button border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
               :class="{ 'font-khmer': language === 'kh' }" aria-haspopup="true" :aria-expanded="isOpen.toString()"
               aria-label="Select language">
               <img :src="language === 'en' ? 'https://flagcdn.com/w40/us.png' : 'https://flagcdn.com/w40/kh.png'"
@@ -257,8 +227,8 @@ onMounted(async () => {
               <span class="ml-2 material-icons">arrow_drop_down</span>
             </button>
             <div v-if="isOpen"
-              class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50" role="menu"
-              aria-orientation="vertical" tabindex="-1">
+              class="language-menu absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-opacity duration-200"
+              role="menu" aria-orientation="vertical" tabindex="-1">
               <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
                 role="menuitem" tabindex="0">
                 <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
@@ -275,7 +245,7 @@ onMounted(async () => {
           <!-- Notifications -->
           <div class="relative">
             <button @click="toggleNotifications"
-              class="material-icons text-gray-600 cursor-pointer hover:text-indigo-600 p-2 rounded-full hover:bg-gray-100"
+              class="notifications-button material-icons text-gray-600 cursor-pointer hover:text-indigo-600 p-2 rounded-full hover:bg-gray-100"
               aria-label="Toggle notifications" :aria-expanded="showNotifications.toString()">
               notifications
             </button>
@@ -285,7 +255,7 @@ onMounted(async () => {
               {{ notifications }}
             </span>
             <div v-if="showNotifications"
-              class="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100"
+              class="notifications-menu absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
               role="region" aria-live="polite">
               <p class="text-sm text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
                 {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }}
@@ -300,13 +270,13 @@ onMounted(async () => {
 
           <!-- Profile -->
           <div class="relative">
-            <div class="h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+            <div class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
               @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
               <img :src="profileImageUrl" alt="Profile" class="h-full w-full rounded-full object-cover"
                 @error="handleImageError" />
             </div>
             <div v-if="showProfileDropdown"
-              class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100"
+              class="profile-menu absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
               role="menu">
               <div class="border-b border-gray-200 pb-2 mb-2">
                 <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
@@ -316,9 +286,8 @@ onMounted(async () => {
                   {{ userStore.user?.email || 'No email' }}
                 </p>
               </div>
-
               <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                role="menuitem" @click="handleClick">
+                role="menuitem" @click="showProfileDropdown = false">
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === 'en' ? 'View Profile' : 'មើលប្រវត្តិរូប' }}
               </router-link>
