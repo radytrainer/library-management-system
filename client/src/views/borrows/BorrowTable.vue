@@ -122,14 +122,16 @@
                             {{ item.borrowed_quantity || 0 }}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <span v-if="getItemStatus(item) === 'overdue'"
-                                class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium bg-red-100 text-red-800">
+                            <button v-if="getItemStatus(item) === 'overdue'"
+                                @click="$emit('confirm-return', item.id)"
+                                class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium bg-red-600 text-white hover:bg-red-700 transition-all"
+                                aria-label="Mark as returned">
                                 <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 Overdue
-                            </span>
+                            </button>
                             <button v-else-if="getItemStatus(item) === 'borrowed'"
                                 @click="$emit('confirm-return', item.id)"
                                 class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium bg-green-600 text-white hover:bg-green-700 transition-all"

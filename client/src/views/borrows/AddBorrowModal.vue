@@ -212,9 +212,7 @@
               </div>
             </div>
           </div>
-          <div v-if="errorMessage" class="mt-4 text-red-600 font-medium">
-            {{ errorMessage }}
-          </div>
+
           <div class="flex justify-between pt-6">
             <button
               v-if="currentStep > 1"
@@ -246,10 +244,14 @@
               <button
                 v-if="currentStep === 3"
                 type="submit"
-                class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 font-medium text-sm"
+                class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 font-medium text-sm flex items-center gap-2"
                 :disabled="loading"
                 :class="{ 'opacity-50 cursor-not-allowed': loading }"
               >
+                <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"></path>
+                </svg>
                 {{ loading ? "Submitting..." : "Submit" }}
               </button>
             </div>
@@ -264,20 +266,20 @@
 import { ref, watch, onMounted } from "vue";
 import { inject } from "vue";
 import { useUserStore } from '@/stores/userStore';
+import { debounce } from "lodash";
 
-const authStore = useUserStore()
+const authStore = useUserStore();
 const props = defineProps({
   modelValue: {
     type: Object,
     default: () => ({}),
   },
-})
+});
 
 const emit = defineEmits(["update:modelValue", "submit", "close"]);
 const { getBook, getUser, showToast, fetchBooksData, fetchUsersData, booksData } = inject("borrowManagement");
 
-
-const today = new Date().toISOString().split('T')[0]
+const today = new Date().toISOString().split('T')[0];
 
 const localForm = ref({
   borrowerType: props.modelValue.borrowerType || "new",
@@ -285,11 +287,12 @@ const localForm = ref({
   borrower_email: props.modelValue.borrower_email || "",
   user_barcode: props.modelValue.user_barcode || "",
   user_id: props.modelValue.user_id || "",
-  librarian_name: authStore.user?.name || "",
+  librarian_name: authStore.user?.username || props.modelValue.librarian_name || "",
   date_borrow: props.modelValue.date_borrow || today,
   books: props.modelValue.books || [{ isbn: "", book_name: "", return_date: "" }],
   status: props.modelValue.status || "borrowed",
-})
+  quantity: props.modelValue.quantity || 1,
+});
 
 const errorMessage = ref("");
 const formError = ref("");
@@ -298,10 +301,10 @@ const showModal = ref(true);
 const currentStep = ref(1);
 
 onMounted(async () => {
-  console.log("BorrowForm mounted, fetching data...");
+  console.log("AddBorrowModel mounted, fetching data...");
   await fetchBooksData();
   await fetchUsersData();
-  console.log("Books data after fetch:", JSON.stringify(booksData.value, null, 2));
+  console.log(`Books data after fetch (length: ${booksData.value.length}):`, JSON.stringify(booksData.value, null, 2));
 });
 
 watch(
@@ -311,6 +314,10 @@ watch(
   },
   { deep: true }
 );
+
+function normalizeIsbn(isbn) {
+  return isbn?.replace(/[-\s]/g, "") || "";
+}
 
 function resetUserFields() {
   localForm.value.borrower_name = "";
@@ -322,18 +329,22 @@ function resetUserFields() {
 function addBook() {
   if (localForm.value.books.length < 3) {
     localForm.value.books.push({ isbn: "", book_name: "", return_date: "" });
+  } else {
+    showToast("Cannot add more than 3 books.", "error");
   }
 }
 
 function removeBook(index) {
   if (localForm.value.books.length > 1) {
     localForm.value.books.splice(index, 1);
+  } else {
+    showToast("At least one book is required.", "error");
   }
 }
 
-async function fetchUserDetails() {
+const fetchUserDetails = debounce(async () => {
   try {
-    const barcode = localForm.value.user_barcode.trim().replace(/[\r\n]+/g, '');
+    const barcode = localForm.value.user_barcode?.trim().replace(/[\r\n]+/g, '');
     if (!barcode) {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
@@ -344,76 +355,99 @@ async function fetchUserDetails() {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
-      showToast("Invalid user barcode format. Please use 8-20 alphanumeric characters.", "error");
+      showToast("Invalid user barcode format. Use 8-20 alphanumeric characters.", "error");
       return;
     }
     console.log(`Fetching user for barcode: ${barcode}`);
     const user = await getUser(barcode);
     if (user) {
-      localForm.value.borrower_name = user.username;
-      localForm.value.borrower_email = user.email;
+      localForm.value.borrower_name = user.username || user.name;
+      localForm.value.borrower_email = user.email || "";
       localForm.value.user_id = user.id;
-      showToast(`User found: ${user.username}`, "success");
+      showToast(`User found: ${user.username || user.name}`, "success");
     } else {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
-      showToast(`User with barcode ${barcode} not found.`, "error");
+      showToast(`No user found with barcode ${barcode}.`, "error");
     }
   } catch (error) {
     console.error("Error fetching user details:", error.message, error.stack);
-    showToast(`Failed to fetch user details: ${error.message}`, "error");
+    showToast(`Failed to fetch user: ${error.message}`, "error");
     localForm.value.borrower_name = "";
     localForm.value.borrower_email = "";
     localForm.value.user_id = "";
   }
-}
+}, 500);
 
-async function fetchBookDetails(index) {
+const fetchBookDetails = debounce(async (index) => {
   try {
-    const isbn = localForm.value.books[index].isbn.trim().replace(/[\r\n]+/g, '');
+    const isbn = localForm.value.books[index].isbn?.trim().replace(/[\r\n]+/g, '');
     if (!isbn) {
       localForm.value.books[index].book_name = "";
       return;
     }
-    const normalizedIsbn = isbn.replace(/[-\s]/g, '');
+    const normalizedIsbn = normalizeIsbn(isbn);
     if (!/^(?:\d{10}|\d{13})$/.test(normalizedIsbn)) {
       localForm.value.books[index].book_name = "";
-      showToast("Invalid ISBN format. Please use 10 or 13 digits, with or without hyphens.", "error");
+      showToast("Invalid ISBN format. Use 10 or 13 digits.", "error");
       return;
     }
-    console.log(`Fetching book for ISBN: ${isbn}`);
-    const book = await getBook(isbn, "isbn");
+    console.log(`Fetching book for ISBN: ${normalizedIsbn}`);
+    const book = await getBook(normalizedIsbn, "isbn");
     if (book) {
-      localForm.value.books[index].book_name = book.title;
-      showToast(`Book found: ${book.title}`, "success");
+      if (book.quantity <= 0) {
+        localForm.value.books[index].book_name = "";
+        showToast(`Book "${book.title}" is out of stock.`, "error");
+      } else {
+        localForm.value.books[index].book_name = book.title;
+        showToast(`Book found: ${book.title}`, "success");
+      }
     } else {
       localForm.value.books[index].book_name = "";
-      showToast(`Book with ISBN ${isbn} not found.`, "error");
+      showToast(`No book found with ISBN ${normalizedIsbn}.`, "error");
     }
   } catch (error) {
     console.error("Error fetching book details:", error.message, error.stack);
-    showToast(`Failed to fetch book details: ${error.message}`, "error");
+    showToast(`Failed to fetch book: ${error.message}`, "error");
     localForm.value.books[index].book_name = "";
   }
-}
+}, 500);
 
 function isStepValid() {
+  const today = new Date().toISOString().split('T')[0];
   if (currentStep.value === 1) {
-    return localForm.value.borrowerType === "new"
-      ? localForm.value.borrower_name &&
-          localForm.value.borrower_email &&
-          localForm.value.librarian_name &&
-          localForm.value.date_borrow
-      : localForm.value.user_barcode &&
-          localForm.value.borrower_name &&
-          localForm.value.librarian_name &&
-          localForm.value.date_borrow &&
-          localForm.value.user_id;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (localForm.value.borrowerType === "new") {
+      return (
+        localForm.value.borrower_name?.trim() &&
+        localForm.value.borrower_email?.trim() &&
+        emailRegex.test(localForm.value.borrower_email) &&
+        localForm.value.librarian_name?.trim() &&
+        localForm.value.date_borrow &&
+        localForm.value.date_borrow <= today
+      );
+    } else {
+      return (
+        localForm.value.user_barcode?.trim() &&
+        localForm.value.borrower_name?.trim() &&
+        localForm.value.librarian_name?.trim() &&
+        localForm.value.date_borrow &&
+        localForm.value.date_borrow <= today &&
+        localForm.value.user_id
+      );
+    }
   } else if (currentStep.value === 2) {
     return (
       localForm.value.books.length > 0 &&
-      localForm.value.books.every((book) => book.isbn && book.book_name && book.return_date)
+      localForm.value.books.every(
+        (book) =>
+          book.isbn &&
+          /^(?:\d{10}|\d{13})$/.test(normalizeIsbn(book.isbn)) &&
+          book.book_name &&
+          book.return_date &&
+          book.return_date >= today
+      )
     );
   }
   return true;
@@ -422,8 +456,8 @@ function isStepValid() {
 function nextStep() {
   if (!isStepValid()) {
     formError.value = "Please complete all required fields correctly.";
-    showToast("Please complete all required fields.", "error");
-    setTimeout(() => (formError.value = ""), 3000);
+    showToast("Please complete all required fields correctly.", "error");
+    setTimeout(() => (formError.value = ""), 5000);
     return;
   }
   if (currentStep.value < 3) {
@@ -437,14 +471,14 @@ async function submitForm() {
   if (!isStepValid()) {
     formError.value = "Please complete all required fields correctly.";
     console.error(`Form validation failed at ${now}`);
-    showToast("Please complete all required fields.", "error");
-    setTimeout(() => (formError.value = ""), 3000);
+    showToast("Please complete all required fields correctly.", "error");
+    setTimeout(() => (formError.value = ""), 5000);
     return;
   }
   try {
     loading.value = true;
     const submitData = {
-      is_new_user: localForm.value.borrowerType === "new",
+      borrowerType: localForm.value.borrowerType,
       borrower_name: localForm.value.borrowerType === "new" ? localForm.value.borrower_name : undefined,
       user_name: localForm.value.borrowerType === "existing" ? localForm.value.borrower_name : undefined,
       borrower_email: localForm.value.borrowerType === "new" ? localForm.value.borrower_email : undefined,
@@ -454,44 +488,38 @@ async function submitForm() {
       date_borrow: localForm.value.date_borrow,
       books: localForm.value.books.map((book) => ({
         name: book.book_name,
-        isbn: book.isbn,
+        isbn: normalizeIsbn(book.isbn),
         date_return: book.return_date,
       })),
-      quantity: 1,
+      quantity: localForm.value.books.length,
       status: localForm.value.status,
     };
     console.log(`Emitting submit event with data at ${now}:`, JSON.stringify(submitData, null, 2));
-    
-    const response = await Promise.resolve(emit("submit", submitData));
+
+    const response = await new Promise((resolve, reject) => {
+      emit("submit", submitData, (err, res) => {
+        if (err) reject(err);
+        else resolve(res);
+      });
+    });
+
     console.log(`Submit event response at ${now}:`, JSON.stringify(response, null, 2));
-
-    if (!response) {
-      throw new Error("No response received from submit event handler.");
+    if (!response || response.status >= 400) {
+      throw new Error(response?.data?.message || "Failed to create borrow record.");
     }
 
-    const responses = Array.isArray(response) ? response : [response];
-    if (responses.length === 0) {
-      throw new Error("Empty response array received from submit event handler.");
-    }
-
-    const failedResponses = responses.filter((res) => !res || (res.status && res.status >= 400));
-    if (failedResponses.length > 0) {
-      const errorMsg = failedResponses[0]?.data?.message || "Unknown backend error";
-      throw new Error(`Failed to create ${failedResponses.length} borrow record(s): ${errorMsg}`);
-    }
-
-    showToast("Borrow record(s) created successfully.", "success");
+    showToast("Borrow record created successfully.", "success");
     showModal.value = false;
     emit("close");
   } catch (error) {
-    console.error(`Error during form submission at ${now}:`, error.message, error.stack);
-    formError.value = error.message || "Failed to create borrow records.";
+    console.error(`Error during form submission at ${now}:`, error.message, error.stack, error.response || error);
+    formError.value = error.message || "Failed to create borrow record.";
     errorMessage.value = formError.value;
     showToast(`Error: ${formError.value}`, "error");
     setTimeout(() => {
       formError.value = "";
       errorMessage.value = "";
-    }, 5000);
+    }, 6000);
   } finally {
     loading.value = false;
   }
