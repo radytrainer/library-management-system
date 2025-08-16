@@ -11,6 +11,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true, // image can be null for existing users
     },
+    qr_code_image: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     roleId: {  // <-- only one foreign key column here
       type: DataTypes.INTEGER,
       references: {
@@ -22,7 +26,7 @@ export default (sequelize, DataTypes) => {
     status: {
         type: DataTypes.ENUM("active", "inactive"),
         allowNull: false,
-        defaultValue: "inactive",
+        defaultValue: "active",
       },
   });
   return User;
