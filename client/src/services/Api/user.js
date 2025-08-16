@@ -64,3 +64,9 @@ export function getUserBarcodeImage(id) {
     responseType: 'blob'
   });
 }
+
+export function getUserQRCode(id) {
+  return api.get(`/user/${id}/qrcode`, {
+    responseType: 'blob',
+  });
+}

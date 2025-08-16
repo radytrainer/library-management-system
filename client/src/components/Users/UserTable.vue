@@ -52,8 +52,9 @@ onUnmounted(() => {
           <th class="px-4 py-3 font-medium text-gray-600">Phone</th>
           <th class="px-4 py-3 font-medium text-gray-600">Role</th>
           <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
-          <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
+          <!-- <th class="px-4 py-3 font-medium text-gray-600">Barcode</th> -->
           <th class="px-4 py-3 font-medium text-gray-600">Barcode Image</th>
+          <th class="px-4 py-3 font-medium text-gray-600">QR Code Image</th> <!-- New column -->
           <th class="px-4 py-3 font-medium text-gray-600">Status</th>
           <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
         </tr>
@@ -75,9 +76,13 @@ onUnmounted(() => {
             </span>
           </td>
           <td class="px-4 py-3">{{ user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : '-' }}</td>
-          <td class="px-4 py-3">{{ user.barcode || '-' }}</td>
+          <!-- <td class="px-4 py-3">{{ user.barcode || '-' }}</td> -->
           <td class="px-4 py-3">
             <img v-if="user.barcode_image" :src="user.barcode_image" class="h-12 w-auto" />
+            <span v-else>-</span>
+          </td>
+          <td class="px-4 py-3">
+            <img v-if="user.qr_code_image" :src="user.qr_code_image" class="h-12 w-auto" />
             <span v-else>-</span>
           </td>
           <td class="px-4 py-3">
@@ -93,7 +98,6 @@ onUnmounted(() => {
             <button @click="toggleMenu(user.id)" class="user-action-button p-2 hover:bg-gray-100 rounded">
               <span class="material-symbols-outlined">more_vert</span>
             </button>
-
             <div v-if="openMenuId === user.id"
               class="user-action-menu absolute right-0 mt-2 w-32 bg-white border rounded shadow-md z-50">
               <button @click="$emit('view-user', user); openMenuId = null"
@@ -106,7 +110,6 @@ onUnmounted(() => {
                 class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700">Print</button>
             </div>
           </td>
-
         </tr>
       </tbody>
     </table>
