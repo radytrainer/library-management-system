@@ -370,6 +370,6 @@ function closeModal() {
       </div>
     </div>
   </div>
-  <UserCard v-if="newUser" ref="idCardRef" :user="newUser" systemName="Library Digital"
+  <UserCard v-if="newUser" ref="idCardRef" :user="newUser" systemName="PNC Library Digital"
     logoUrl="/path/to/your/logo.png" />
 </template>

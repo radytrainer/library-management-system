@@ -36,7 +36,7 @@
             </div>
 
             <div>
-              <img src="../../public/image.png" alt="" />
+              <img src="../../public/banner.png" alt="" />
             </div>
           </div>
         </div>

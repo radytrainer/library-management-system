@@ -156,9 +156,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       isSidebarOpen ? 'w-64' : 'w-20',
     ]">
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
-        <img src="/logo.png" alt="Library Logo" class="h-20 w-23" />
+        <img src="/PN.png" alt="Library Logo" class="h-20 w-30" />
         <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
-          {{ language === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
+          {{ language === 'en' ? 'PNC Library Digital' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
       </div>
       <nav class="flex-1 overflow-y-auto">
