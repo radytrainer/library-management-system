@@ -38,7 +38,7 @@ const navItems = [
 const filteredNav = computed(() => {
   const role = userStore.user?.role
   if (!role) return []
-  return role === 'admin', "user","linbrarian"
+  return role === 'admin'
     ? navItems
     : navItems.filter(item => item.roles.includes(role))
 })

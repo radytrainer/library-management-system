@@ -24,44 +24,7 @@ const adminBoard = (req, res) => {
 
 const librarianBoard = (req, res) => {
   res.status(200).json({ message: "Librarian Content." })
-}
-
-// const getAllUsers = async (req, res) => {
-//   try {
-//     const users = await User.findAll({
-//       include: [{ model: Role, as: "Role", attributes: ["id", "name", "description"], required: false }],
-//       attributes: ["id", "username", "email", "date_of_birth", "profile_image", "phone", "RoleId", "barcode", "barcode_image", "createdAt", "updatedAt", "status"],
-//       order: [["createdAt", "ASC"]],
-//     });
-
-//     // Map users to include the full profile image URL and role details
-//     const formattedUsers = users.map(user => ({
-//       id: user.id,
-//       username: user.username,
-//       email: user.email,
-//       date_of_birth: user.date_of_birth,
-//       profile_image: getProfileImageUrl(req, user.profile_image), // Assuming this function generates the full URL
-//       phone: user.phone,
-//       barcode: user.barcode,
-//       barcode_image: user.barcode_image,
-//       role: user.Role
-//         ? {
-//             id: user.Role.id,
-//             name: user.Role.name,
-       
-//           }
-//         : null,
-//       status: user.status, // Include status in the response
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt,
-//     }));
-
-//     res.status(200).json({ users: formattedUsers });
-//   } catch (error) {
-//     console.error('Error in getAllUsers:', error);
-//     res.status(500).json({ message: 'Failed to fetch users', error: error.message });
-//   }
-// };
+};
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
@@ -161,7 +124,6 @@ const getUserProfile = (req, res) => {
   }
 };
 
-
 const getRoles = async (req, res) => {
   try {
     const roles = await Role.findAll({ attributes: ['id', 'name'] });
@@ -172,104 +134,127 @@ const getRoles = async (req, res) => {
   }
 };
 
-// const updateUser = async (req, res) => {
-//   try {
-//     console.log("Incoming PUT /user/:id request");
-//     const userId = req.params.id;
-//     const isSelfUpdate = req.user.id.toString() === userId.toString();
+const createUser = async (req, res) => {
+  try {
+    const { username, email, password, date_of_birth, phone, roleId } = req.body;
+    const profile_image = req.file ? req.file.filename : null;
 
-//     const { username, email, password, date_of_birth, phone, roleId, barcode } = req.body;
-//     const profile_image = req.file ? req.file.filename : null;
+    // Check required fields
+    if (!username || !email || !password || !roleId) {
+      return res.status(400).json({ message: 'Username, email, password, and role are required' });
+    }
 
-//     const user = await User.findByPk(userId, {
-//       include: { model: Role, as: 'Role', attributes: ["id", "name", "description"] }
-//     });
-//     if (!user) return res.status(404).json({ message: "User not found!" });
+    // Only admin or librarian can create users
+    if (!['admin', 'librarian'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only admins or librarians can create users' });
+    }
 
-//     if (req.userRole !== 'admin' && !isSelfUpdate) {
-//       return res.status(403).json({ message: "You can only update your own account!" });
-//     }
+    // Check email uniqueness
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
 
-//     const updates = {};
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 8);
 
-//     // Basic fields
-//     if (username?.trim()) updates.username = username.trim();
-//     if (email?.trim()) updates.email = email.trim();
-//     if (date_of_birth) updates.date_of_birth = date_of_birth;
-//     if (phone?.trim()) updates.phone = phone.trim();
-//     if (barcode?.trim()) updates.barcode = barcode.trim();
+    // Check Role
+    const targetRole = await Role.findByPk(roleId);
+    if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
 
-//     // Password
-//     if (password?.trim()) {
-//       updates.password = await bcrypt.hash(password, 8);
-//     }
+    if (targetRole.name === 'admin') {
+      return res.status(403).json({ message: 'Cannot assign admin role' });
+    }
 
-//     // Role change with restrictions
-//     if (roleId) {
-//       // Only admins can change roles
-//       if (req.userRole !== 'admin') {
-//         return res.status(403).json({ message: "Only admins can change roles!" });
-//       }
-//       const targetRole = await Role.findByPk(roleId);
-//       if (!targetRole) {
-//         return res.status(400).json({ message: "Invalid roleId!" });
-//       }
+    if (req.user.role === 'librarian' && targetRole.name !== 'user') {
+      return res.status(403).json({ message: 'Librarians can only assign "user" role' });
+    }
 
-//       // Prevent assigning admin role to others
-//       if (targetRole.name === 'admin' && user.id !== req.user.id) {
-//         return res.status(403).json({ message: "Only the original admin can assign admin role to themselves!" });
-//       }
+    // Generate unique barcode
+    let barcode, isUnique = false;
+    while (!isUnique) {
+      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+      const exist = await User.findOne({ where: { barcode } });
+      if (!exist) isUnique = true;
+    }
 
-//       // Restrict role updates based on current role
-//       if (req.userRole === 'librarian' && targetRole.name !== 'user') {
-//         return res.status(403).json({ message: "Librarians can only assign the 'user' role!" });
-//       }
+    // Create user
+    const user = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+      date_of_birth,
+      phone,
+      profile_image,
+      roleId: roleId,
+      barcode,
+      barcode_image: null,
+      qr_code_image: null,
+    });
 
-//       updates.roleId = roleId;
-//     }
+    // Generate and save barcode image
+    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
+    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
-//     // Profile image
-//     if (profile_image) {
-//       if (user.profile_image) {
-//         const oldPath = path.join(process.cwd(), "uploads", "profile", user.profile_image);
-//         if (fs.existsSync(oldPath)) {
-//           fs.unlinkSync(oldPath);
-//         }
-//       }
-//       updates.profile_image = profile_image;
-//     }
+    const barcodeCanvas = createCanvas(400, 150);
+    const ctx = barcodeCanvas.getContext('2d');
+    JsBarcode(barcodeCanvas, barcode, { format: 'CODE128', displayValue: true, fontSize: 18, margin: 20 });
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(username, barcodeCanvas.width / 2, 140);
 
-//     if (Object.keys(updates).length === 0) {
-//       return res.status(400).json({ message: "No valid fields to update" });
-//     }
+    const barcodeFilename = `barcode_${user.id}.png`;
+    const barcodePath = path.join(barcodeDir, barcodeFilename);
+    const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
 
-//     await user.update(updates);
-//     await user.reload();
+    const barcodeOut = fs.createWriteStream(barcodePath);
+    barcodeCanvas.createPNGStream().pipe(barcodeOut);
+    await new Promise(resolve => barcodeOut.on('finish', resolve));
 
-//     res.status(200).json({
-//       message: "User updated successfully!",
-//       user: {
-//         id: user.id,
-//         username: user.username,
-//         email: user.email,
-//         date_of_birth: user.date_of_birth,
-//         profile_image: getProfileImageUrl(req, user.profile_image),
-//         phone: user.phone,
-//         barcode: user.barcode,
-//         barcode_image: user.barcode_image,
-//         role: user.Role
-//           ? { id: user.Role.id, name: user.Role.name, description: user.Role.description }
-//           : null,
-//         createdAt: user.createdAt,
-//         updatedAt: user.updatedAt,
-//       },
-//     });
+    // Generate and save QR code image
+    const qrDir = path.join(process.cwd(), 'Uploads', 'qrcodes');
+    if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
-//   } catch (error) {
-//     console.error("Update user error:", error);
-//     res.status(500).json({ message: "Failed to update user", error: error.message });
-//   }
-// };
+    const qrFilename = `qrcode_${user.id}.png`;
+    const qrPath = path.join(qrDir, qrFilename);
+    const qrImageUrl = `${req.protocol}://${req.get('host')}/uploads/qrcodes/${qrFilename}`;
+
+    await QRCode.toFile(qrPath, barcode, { // Changed from user.id.toString() to barcode
+      type: 'png',
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff',
+      },
+    });
+
+    // Update user with barcode and QR code image URLs
+    user.barcode_image = barcodeImageUrl;
+    user.qr_code_image = qrImageUrl;
+    await user.save();
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        username,
+        email,
+        date_of_birth,
+        phone,
+        profile_image: profile_image
+          ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
+          : null,
+        barcode,
+        barcode_image: barcodeImageUrl,
+        qr_code_image: qrImageUrl,
+        role: targetRole.name,
+      },
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ message: 'Server error during user creation', error: error.message });
+  }
+};
+
 const updateUser = async (req, res) => {
   try {
     console.log('Incoming PUT /user/:id request');
@@ -425,59 +410,7 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: 'Failed to update user', error: error.message });
   }
 };
-// const deleteUserById = async (req, res) => {
-//   try {
-//     console.log("➡️ DELETE called with ID:", req.params.id);
 
-//     const userId = req.params.id;
-//     const user = await User.findByPk(userId);
-
-//     if (!user) {
-//       console.log("❌ User not found with ID:", userId);
-//       return res.status(404).json({ message: "User not found!" });
-//     }
-
-//     // ❗ Check for foreign key relation if user is a librarian
-//     if (user.role === 'librarian') {
-//       const borrowCount = await Borrow.count({ where: { librarian_id: userId } });
-//       console.log("📌 Borrow records linked to this librarian:", borrowCount);
-
-//       if (borrowCount > 0) {
-//         return res.status(400).json({
-//           message: "❗ Cannot delete this librarian. They are linked to borrow records."
-//         });
-//       }
-//     }
-
-//     // 🗑 Delete barcode image if exists
-//     if (user.barcode_image) {
-//       const filename = path.basename(user.barcode_image);
-//       const filePath = path.join(process.cwd(), 'uploads', 'barcodes', filename);
-//       if (fs.existsSync(filePath)) {
-//         fs.unlinkSync(filePath);
-//         console.log("🗑 Barcode image deleted:", filePath);
-//       }
-//     }
-
-//     // 🗑 Delete profile image if exists
-//     if (user.profile_image) {
-//       const profilePath = path.join(process.cwd(), 'uploads', 'profiles', user.profile_image);
-//       if (fs.existsSync(profilePath)) {
-//         fs.unlinkSync(profilePath);
-//         console.log("🗑 Profile image deleted:", profilePath);
-//       }
-//     }
-
-//     // ✅ Safe to delete
-//     await user.destroy();
-//     console.log("✅ User deleted successfully with ID:", userId);
-
-//     res.status(200).json({ message: "User deleted successfully!" });
-//   } catch (error) {
-//     console.error("❌ Delete user error:", error);
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 const deleteUserById = async (req, res) => {
   try {
     console.log('➡️ DELETE called with ID:', req.params.id);
@@ -541,6 +474,7 @@ const deleteUserById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const deleteAccount = async (req, res) => {
   try {
     const userId = req.userId
@@ -560,6 +494,7 @@ const deleteAccount = async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 }
+
 const exportUsersWithImages = async (req, res) => {
   try {
     const users = await User.findAll({
@@ -629,6 +564,7 @@ const exportUsersWithImages = async (req, res) => {
     res.status(500).json({ message: 'Error exporting Excel file' });
   }
 };
+
 async function generateQRCodesForExistingUsers() {
   try {
     const users = await User.findAll();
@@ -637,7 +573,7 @@ async function generateQRCodesForExistingUsers() {
 
     for (const user of users) {
       if (!user.qr_code_image && user.barcode) {
-        const qrFilename = `qrcode_${user.id}.png`;
+        const qrFilename = `qrcode_${user.barcode}.png`;
         const qrPath = path.join(qrDir, qrFilename);
         const qrImageUrl = `${process.env.BASE_URL}/uploads/qrcodes/${qrFilename}`; // Set BASE_URL in your .env file
 
@@ -670,18 +606,11 @@ const generateUserQRCode = async (req, res) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Prepare user info to encode
-    const userInfo = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
-      date_of_birth: user.date_of_birth,
-      roleId: user.roleId,
-      status: user.status
-    };
+    if (!user.barcode) {
+      return res.status(400).json({ message: 'User does not have a barcode' });
+    }
 
-    const qrData = JSON.stringify(userInfo); // convert to JSON string
+    const qrData = user.barcode; // always encode barcode
 
     // Generate QR code
     const qrFileName = `qr_${user.id}.png`;
@@ -692,232 +621,13 @@ const generateUserQRCode = async (req, res) => {
     await QRCode.toFile(qrFilePath, qrData, { width: 300, margin: 2 });
 
     // Save path in DB
-    user.barcode_image = `/qrcodes/${qrFileName}`;
+    user.qr_code_image = `/qrcodes/${qrFileName}`;
     await user.save();
 
-    res.json({ message: 'QR code generated', qrCodeUrl: user.barcode_image });
+    res.json({ message: 'QR code generated', qrCodeUrl: user.qr_code_image });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error generating QR code' });
-  }
-};
-// const createUser = async (req, res) => {
-//   try {
-//     const { username, email, password, date_of_birth, phone, roleId } = req.body;
-//     const profile_image = req.file ? req.file.filename : null;
-
-//     // Check required fields
-//     if (!username || !email || !password || !roleId) {
-//       return res.status(400).json({ message: 'Username, email, password, and role are required' });
-//     }
-
-//     // Only admin or librarian can create users
-//     if (!['admin', 'librarian'].includes(req.user.role)) {
-//       return res.status(403).json({ message: 'Only admins or librarians can create users' });
-//     }
-
-//     // Check email uniqueness
-//     const existingEmail = await User.findOne({ where: { email } });
-//     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
-
-//     // Hash password
-//     const hashedPassword = await bcrypt.hash(password, 8);
-
-//     // Check Role
-//     const targetRole = await Role.findByPk(roleId);
-//     if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
-
-//     if (targetRole.name === 'admin') {
-//       return res.status(403).json({ message: 'Cannot assign admin role' });
-//     }
-
-//     if (req.user.role === 'librarian' && targetRole.name !== 'user') {
-//       return res.status(403).json({ message: 'Librarians can only assign "user" role' });
-//     }
-
-//     // Generate unique barcode
-//     let barcode, isUnique = false;
-//     while (!isUnique) {
-//       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-//       const exist = await User.findOne({ where: { barcode } });
-//       if (!exist) isUnique = true;
-//     }
-
-//     // Create user
-//     const user = await User.create({
-//       username,
-//       email,
-//       password: hashedPassword,
-//       date_of_birth,
-//       phone,
-//       profile_image,
-//       roleId: roleId,
-//       barcode,
-//       barcode_image: null
-//     });
-
-//     // Generate barcode image
-//     const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
-//     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
-
-//     const canvas = createCanvas(400, 150);
-//     const ctx = canvas.getContext('2d');
-//     JsBarcode(canvas, barcode, { format: 'CODE128', displayValue: true, fontSize: 18, margin: 20 });
-//     ctx.font = '18px Arial';
-//     ctx.textAlign = 'center';
-//     ctx.fillText(username, canvas.width / 2, 140);
-
-//     const barcodeFilename = `barcode_${user.id}.png`;
-//     const barcodePath = path.join(barcodeDir, barcodeFilename);
-//     const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
-
-//     const out = fs.createWriteStream(barcodePath);
-//     canvas.createPNGStream().pipe(out);
-//     await new Promise(resolve => out.on('finish', resolve));
-
-//     user.barcode_image = barcodeImageUrl;
-//     await user.save();
-
-//     res.status(201).json({
-//       message: 'User created successfully',
-//       user: {
-//         id: user.id,
-//         username,
-//         email,
-//         date_of_birth,
-//         phone,
-//         profile_image: profile_image
-//           ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
-//           : null,
-//         barcode,
-//         barcode_image: barcodeImageUrl,
-//         role: targetRole.name,
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error('Create user error:', error);
-//     res.status(500).json({ message: 'Server error during user creation', error: error.message });
-//   }
-// };
-const createUser = async (req, res) => {
-  try {
-    const { username, email, password, date_of_birth, phone, roleId } = req.body;
-    const profile_image = req.file ? req.file.filename : null;
-
-    // Check required fields
-    if (!username || !email || !password || !roleId) {
-      return res.status(400).json({ message: 'Username, email, password, and role are required' });
-    }
-
-    // Only admin or librarian can create users
-    if (!['admin', 'librarian'].includes(req.user.role)) {
-      return res.status(403).json({ message: 'Only admins or librarians can create users' });
-    }
-
-    // Check email uniqueness
-    const existingEmail = await User.findOne({ where: { email } });
-    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 8);
-
-    // Check Role
-    const targetRole = await Role.findByPk(roleId);
-    if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
-
-    if (targetRole.name === 'admin') {
-      return res.status(403).json({ message: 'Cannot assign admin role' });
-    }
-
-    if (req.user.role === 'librarian' && targetRole.name !== 'user') {
-      return res.status(403).json({ message: 'Librarians can only assign "user" role' });
-    }
-
-    // Generate unique barcode
-    let barcode, isUnique = false;
-    while (!isUnique) {
-      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-      const exist = await User.findOne({ where: { barcode } });
-      if (!exist) isUnique = true;
-    }
-
-    // Create user
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      date_of_birth,
-      phone,
-      profile_image,
-      roleId: roleId,
-      barcode,
-      barcode_image: null,
-      qr_code_image: null,
-    });
-
-    // Generate and save barcode image
-    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
-    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
-
-    const barcodeCanvas = createCanvas(400, 150);
-    const ctx = barcodeCanvas.getContext('2d');
-    JsBarcode(barcodeCanvas, barcode, { format: 'CODE128', displayValue: true, fontSize: 18, margin: 20 });
-    ctx.font = '18px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(username, barcodeCanvas.width / 2, 140);
-
-    const barcodeFilename = `barcode_${user.id}.png`;
-    const barcodePath = path.join(barcodeDir, barcodeFilename);
-    const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
-
-    const barcodeOut = fs.createWriteStream(barcodePath);
-    barcodeCanvas.createPNGStream().pipe(barcodeOut);
-    await new Promise(resolve => barcodeOut.on('finish', resolve));
-
-    // Generate and save QR code image
-    const qrDir = path.join(process.cwd(), 'Uploads', 'qrcodes');
-    if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
-
-    const qrFilename = `qrcode_${user.id}.png`;
-    const qrPath = path.join(qrDir, qrFilename);
-    const qrImageUrl = `${req.protocol}://${req.get('host')}/uploads/qrcodes/${qrFilename}`;
-
-    await QRCode.toFile(qrPath, user.id.toString(), {
-      type: 'png',
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#ffffff',
-      },
-    });
-
-    // Update user with barcode and QR code image URLs
-    user.barcode_image = barcodeImageUrl;
-    user.qr_code_image = qrImageUrl;
-    await user.save();
-
-    res.status(201).json({
-      message: 'User created successfully',
-      user: {
-        id: user.id,
-        username,
-        email,
-        date_of_birth,
-        phone,
-        profile_image: profile_image
-          ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}`
-          : null,
-        barcode,
-        barcode_image: barcodeImageUrl,
-        qr_code_image: qrImageUrl,
-        role: targetRole.name,
-      },
-    });
-  } catch (error) {
-    console.error('Create user error:', error);
-    res.status(500).json({ message: 'Server error during user creation', error: error.message });
   }
 };
 
@@ -991,6 +701,7 @@ module.exports = {
   adminBoard,
   librarianBoard,
   exportUsersWithImages,
+  generateUserQRCode,
   getUserBarcode,
   getAllUsers,
   getUserById,

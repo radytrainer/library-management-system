@@ -94,45 +94,62 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('profile_image');
     },
 
-    async register(form) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const user = await registerUser(form);
-        this.setUser(user);
-        return { success: true, user };
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Registration failed';
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+   async register(form) {
+  this.loading = true;
+  this.error = '';
+  try {
+    // Call API
+    const response = await registerUser(form);
 
-    async login(email, password) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const response = await loginUser(email, password);
-        const token = response.accessToken || response.token;
-        const user = response.user || response;
+    // Extract user from API response
+    const user = response.user;
 
-        if (!token || !user) throw new Error('Invalid response from server');
+    // Save user in state/store
+    this.setUser(user);
 
-        this.setToken(token);
-        this.setUser(user);
+    // Store token for auto-login
+    if (user.accessToken) {
+      localStorage.setItem('token', user.accessToken);
+    }
 
-        console.log('Login successful:', user, 'Token:', token);
-        return { success: true, user };
-      } catch (error) {
-        console.error('Login error:', error.response?.data || error.message);
-        this.error = error.response?.data?.message || 'Login failed';
-        this.resetAuth();
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+    return { success: true, user };
+  } catch (error) {
+    this.error = error.response?.data?.message || 'Registration failed';
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
+
+   async login(email, password) {
+  this.loading = true;
+  this.error = '';
+  try {
+    const response = await loginUser(email, password);
+    const token = response.accessToken || response.token;
+    const user = response.user || response;
+
+    // Validate response
+    if (!token || !user || !user.id) {
+      throw new Error('Invalid response from server: Missing token or user data');
+    }
+
+    // Store token and user
+    this.setToken(token);
+    localStorage.setItem('token', token); // Persist token
+    this.setUser(user);
+
+    console.log('Login successful:', user, 'Token:', token);
+    return { success: true, user };
+  } catch (error) {
+    console.error('Login error:', error.response?.data || error.stack || error.message);
+    this.error = error.response?.data?.message || 'Login failed due to server error';
+    this.resetAuth();
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
 
     async fetchUserProfile() {
       if (!this.token) {

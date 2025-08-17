@@ -1,18 +1,28 @@
 import api from '@/services/axios'
 
 export const registerUser = async (form) => {
-  const formData = new FormData()
-  formData.append('username', form.username)
-  formData.append('email', form.email)
-  formData.append('phone', form.phone)
-  formData.append('password', form.password)
-  if (form.profile_image) formData.append('profile_image', form.profile_image)
+  const formData = new FormData();
+  formData.append('username', form.username);
+  formData.append('email', form.email);
+  formData.append('phone', form.phone);
+  formData.append('password', form.password);
+  formData.append('roleId', form.roleId || 1); // Optional with default
+  if (form.profile_image) formData.append('profile_image', form.profile_image);
 
-  const response = await api.post('/auth/signup', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-  return response.data.user
-}
+  try {
+    const token = localStorage.getItem('token') || ''; // Optional auth
+    const response = await api.post('/auth/signup', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}` // Optional
+      }
+    });
+    return response.data.user;
+  } catch (error) {
+    console.error('Registration error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Registration failed');
+  }
+};
 
 export const loginUser = async (email, password) => {
   try {
