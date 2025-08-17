@@ -8,7 +8,7 @@
         <h3 class="text-[6px] mt-[-8px] font-bold text-[#2c3e50] leading-none">{{ systemName }}</h3>
       </div>
 
-      <!-- Main content: profile, username, barcode, ID -->
+      <!-- Main content: profile, username, QR code, ID -->
       <div class="flex flex-col justify-center items-center mt-[6px]">
         <img
           :src="user.profile_image"
@@ -19,10 +19,10 @@
         <p class="text-[8px] text-[#34495e] font-medium mb-[6px]">{{ user.username }}</p>
 
         <img
-          :src="user.barcode_image"
-          alt="Barcode"
+          :src="user.qr_code_image"
+          alt="QR Code"
           class="max-w-[60px] h-auto"
-          v-if="user.barcode_image"
+          v-if="user.qr_code_image"
         />
         <p class="text-[6px] text-[#444f5a]">ID: {{ user.id }}</p>
       </div>
@@ -39,7 +39,6 @@ const logoUrl = ref('../../public/logo.png');
 const props = defineProps({
   user: Object,
   systemName: String,
-
 });
 
 const emit = defineEmits(['generated']);
@@ -73,8 +72,8 @@ function checkImageLoad() {
   if (props.user.profile_image)
     images.push(loadImage(props.user.profile_image));
 
-  if (props.user.barcode_image)
-    images.push(loadImage(props.user.barcode_image));
+  if (props.user.qr_code_image) // Updated to check qr_code_image
+    images.push(loadImage(props.user.qr_code_image));
 
   if (logoUrl.value)
     images.push(loadImage(logoUrl.value));

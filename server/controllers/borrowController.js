@@ -2,9 +2,145 @@ const db = require("../models");
 const Borrow = db.Borrow;
 const Book = db.Book;
 const User = db.User;
-const { Op } = require("sequelize");
+const { Op, fn, col, literal } = require("sequelize");
 const nodemailer = require("nodemailer");
 const { transporter } = require("../utils/mailer");
+
+// for chart js
+exports.activity = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const view = req.query.view || 'year';
+    const month = parseInt(req.query.month) || null;
+    const week = parseInt(req.query.week) || null; // for week view
+
+    let data = [];
+
+    if (view === 'year') {
+      // Yearly: Monthly totals
+      const borrows = await Borrow.findAll({
+        attributes: [
+          [fn('MONTH', col('borrow_date')), 'monthNum'],
+          [fn('COUNT', col('id')), 'count']
+        ],
+        where: {
+          borrow_date: {
+            [Op.between]: [`${year}-01-01`, `${year}-12-31`]
+          }
+        },
+        group: ['monthNum'],
+        order: [['monthNum', 'ASC']]
+      });
+
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      data = monthNames.map((m, i) => {
+        const found = borrows.find(b => b.get('monthNum') === i + 1);
+        return { label: m, value: found ? parseInt(found.get('count')) : 0 };
+      });
+
+    } else if (view === 'month' && month) {
+      // Monthly: Weekly breakdown
+      const borrows = await Borrow.findAll({
+        attributes: [
+          [
+            literal(`
+              CASE 
+                WHEN DAY(borrow_date) BETWEEN 1 AND 7 THEN 'Week 1'
+                WHEN DAY(borrow_date) BETWEEN 8 AND 14 THEN 'Week 2'
+                WHEN DAY(borrow_date) BETWEEN 15 AND 21 THEN 'Week 3'
+                ELSE 'Week 4'
+              END
+            `),
+            'week'
+          ],
+          [fn('COUNT', col('id')), 'count']
+        ],
+        where: {
+          borrow_date: {
+            [Op.between]: [
+              `${year}-${String(month).padStart(2, '0')}-01`,
+              `${year}-${String(month).padStart(2, '0')}-31`
+            ]
+          }
+        },
+        group: ['week'],
+        order: [['week', 'ASC']]
+      });
+
+      const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      data = weeks.map(w => {
+        const found = borrows.find(b => b.get('week') === w);
+        return { label: w, value: found ? parseInt(found.get('count')) : 0 };
+      });
+
+    } else if (view === 'week' && month && week) {
+      // Weekly: Daily breakdown
+      const startDay = (week - 1) * 7 + 1;
+      const endDay = Math.min(week * 7, 31);
+
+      const borrows = await Borrow.findAll({
+        attributes: [
+          [fn('DAY', col('borrow_date')), 'dayNum'],
+          [fn('COUNT', col('id')), 'count']
+        ],
+        where: {
+          borrow_date: {
+            [Op.between]: [
+              `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`,
+              `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`
+            ]
+          }
+        },
+        group: ['dayNum'],
+        order: [['dayNum', 'ASC']]
+      });
+
+      const days = Array.from({ length: endDay - startDay + 1 }, (_, i) => startDay + i);
+      data = days.map(d => {
+        const found = borrows.find(b => b.get('dayNum') === d);
+        return { label: `Day ${d}`, value: found ? parseInt(found.get('count')) : 0 };
+      });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching borrow activity:', err);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+};
+
+// for top borrowers 
+exports.topBorrowers = async (req, res) => {
+  try {
+    const borrows = await Borrow.findAll({
+      attributes: [
+        'user_id',
+        [fn('COUNT', col('Borrow.id')), 'books']
+      ],
+      group: ['user_id', 'user.id', 'user.username', 'user.profile_image'],
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'profile_image']
+      }],
+      order: [[fn('COUNT', col('Borrow.id')), 'DESC']]
+      // no limit here
+    });
+
+    const result = borrows.map(b => ({
+      id: b.user_id,
+      name: b.user?.username || 'Unknown',
+      avatar: b.user?.profile_image
+        ? `${process.env.BASE_URL || 'http://localhost:5000'}/uploads/profile/${b.user.profile_image}`
+        : `${process.env.BASE_URL || 'http://localhost:5000'}/uploads/default-avatar.png`,
+      books: b.dataValues.books
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("[allBorrowers] Error:", error);
+  }
+};
 
 // Format borrow record output
 const formatBorrow = (borrow) => ({
@@ -61,9 +197,8 @@ exports.index = async (req, res) => {
         author: borrow.book?.author?.name || null,
         category: borrow.book?.category?.name || null,
         cover_image: borrow.book?.cover_image
-          ? `${req.protocol}://${req.get("host")}/uploads/books/${
-              borrow.book.cover_image
-            }`
+          ? `${req.protocol}://${req.get("host")}/uploads/books/${borrow.book.cover_image
+          }`
           : null,
       },
       user: {
@@ -496,4 +631,3 @@ exports.sendReturnReminders = async () => {
     console.error("❌ Failed to send reminders:", err.message);
   }
 };
-

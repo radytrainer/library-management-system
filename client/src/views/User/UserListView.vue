@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, nextTick, computed, watch } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import UserTable from '@/components/Users/UserTable.vue';
 import UserForm from '@/components/Users/UserForm.vue';
@@ -13,20 +13,26 @@ const showFormModal = ref(false);
 const showViewModal = ref(false);
 const isEditing = ref(false);
 const selectedUser = ref(null);
-const formUserData = ref({});
 const selectedUserId = ref(null);
 const selectedUserForPrint = ref(null);
 const printCardRef = ref(null);
-const searchQuery = ref('');
-const activeStatusFilter = ref('all'); // Options: 'all', 'active', 'inactive'
-const borrowingStatusFilter = ref('all'); // Options: 'all', 'borrowing', 'not-borrowing'
+const formUserData = ref({}); // Added missing formUserData ref
 
+const searchQuery = ref('');
+const roleFilter = ref('all');
+const activeStatusFilter = ref('all');
+const startDate = ref(null);
+const endDate = ref(null);
+
+const currentPage = ref(1);
+const itemsPerPage = ref(5);
+
+// Fetch users and roles on mount
 onMounted(() => {
-  userStore.fetchUsers().catch((e) => {
+  userStore.fetchUsers().catch(e => {
     Swal.fire({
       toast: true,
       position: 'bottom-end',
-
       icon: 'error',
       title: e.message || 'Failed to load users',
       showConfirmButton: false,
@@ -37,11 +43,10 @@ onMounted(() => {
       background: '#fff',
     });
   });
-  userStore.fetchRoles().catch((e) => {
+  userStore.fetchRoles().catch(e => {
     Swal.fire({
       toast: true,
-          position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'error',
       title: e.message || 'Failed to load roles',
       showConfirmButton: false,
@@ -54,7 +59,7 @@ onMounted(() => {
   });
 });
 
-// Computed property to filter users based on search query and status filters
+// Computed: Filter users based on search, role, status, and createdAt
 const filteredUsers = computed(() => {
   let filtered = userStore.users;
 
@@ -62,35 +67,92 @@ const filteredUsers = computed(() => {
     const query = searchQuery.value.toLowerCase().trim();
     filtered = filtered.filter(user =>
       (user.username && user.username.toLowerCase().includes(query)) ||
+      (user.email && user.email.toLowerCase().includes(query)) ||
       (user.id && user.id.toString().includes(query))
     );
   }
 
-  if (activeStatusFilter.value !== 'all') {
-    filtered = filtered.filter(user =>
-      activeStatusFilter.value === 'active' ? user.isActive : !user.isActive
-    );
+  if (roleFilter.value !== 'all') {
+    filtered = filtered.filter(user => user.role?.name.toLowerCase() === roleFilter.value);
   }
 
-  if (borrowingStatusFilter.value !== 'all') {
-    filtered = filtered.filter(user =>
-      borrowingStatusFilter.value === 'borrowing' ? user.hasActiveLoans : !user.hasActiveLoans
-    );
+  if (activeStatusFilter.value !== 'all') {
+    filtered = filtered.filter(user => user.status.toLowerCase() === activeStatusFilter.value);
+  }
+
+  if (startDate.value && endDate.value) {
+    filtered = filtered.filter(user => {
+      const createdAt = new Date(user.createdAt);
+      return createdAt >= new Date(startDate.value) && createdAt <= new Date(endDate.value);
+    });
   }
 
   return filtered;
 });
 
+// Computed: Total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredUsers.value.length / itemsPerPage.value) || 1;
+});
+
+// Computed: Paginated users
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredUsers.value.slice(start, end);
+});
+
+// Computed: Dynamic page buttons (current page ± 2, up to 5 buttons)
+const pageButtons = computed(() => {
+  const maxButtons = 5;
+  const half = Math.floor(maxButtons / 2);
+  let startPage = Math.max(1, currentPage.value - half);
+  let endPage = Math.min(totalPages.value, startPage + maxButtons - 1);
+
+  if (endPage - startPage < maxButtons - 1) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  const pages = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
+
+// Reset current page when filters change
+watch([searchQuery, roleFilter, activeStatusFilter, startDate, endDate, itemsPerPage], () => {
+  currentPage.value = 1;
+});
+
 function openAddUser() {
   isEditing.value = false;
-  formUserData.value = {};
+  formUserData.value = {
+    username: '',
+    email: '',
+    password: '',
+    phone: '',
+    RoleId: '',
+    date_of_birth: '',
+    profile_image: '',
+    status: 'active',
+  };
   selectedUserId.value = null;
   showFormModal.value = true;
 }
 
-async function openEditUser(user) {
+function openEditUser(user) {
   isEditing.value = true;
-  formUserData.value = { ...user, password: '' };
+  formUserData.value = {
+    username: user.username || '',
+    email: user.email || '',
+    password: '', // Clear password for security
+    date_of_birth: user.date_of_birth || '',
+    phone: user.phone || '',
+    RoleId: user.role?.id || '', // Map role.id to RoleId
+    profile_image: user.profile_image || '',
+    status: user.status || 'active',
+  };
   selectedUserId.value = user.id;
   showFormModal.value = true;
 }
@@ -102,11 +164,10 @@ function openViewUser(user) {
 
 function handleFormSubmitSuccess() {
   showFormModal.value = false;
-  userStore.fetchUsers().catch((e) => {
+  userStore.fetchUsers().catch(e => {
     Swal.fire({
       toast: true,
-          position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'error',
       title: e.message || 'Failed to reload users',
       showConfirmButton: false,
@@ -120,22 +181,19 @@ function handleFormSubmitSuccess() {
 }
 
 async function confirmDeleteUser(id) {
-const result = await Swal.fire({
-  title: 'Are you sure?',
-  text: "This action cannot be undone!",
-  icon: 'warning',
-  showCancelButton: true,
-  confirmButtonColor: '#d33',
-  cancelButtonColor: '#3085d6',
-  confirmButtonText: 'Yes, delete it!',
-  background: '#fff',
-
-  willClose: () => {
-    // Remove blur from body when modal closes
-    document.body.style.filter = 'none';
-  }
-});
-
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'This action cannot be undone!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!',
+    background: '#fff',
+    willClose: () => {
+      document.body.style.filter = 'none';
+    },
+  });
 
   if (!result.isConfirmed) return;
 
@@ -143,8 +201,7 @@ const result = await Swal.fire({
   if (res.success) {
     Swal.fire({
       toast: true,
-          position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'success',
       title: 'User has been deleted.',
       showConfirmButton: false,
@@ -157,8 +214,7 @@ const result = await Swal.fire({
   } else {
     Swal.fire({
       toast: true,
-         position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'error',
       title: res.error || 'Failed to delete user',
       showConfirmButton: false,
@@ -190,20 +246,56 @@ const handlePrintUser = async (userId) => {
   }
 };
 
-// Updated submitForm with toast style notifications
 async function submitForm() {
   let res;
   if (isEditing.value) {
-    res = await userStore.updateUser(selectedUserId.value, formUserData.value);
+    const formData = new FormData();
+    formData.append('username', formUserData.value.username);
+    formData.append('email', formUserData.value.email);
+    if (formUserData.value.password) {
+      formData.append('password', formUserData.value.password);
+    }
+    if (formUserData.value.phone) {
+      formData.append('phone', formUserData.value.phone);
+    }
+    if (formUserData.value.RoleId) {
+      formData.append('RoleId', formUserData.value.RoleId);
+    }
+    if (formUserData.value.date_of_birth) {
+      formData.append('date_of_birth', formUserData.value.date_of_birth);
+    }
+    if (formUserData.value.profile_image_file) {
+      formData.append('profile_image', formUserData.value.profile_image_file);
+    }
+    formData.append('status', formUserData.value.status);
+
+    res = await userStore.updateUser(selectedUserId.value, formData);
   } else {
-    res = await userStore.createUser(formUserData.value);
+    const formData = new FormData();
+    formData.append('username', formUserData.value.username);
+    formData.append('email', formUserData.value.email);
+    formData.append('password', formUserData.value.password);
+    if (formUserData.value.phone) {
+      formData.append('phone', formUserData.value.phone);
+    }
+    if (formUserData.value.RoleId) {
+      formData.append('RoleId', formUserData.value.RoleId);
+    }
+    if (formUserData.value.date_of_birth) {
+      formData.append('date_of_birth', formUserData.value.date_of_birth);
+    }
+    if (formUserData.value.profile_image_file) {
+      formData.append('profile_image', formUserData.value.profile_image_file);
+    }
+    formData.append('status', formUserData.value.status);
+
+    res = await userStore.createUser(formData);
   }
 
   if (res.success) {
     Swal.fire({
       toast: true,
-          position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'success',
       title: isEditing.value ? 'User updated successfully.' : 'User created successfully.',
       showConfirmButton: false,
@@ -217,8 +309,7 @@ async function submitForm() {
   } else {
     Swal.fire({
       toast: true,
-    position: 'bottom-end',
-
+      position: 'bottom-end',
       icon: 'error',
       title: res.error || 'Something went wrong',
       showConfirmButton: false,
@@ -233,48 +324,48 @@ async function submitForm() {
 </script>
 
 <template>
-  <div class="p-8 bg-[#F8F8F8]">
-    <div class="flex justify-between items-center mb-2">
+  <div class="p-8 bg-[#F8F8F8] rounded-md shadow">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
       <div>
         <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>
         <p class="text-gray-600 mt-1 max-w-md leading-relaxed">
           Overview of all users including total count, active users, and new users added this month.
         </p>
       </div>
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-4 flex-wrap gap-4">
         <!-- Search Input -->
         <div class="relative">
           <input
             type="text"
             v-model="searchQuery"
-            placeholder="Search Name and ID"
+            placeholder="Search Name, Email, or ID"
             class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-            :class="{ 'font-khmer': language === 'kh' }"
             aria-label="Search"
           />
           <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
             search
           </span>
         </div>
-        <!-- Active Status Filter -->
+        <!-- Role Filter -->
+        <select
+          v-model="roleFilter"
+          class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
+          aria-label="Filter by role"
+        >
+          <option value="all">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="librarian">Librarian</option>
+          <option value="user">User</option>
+        </select>
+        <!-- Status Filter -->
         <select
           v-model="activeStatusFilter"
           class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-          aria-label="Filter by active status"
+          aria-label="Filter by status"
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
-        </select>
-        <!-- Borrowing Status Filter -->
-        <select
-          v-model="borrowingStatusFilter"
-          class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-          aria-label="Filter by borrowing status"
-        >
-          <option value="all">All Borrowing Statuses</option>
-          <option value="borrowing">Borrowing</option>
-          <option value="not-borrowing">Not Borrowing</option>
         </select>
         <!-- Add User Button -->
         <button
@@ -288,7 +379,6 @@ async function submitForm() {
 
     <div class="max-w-7xl mx-auto py-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <!-- Total Users -->
         <div
           class="bg-blue-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-blue-100 cursor-pointer"
         >
@@ -305,8 +395,6 @@ async function submitForm() {
             </div>
           </div>
         </div>
-
-        <!-- Active Users -->
         <div
           class="bg-green-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-green-100 cursor-pointer"
         >
@@ -323,8 +411,6 @@ async function submitForm() {
             </div>
           </div>
         </div>
-
-        <!-- New This Month -->
         <div
           class="bg-purple-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-purple-100 cursor-pointer"
         >
@@ -343,14 +429,62 @@ async function submitForm() {
         </div>
       </div>
     </div>
+
+    <!-- Empty State -->
+    <div v-if="filteredUsers.length === 0" class="text-center py-4 text-gray-600">
+      No matching users found.
+    </div>
+
     <UserTable
-      :users="filteredUsers"
+      :users="paginatedUsers"
       :roles="userStore.roles"
       @edit-user="openEditUser"
       @view-user="openViewUser"
       @delete-user="confirmDeleteUser"
       @print-user="handlePrintUser"
     />
+
+    <!-- Pagination Controls -->
+    <div class="flex items-center justify-between mt-4">
+      <select
+        v-model="itemsPerPage"
+        class="px-3 py-1 border rounded"
+        aria-label="Select number of users per page"
+      >
+        <option value="5">5</option>
+        <option value="15">15</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
+      <nav class="flex space-x-1">
+        <button
+          @click="currentPage = Math.max(currentPage - 1, 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 rounded border disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <button
+          v-for="page in pageButtons"
+          :key="page"
+          @click="currentPage = page"
+          :class="[
+            'px-3 py-1 rounded border',
+            currentPage === page ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'
+          ]"
+        >
+          {{ page }}
+        </button>
+        <button
+          @click="currentPage = Math.min(currentPage + 1, totalPages)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded border disabled:opacity-50"
+        >
+          Next
+        </button>
+      </nav>
+    </div>
+
     <UserForm
       :show="showFormModal"
       :isEditing="isEditing"
@@ -359,7 +493,11 @@ async function submitForm() {
       @close="showFormModal = false"
       @submit-success="handleFormSubmitSuccess"
     />
-    <UserViewModal :show="showViewModal" :user="selectedUser" @close="showViewModal = false" />
+    <UserViewModal
+      :show="showViewModal"
+      :user="selectedUser"
+      @close="showViewModal = false"
+    />
     <UserCard
       v-if="selectedUserForPrint"
       ref="printCardRef"
@@ -369,6 +507,7 @@ async function submitForm() {
     />
   </div>
 </template>
+
 <style>
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 </style>

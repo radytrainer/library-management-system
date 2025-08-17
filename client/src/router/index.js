@@ -19,7 +19,7 @@ import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
 import ListBook from '@/views/books/ListBook.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
-import UserProfile from '@/views/User/UserProfile.vue'
+import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
   // Redirect root to login or role-based page
@@ -44,8 +44,21 @@ const routes = [
       { path: 'website', name: 'website', component: Website },
       { path: 'about-us', name: 'about', component: AboutWebView },
       { path: 'web-book', name: 'web-book', component: BookWebView },
-    ],
+    ]
   },
+
+  // Role-based redirect
+  {
+    path: '/',
+    redirect: () => {
+      const authStore = useAuthStore()
+      const role = authStore.user?.role
+      if (role === 'admin') return '/dashboard'
+      if (role === 'librarian' || role === 'user') return '/books'
+      return '/login'
+    }
+  },
+
 
   // Protected Routes (AppLayout)
   {
@@ -66,7 +79,7 @@ const routes = [
   },
 
   // Fallback to login for unmatched routes (optional)
-  // { path: '/:pathMatch(.*)*', redirect: '/login' },
+  { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
 const router = createRouter({
@@ -79,16 +92,17 @@ router.beforeEach(async (to, from, next) => {
   console.log('--- Navigation Attempt ---')
   console.log('From:', from.fullPath)
   console.log('To:', to.fullPath)
-  console.log('Store State - Token:', localStorage.getItem('token'), 'User:', useUserStore().user)
+  console.log('Token:', localStorage.getItem('token'))
+  console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
 
   const authStore = useUserStore()
 
+  // Try to fetch profile if token exists but no user in store
   if (!authStore.user && localStorage.getItem('token')) {
-    console.log('Attempting to fetch profile with token:', localStorage.getItem('token'))
-    const result = await authStore.fetchProfile()
-    console.log('Fetch Profile Result:', result)
+    console.log('Attempting to fetch profile...')
+    const result = await authStore.fetchUserProfile()
+    console.log('Profile fetch result:', result)
     if (!result.success) {
-      console.log('Profile fetch failed, clearing auth and redirecting')
       authStore.resetAuth()
       return next('/login')
     }
@@ -97,27 +111,29 @@ router.beforeEach(async (to, from, next) => {
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
+  // Public pages
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
       if (userRole === 'admin') return next('/dashboard')
-      if (userRole === 'librarian' || userRole === 'user') return next('/books')
+      if (['librarian', 'user'].includes(userRole)) return next('/books')
     }
     return next()
   }
 
+  // Protected pages - not logged in
   if (to.meta.requiresAuth && !isLoggedIn) {
-    console.log('No authentication, redirecting to login')
     return next('/login')
   }
 
+  // Role-based restriction
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
-    console.log(`Unauthorized role ${userRole} for ${to.path}`)
     if (userRole === 'admin') return next('/dashboard')
-    if (userRole === 'librarian' || userRole === 'user') return next('/books')
+    if (['librarian', 'user'].includes(userRole)) return next('/books')
     return next('/login')
   }
 
   next()
 })
+
 
 export default router

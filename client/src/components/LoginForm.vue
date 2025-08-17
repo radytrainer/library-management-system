@@ -37,6 +37,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
+import { loginUser } from '@/services/Api/user'
 
 const router = useRouter()
 const authStore = useUserStore()
@@ -48,26 +49,35 @@ const isLoading = ref(false)
 const goToRegister = () => router.push('/register')
 
 const handleLogin = async () => {
-  console.log('Login started with email:', form.value.email)
-  errorMessage.value = ''
-  isLoading.value = true
+  errorMessage.value = '';
+  isLoading.value = true;
 
   try {
-    const result = await authStore.login(form.value.email, form.value.password)
-    console.log('Login result:', result)
-    if (result.success) {
-      console.log('Login successful, redirecting...')
-      const role = authStore.user?.role
-      router.push(role === 'admin' ? '/dashboard' : '/books')
-    } else {
-      throw new Error(result.error || 'Login failed')
-    }
+    const response = await loginUser(form.value.email, form.value.password);
+
+    // backend sends user inside response.user
+    const user = response.user;
+
+    const userData = {
+      token: user.accessToken,       // JWT token
+      role: user.role,               // user role
+      name: user.username,           // username
+      email: user.email,             // email
+      profile_image: user.profile_image || user.barcode_image || ''  // fallback to barcode_image
+    };
+
+    authStore.setUser(userData);
+    authStore.setToken(user.accessToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+
+    router.push(user.role === 'admin' ? '/dashboard' : '/books');
+
   } catch (err) {
-    console.error('Login error:', err)
-    errorMessage.value = err.message || 'Invalid email or password!'
+    console.error('Login error:', err);
+    errorMessage.value = err.response?.data?.message || 'Invalid email or password!';
   } finally {
-    isLoading.value = false
-    console.log('Login process finished')
+    isLoading.value = false;
   }
-}
+};
+
 </script>
