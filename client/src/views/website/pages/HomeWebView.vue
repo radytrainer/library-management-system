@@ -52,11 +52,11 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Newest Books Just Added</h2>
-      <p class="text-gray-700 max-w-3xl">
-        Explore the latest arrivals in our collection. These newest books are carefully selected to keep you inspired,
-        entertained, and informed. Whether you love fiction, non-fiction, or educational reads, you’ll find fresh titles
-        to dive into every week. Start exploring and discover your next favorite book today!
-      </p>
+    <p class="text-gray-700 max-w-3xl">
+      Check out the newest books just added to our library! From inspiring stories to informative reads, these fresh titles are ready for you to explore today.
+    </p>
+
+
     </div>
 
     <!-- Book Cards Section -->
