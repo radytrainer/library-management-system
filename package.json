@@ -10,6 +10,7 @@
     "concurrently": "^7.0.0"
   },
   "dependencies": {
+    "@iconify/vue": "^5.0.0",
     "chart.js": "^4.5.0",
     "cors": "^2.8.5",
     "csv-parse": "^6.1.0",
