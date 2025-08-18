@@ -17,7 +17,7 @@ import BookWebView from '@/views/website/pages/BookWebView.vue'
 import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
-import ListBook from '@/views/books/ListBook.vue'
+import ListBook from '@/views/books/BookList.vue'
 import DonateView from '@/views/Donate/DonateView.vue'
 import UserProfile from '@/views/User/UserProfile.vue'
 
