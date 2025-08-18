@@ -7,7 +7,6 @@
           <router-link to="/website" class="nav-link font-medium">HOME</router-link>
           <router-link to="/about-us" class="nav-link">ABOUT</router-link>
           <router-link to="/web-book" class="nav-link">BOOK</router-link>
-          <router-link to="/donate" class="nav-link">DONATE</router-link>
         </div>
         <div class="flex space-x-4 items-center">
           <router-link to="/login" class="btn border-blue-600 text-blue-600 hover:text-blue-800 hover:border-blue-800">Login</router-link>

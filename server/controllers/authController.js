@@ -1,122 +1,74 @@
-const db = require("../models");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const authConfig = require("../config/auth.config");
-const fs = require("fs");
-const path = require("path");
-const { createCanvas } = require("canvas");
-const JsBarcode = require("jsbarcode");
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { createCanvas } = require('canvas');
+const JsBarcode = require('jsbarcode');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
+const db = require('../models/index');
+const authConfig = require('../config/auth.config');
 
-const signup = async (req, res) => {
-  try {
-    const { username, email, password, date_of_birth, phone } = req.body;
-    const profile_image = req.file ? req.file.filename : null;
+// Store active user IDs and their last activity timestamp
+const activeUsers = new Map();
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "Username, email, and password are required!" });
+// Initialize Socket.IO
+let io;
+const initSocket = (server) => {
+  io = new Server(server, {
+    cors: { origin: '*', methods: ['GET', 'POST'] }
+  });
+
+  io.on('connection', (socket) => {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+      socket.disconnect();
+      return;
     }
 
-    const { User, Role } = db;
+    jwt.verify(token, authConfig.secret, (err, decoded) => {
+      if (err) {
+        socket.disconnect();
+        return;
+      }
 
-    const existingEmail = await User.findOne({ where: { email } });
-    if (existingEmail) {
-      return res.status(400).json({ message: "Email already registered!" });
-    }
+      const userId = decoded.id;
+      activeUsers.set(userId, Date.now());
+      broadcastActiveUsers();
 
-    const existingUsername = await User.findOne({ where: { username } });
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already taken!" });
-    }
+      socket.on('user-interaction', async () => {
+        activeUsers.set(userId, Date.now());
+        try {
+          const user = await db.User.findByPk(userId);
+          if (user) {
+            await user.update({ lastActive: new Date() });
+          }
+        } catch (error) {
+          console.error('Error updating lastActive:', error);
+        }
+        broadcastActiveUsers();
+      });
 
-    const dob = date_of_birth
-      ? new Date(date_of_birth.split('.').reverse().join('-')).toISOString().split('T')[0]
-      : null;
-
-    if (dob && isNaN(Date.parse(dob))) {
-      return res.status(400).json({ message: "Invalid date of birth format. Use DD.MM.YYYY." });
-    }
-
-    if (dob && new Date(dob) > new Date()) {
-      return res.status(400).json({ message: "Date of birth cannot be in the future." });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // ✅ Get default role (user)
-    const role = await Role.findOne({ where: { name: "user" } });
-    const roleId = role ? role.id : null;
-
-    // ✅ Generate unique 12-digit barcode
-    let barcode, isUnique = false;
-    while (!isUnique) {
-      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-      const existing = await User.findOne({ where: { barcode } });
-      if (!existing) isUnique = true;
-    }
-
-    // ✅ Create user in DB
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      date_of_birth: dob,
-      phone,
-      profile_image,
-      roleId,
-      barcode,
-      barcode_image: null
+      socket.on('disconnect', () => {
+        activeUsers.delete(userId);
+        broadcastActiveUsers();
+      });
     });
+  });
+};
 
-    // ✅ Generate barcode image
-    const barcodeDir = path.join(process.cwd(), 'uploads', 'barcodes');
-    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
-
-    const canvas = createCanvas(400, 150);
-    const ctx = canvas.getContext('2d');
-    JsBarcode(canvas, barcode, {
-      format: 'CODE128',
-      displayValue: true,
-      fontSize: 18,
-      margin: 20,
-    });
-
-    ctx.font = '18px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(username, canvas.width / 2, 140);
-
-    const barcodeFilename = `barcode_${user.id}.png`;
-    const barcodePath = path.join(barcodeDir, barcodeFilename);
-    const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
-
-    const out = fs.createWriteStream(barcodePath);
-    canvas.createPNGStream().pipe(out);
-    await new Promise((resolve) => out.on('finish', resolve));
-
-    user.barcode_image = barcodeImageUrl;
-    await user.save();
-
-    // ✅ Generate JWT token
-    const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
-
-    res.status(201).json({
-      message: "User registered successfully!",
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        date_of_birth: user.date_of_birth,
-        profile_image: profile_image ? `${req.protocol}://${req.get('host')}/uploads/profile/${profile_image}` : null,
-        barcode: user.barcode,
-        barcode_image: user.barcode_image,
-        role: role?.name || "user",
-        accessToken: token,
-      },
-    });
-  } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ message: "Server error during signup", error: error.message });
+// Broadcast active user count and list
+const broadcastActiveUsers = () => {
+  if (!io) return;
+  const now = Date.now();
+  const activeThreshold = 5 * 60 * 1000;
+  for (const [userId, lastActive] of activeUsers) {
+    if (now - lastActive > activeThreshold) activeUsers.delete(userId);
   }
+  io.emit('active-users', {
+    count: activeUsers.size,
+    userIds: Array.from(activeUsers.keys()),
+  });
 };
 
 const signin = async (req, res) => {
@@ -147,6 +99,15 @@ const signin = async (req, res) => {
       return res.status(401).json({ accessToken: null, message: "Invalid password!" });
     }
 
+    const inactiveThreshold = 30 * 24 * 60 * 60 * 1000;
+    const currentTime = new Date();
+    if (user.lastActive && (currentTime - new Date(user.lastActive) > inactiveThreshold)) {
+      await user.update({ isActive: false });
+      return res.status(403).json({ message: "Account is inactive. Please contact support to reactivate." });
+    }
+
+    await user.update({ lastActive: currentTime, isActive: true });
+
     const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
 
     res.status(200).json({
@@ -156,6 +117,17 @@ const signin = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.Role?.name || "user",
+        isActive: user.isActive,
+        barcode: user.barcode,
+        barcode_image: user.barcode_image
+          ? `${req.protocol}://${req.get('host')}${user.barcode_image}`
+          : null,
+        qr_code_image: user.qr_code_image
+          ? `${req.protocol}://${req.get('host')}${user.qr_code_image}`
+          : null,
+        profile_image: user.profile_image
+          ? `${req.protocol}://${req.get('host')}/uploads/profile/${user.profile_image}`
+          : null,
         accessToken: token,
       },
     });
@@ -165,10 +137,143 @@ const signin = async (req, res) => {
   }
 };
 
+const signup = async (req, res) => {
+  try {
+    const { username, email, password, phone, date_of_birth } = req.body;
 
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Username, email, and password are required!" });
+    }
 
+    const { User, Role } = db;
 
-module.exports = {
-  signup,
-  signin
+    // Check if email already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use!" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 🔢 Generate unique numeric barcode (12 digits)
+    let barcode, isUnique = false;
+    while (!isUnique) {
+      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString(); // 12 digits
+      const exist = await User.findOne({ where: { barcode } });
+      if (!exist) isUnique = true;
+    }
+
+    // Step 1: Create user (without images yet)
+    const user = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+      phone,
+      date_of_birth,
+      isActive: true,
+      lastActive: new Date(),
+      barcode
+    });
+
+    // ---------- Generate Barcode Image ----------
+    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
+    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
+
+    const barcodeCanvas = createCanvas(400, 150);
+    JsBarcode(barcodeCanvas, barcode, {
+      format: "CODE128",   // Works for any numbers
+      displayValue: true,  // Show number under barcode
+      fontSize: 20,
+      margin: 10,
+      lineColor: "#000000",
+      background: "#ffffff"
+    });
+
+    const barcodeFilename = `barcode_${user.id}.png`;
+    const barcodePath = path.join(barcodeDir, barcodeFilename);
+    const barcodeImageUrl = `/Uploads/barcodes/${barcodeFilename}`;
+
+    const barcodeOut = fs.createWriteStream(barcodePath);
+    barcodeCanvas.createPNGStream().pipe(barcodeOut);
+    await new Promise((resolve, reject) => {
+      barcodeOut.on('finish', resolve);
+      barcodeOut.on('error', reject);
+    });
+
+    // ---------- Generate QR Code ----------
+    const qrDir = path.join(process.cwd(), 'Uploads', 'qrcodes');
+    if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
+
+    const qrFilename = `qrcode_${user.id}.png`;
+    const qrPath = path.join(qrDir, qrFilename);
+    const qrImageUrl = `/Uploads/qrcodes/${qrFilename}`;
+    const userDetailsUrl = `${req.protocol}://${req.get('host')}/user/${user.id}`;
+
+    await QRCode.toFile(qrPath, userDetailsUrl, {
+      type: 'png',
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+
+    // Step 2: Update user with image paths
+    await user.update({
+      barcode_image: barcodeImageUrl,
+      qr_code_image: qrImageUrl,
+    });
+
+    // Assign default role
+    const defaultRole = await Role.findOne({ where: { name: "user" } });
+    if (defaultRole) {
+      await user.setRole(defaultRole);
+    }
+
+    // Track active users
+    activeUsers.set(user.id, Date.now());
+    broadcastActiveUsers();
+
+    // Generate JWT
+    const token = jwt.sign({ id: user.id }, authConfig.secret, { expiresIn: 86400 });
+
+    res.status(201).json({
+      message: "Signup successful!",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        date_of_birth: user.date_of_birth,
+        role: defaultRole?.name || "user",
+        isActive: user.isActive,
+        barcode: user.barcode,
+        barcode_image: `${req.protocol}://${req.get('host')}${barcodeImageUrl}`,
+        qr_code_image: `${req.protocol}://${req.get('host')}${qrImageUrl}`,
+        accessToken: token,
+      },
+    });
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ message: "Server error during signup", error: error.message });
+  }
 };
+
+
+
+const getActiveUsers = async (req, res) => {
+  try {
+    const now = Date.now();
+    const activeThreshold = 5 * 60 * 1000;
+    for (const [userId, lastActive] of activeUsers) {
+      if (now - lastActive > activeThreshold) {
+        activeUsers.delete(userId);
+      }
+    }
+    res.status(200).json({ count: activeUsers.size, userIds: Array.from(activeUsers.keys()) });
+  } catch (error) {
+    console.error('Error fetching active users:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { signin, signup, initSocket, getActiveUsers };

@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 import {
   registerUser,
   loginUser,
@@ -10,11 +10,12 @@ import {
   deleteUser,
   getProfile,
   getUserBarcodeImage,
-} from '@/services/Api/user'
-import router from '@/router'
-import Swal from 'sweetalert2'
+  getUserQRCode, // Add this import for QR code fetching
+} from '@/services/Api/user';
+import router from '@/router';
+import Swal from 'sweetalert2';
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -26,13 +27,14 @@ export const useUserStore = defineStore('user', {
     viewedUser: null,
     userProfile: null,
     userBarcodeImageUrl: null,
+    userQRCodeImageUrl: null, // Add state for QR code image URL
     error: '',
     loading: false,
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-    activeUsersCount: (state) => state.users.filter(u => u.isActive).length,
+    activeUsersCount: (state) => state.users.filter(user => user.status === 'active').length,
     newUsersCount: (state) => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -41,123 +43,141 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    setUser(user) {
-      this.user = user
-      localStorage.setItem('user', JSON.stringify(user))
-    },
-
-    setToken(token) {
-      this.token = token
-      localStorage.setItem('token', token)
-      console.log('Token:', localStorage.getItem('token'))
-      console.log('User:', JSON.parse(localStorage.getItem('user')))
-
-    },
-
-    resetAuth() {
-      this.user = null
-      this.token = null
-      localStorage.removeItem('user')
-      localStorage.removeItem('token')
-
-    },
-
     normalizeUser(user) {
       return {
         ...user,
+        username: user.name || user.username || '',
         profile_image: user.profile_image
-          ? user.profile_image.startsWith('http')
-            ? user.profile_image
-            : `${apiBase}/uploads/profile/${user.profile_image}`
+          ? (user.profile_image.startsWith('http')
+              ? user.profile_image
+              : `${apiBase}/uploads/profile/${user.profile_image}`)
           : null,
         barcode_image: user.barcode_image
-          ? user.barcode_image.startsWith('http')
-            ? user.barcode_image
-            : `${apiBase}/uploads/barcodes/${user.barcode_image}`
+          ? (user.barcode_image.startsWith('http')
+              ? user.barcode_image
+              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
+        qr_code_image: user.qr_code_image // Add QR code image normalization
+          ? (user.qr_code_image.startsWith('http')
+              ? user.qr_code_image
+              : `${apiBase}/uploads/qrcodes/${user.qr_code_image}`)
+          : null,
+      };
+    },
+
+    setUser(user) {
+      const normalizedUser = this.normalizeUser(user);
+      this.user = normalizedUser;
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+
+      if (normalizedUser.profile_image) {
+        localStorage.setItem('profile_image', normalizedUser.profile_image);
+        this.profileImage = normalizedUser.profile_image;
+      } else {
+        localStorage.removeItem('profile_image');
+        this.profileImage = null;
       }
     },
 
-    async register(form) {
-      this.loading = true
-      this.error = ''
-      try {
-        const user = await registerUser(form)
-        this.setUser(user)
-        return { success: true, user }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Registration failed'
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
+    setToken(token) {
+      this.token = token;
+      localStorage.setItem('token', token);
     },
-    async login(email, password) {
-      this.loading = true
-      this.error = ''
-      try {
-        const response = await loginUser(email, password)
-        console.log('Login API Response:', response)
 
-        // Adjust for possible 'accessToken' key
-        const token = response.token || response.accessToken || response.user?.accessToken
-        const user = response.user || response
+    resetAuth() {
+      this.user = null;
+      this.token = null;
+      this.userBarcodeImageUrl = null;
+      this.userQRCodeImageUrl = null; // Reset QR code image URL
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('profile_image');
+    },
 
-        if (!token || !user) {
-          throw new Error('Invalid response: Token or user missing')
-        }
+   async register(form) {
+  this.loading = true;
+  this.error = '';
+  try {
+    // Call API
+    const response = await registerUser(form);
 
-        this.setUser(user)
-        this.setToken(token)
+    // Extract user from API response
+    const user = response.user;
 
-        if (user.profile_image) {
-          localStorage.setItem('profile_image', user.profile_image)
-          console.log('Profile image saved:', user.profile_image)
-        } else {
-          localStorage.removeItem('profile_image')
-        }
+    // Save user in state/store
+    this.setUser(user);
 
-        console.log('Login successful, token stored:', token)
-        return { success: true, user }
-      } catch (error) {
-        console.error('Login error:', error.message, error.response?.data)
-        this.error = error.response?.data?.message || 'Login failed'
-        this.resetAuth()
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
+    // Store token for auto-login
+    if (user.accessToken) {
+      localStorage.setItem('token', user.accessToken);
     }
-    ,
+
+    return { success: true, user };
+  } catch (error) {
+    this.error = error.response?.data?.message || 'Registration failed';
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
+
+   async login(email, password) {
+  this.loading = true;
+  this.error = '';
+  try {
+    const response = await loginUser(email, password);
+    const token = response.accessToken || response.token;
+    const user = response.user || response;
+
+    // Validate response
+    if (!token || !user || !user.id) {
+      throw new Error('Invalid response from server: Missing token or user data');
+    }
+
+    // Store token and user
+    this.setToken(token);
+    localStorage.setItem('token', token); // Persist token
+    this.setUser(user);
+
+    console.log('Login successful:', user, 'Token:', token);
+    return { success: true, user };
+  } catch (error) {
+    console.error('Login error:', error.response?.data || error.stack || error.message);
+    this.error = error.response?.data?.message || 'Login failed due to server error';
+    this.resetAuth();
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
+
     async fetchUserProfile() {
-      // If no token, redirect to login (or skip if already on login handled elsewhere)
       if (!this.token) {
-        console.log('No token found, redirecting to login')
-        await router.push('/login')
-        return { success: false }
+        console.log('No token found, redirecting to login');
+        await router.push('/login');
+        return { success: false };
       }
 
-      this.loading = true
+      this.loading = true;
       try {
-        // Call your API service
-        const res = await getProfile()  // assuming getProfile() returns profile data
-
+        const res = await getProfile();
         if (!res || !res.data) {
-          console.log('Failed to fetch profile, redirecting to login')
-          await router.push('/login')
-          return { success: false }
+          console.log('Failed to fetch profile, redirecting to login');
+          await router.push('/login');
+          return { success: false };
         }
 
-        this.userProfile = this.normalizeUser(res.data)
-        return { success: true, data: this.userProfile }
+        this.userProfile = this.normalizeUser(res.data);
+        return { success: true, data: this.userProfile };
       } catch (error) {
-        console.error('Error fetching profile:', error)
-        await router.push('/login')
-        return { success: false, error }
+        console.error('Error fetching profile:', error);
+        await router.push('/login');
+        return { success: false, error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
+
     async fetchRoles() {
       this.loading = true;
       this.error = '';
@@ -174,101 +194,126 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchUsers() {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
       try {
-        const res = await getAllUsers()
+        const res = await getAllUsers();
         this.users = Array.isArray(res.data.users)
           ? res.data.users.map(u => this.normalizeUser(u))
-          : []
-        return { success: true }
+          : [];
+        return { success: true };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to fetch users'
-        return { success: false, error: this.error }
+        this.error = error.response?.data?.message || 'Failed to fetch users';
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async createUser(formData) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
+
+      if (!formData.get('username') || !formData.get('email') || !formData.get('password') || !formData.get('roleId')) {
+        this.error = 'Username, email, password, and role are required';
+        Swal.fire({ icon: 'error', title: 'Error', text: this.error });
+        this.loading = false;
+        return { success: false, error: this.error };
+      }
+
       try {
-        const res = await createUser(formData)
-        const newUser = this.normalizeUser(res.data.user)
-        this.users.push(newUser)
+        const res = await createUser(formData);
+        const newUser = this.normalizeUser(res.data.user);
+        this.users.push(newUser);
+
         Swal.fire({
           icon: 'success',
           title: 'User created!',
           text: 'The user was created successfully.',
           timer: 2000,
           showConfirmButton: false,
-        })
-        return { success: true, data: newUser }
+        });
+
+        return { success: true, data: newUser };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to create user'
-        Swal.fire({ icon: 'error', title: 'Error', text: this.error })
-        return { success: false, error: this.error }
+        console.error('Create user error:', error.response?.data || error.message);
+        this.error = error.response?.data?.message || 'Failed to create user';
+        Swal.fire({ icon: 'error', title: 'Error', text: this.error });
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async updateUser(id, formData) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
       try {
-        const res = await updateUser(id, formData)
-        const updatedUser = this.normalizeUser(res.data.user)
-        const index = this.users.findIndex(u => u.id === id)
-        if (index !== -1) this.users[index] = updatedUser
-        return { success: true }
+        const res = await updateUser(id, formData);
+        const updatedUser = this.normalizeUser(res.data.user);
+        const index = this.users.findIndex(u => u.id === id);
+        if (index !== -1) this.users[index] = updatedUser;
+        return { success: true };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to update user'
-        return { success: false, error: this.error }
+        this.error = error.response?.data?.message || 'Failed to update user';
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async deleteUser(id) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
       try {
-        await deleteUser(id)
-        this.users = this.users.filter(u => u.id !== id)
-        return { success: true }
+        await deleteUser(id);
+        this.users = this.users.filter(u => u.id !== id);
+        return { success: true };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to delete user'
-        return { success: false, error: this.error }
+        this.error = error.response?.data?.message || 'Failed to delete user';
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
+
     async fetchUserBarcodeImage(id) {
-      this.loading = true
-      this.error = ''
+      this.loading = true;
+      this.error = '';
       try {
-        const res = await getUserBarcodeImage(id)
-        if (this.userBarcodeImageUrl) URL.revokeObjectURL(this.userBarcodeImageUrl)
-        this.userBarcodeImageUrl = URL.createObjectURL(res.data)
-        return { success: true }
+        const res = await getUserBarcodeImage(id);
+        if (this.userBarcodeImageUrl) URL.revokeObjectURL(this.userBarcodeImageUrl);
+        this.userBarcodeImageUrl = URL.createObjectURL(res.data);
+        return { success: true };
       } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to fetch barcode image'
-        this.userBarcodeImageUrl = null
-        return { success: false, error: this.error }
+        this.error = error.response?.data?.message || 'Failed to fetch barcode image';
+        this.userBarcodeImageUrl = null;
+        return { success: false, error: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
+      }
+    },
+
+    async fetchUserQRCodeImage(id) {
+      this.loading = true;
+      this.error = '';
+      try {
+        const res = await getUserQRCode(id);
+        if (this.userQRCodeImageUrl) URL.revokeObjectURL(this.userQRCodeImageUrl);
+        this.userQRCodeImageUrl = URL.createObjectURL(res.data);
+        return { success: true };
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch QR code image';
+        this.userQRCodeImageUrl = null;
+        return { success: false, error: this.error };
+      } finally {
+        this.loading = false;
       }
     },
 
     logout() {
       this.resetAuth();
-      localStorage.removeItem('profile_image');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       router.push('/login');
-    }
-
+    },
   },
-})
+});
