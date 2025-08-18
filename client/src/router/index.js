@@ -18,7 +18,7 @@ import Dashboard from '@/views/DashboardView.vue'
 import BorrowList from '@/views/borrows/BorrowList.vue'
 import UserListView from '@/views/User/UserListView.vue'
 import ListBook from '@/views/books/BookList.vue'
-import DonateView from '@/views/Donate/DonateView.vue'
+import LanguageView from '@/views/Lang/LanguageView.vue'
 import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
@@ -68,7 +68,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'dashboard', component: Dashboard, meta: { roles: ['admin'] } },
       { path: 'users', name: 'users', component: UserListView, meta: { roles: ['admin', 'librarian'] } },
-      { path: 'donations', name: 'donations', component: DonateView, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'language', name: 'language', component: LanguageView, meta: { roles: ['admin', 'librarian'] } },
       { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },

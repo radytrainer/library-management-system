@@ -28,7 +28,7 @@ const navItems = [
   { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' }, roles: ['admin', 'librarian', 'user'] },
   { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' }, roles: ['admin', 'librarian', 'user'] },
   { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' }, roles: ['admin', 'librarian'] },
+  { path: '/Language', icon: 'language', label: { en: 'Languages', kh: 'ភាសា' }, roles: ['admin', 'librarian'] },
   { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' }, roles: ['admin', 'librarian'] },
   { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian'] },
   { path: '/profile', icon: 'account_circle', label: { en: 'Account', kh: 'ប្រវត្តិរូប' }, roles: ['admin', 'librarian', 'user'] },
@@ -62,7 +62,7 @@ const pageTitle = computed(() => {
     users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
     authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
     categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    Language: { en: 'Language', kh: 'ភាសា' },
     history: { en: 'History', kh: 'ប្រវត្តិការខ្ចី' },
     profile: { en: 'Profile', kh: 'ប្រវត្តិរូប' },
   }
