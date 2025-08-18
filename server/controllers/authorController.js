@@ -1,130 +1,70 @@
 const { Author } = require('../models');
 
+// Create a new author
+exports.store = async (req, res) => {
+    try {
+        const { name, nationality } = req.body;
+        if (!name) {
+            return res.status(400).json({ message: 'Name is required' });
+        }
+        const author = await Author.create({ name, nationality });
+        res.status(201).json(author);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Get all authors
 exports.index = async (req, res) => {
     try {
-        const authors = await Author.findAll();
-
-        const authorsWithImageUrl = authors.map(author => {
-            const authorData = author.toJSON();
-            authorData.profile_image_url = authorData.profile_image
-                ? `${req.protocol}://${req.get('host')}/uploads/authors/${authorData.profile_image}`
-                : null;
-            return authorData;
-        });
-
-        res.status(200).json(authorsWithImageUrl);
+        const authors = await Author.findAll({ attributes: ['id', 'name', 'nationality'] });
+        res.json(authors);
     } catch (error) {
-        console.error('Error fetching authors:', error);
-        res.status(500).json({ error: 'Failed to fetch authors' });
+        res.status(500).json({ message: error.message });
     }
 };
 
-// Get a single author by ID
+// Get a single author by id
 exports.show = async (req, res) => {
     try {
-        const author = await Author.findByPk(req.params.id);
-
+        const author = await Author.findByPk(req.params.id, { attributes: ['id', 'name', 'nationality'] });
         if (!author) {
-            return res.status(404).json({ error: 'Author not found' });
+            return res.status(404).json({ message: 'Author not found' });
         }
-
-        const imageUrl = author.profile_image
-            ? `${req.protocol}://${req.get('host')}/uploads/authors/${author.profile_image}`
-            : null;
-
-        res.status(200).json({
-            author: {
-                ...author.toJSON(),
-                profile_image_url: imageUrl,
-            },
-        });
+        res.json(author);
     } catch (error) {
-        console.error('Error fetching author:', error);
-        res.status(500).json({ error: 'Failed to fetch author' });
+        res.status(500).json({ message: error.message });
     }
 };
 
-// Add a new author
-exports.store = async (req, res) => {
-  try {
-    const { name, biography, nationality, birth_date, isLiving } = req.body;
-    if (!name || !birth_date) {
-      return res.status(400).json({ error: 'Name and birth date are required.' });
-    }
-
-    const profile_image = req.file ? req.file.filename : null;
-
-    // Use a transaction to ensure atomicity
-    const newAuthor = await Author.sequelize.transaction(async (t) => {
-      return await Author.create({
-        name,
-        biography,
-        nationality,
-        birth_date,
-        profile_image,
-        isLiving,
-      }, { transaction: t });
-    });
-
-    const imageUrl = profile_image
-      ? `${req.protocol}://${req.get('host')}/uploads/authors/${profile_image}`
-      : null;
-
-    res.status(201).json({
-      message: 'Author created successfully.',
-      author: {
-        ...newAuthor.toJSON(),
-        profile_image_url: imageUrl,
-      },
-    });
-  } catch (error) {
-    console.error('Error creating author:', error);
-    res.status(500).json({ error: 'Failed to create author' });
-  }
-};
-
-// Update an existing author
+// Update an author
 exports.update = async (req, res) => {
     try {
+        const { name, nationality } = req.body;
         const author = await Author.findByPk(req.params.id);
-
         if (!author) {
-            return res.status(404).json({ error: 'Author not found' });
+            return res.status(404).json({ message: 'Author not found' });
         }
-
-        const { name, biography, nationality, birth_date, isLiving } = req.body;
-        const profile_image = req.file ? req.file.filename : author.profile_image;
-
-        await author.update({
-            name,
-            biography,
-            nationality,
-            birth_date,
-            isLiving,
-            profile_image,
-        });
-
-        res.status(200).json({ message: 'Author updated successfully.', author: author.toJSON(), profile_image_url: profile_image ? `${req.protocol}://${req.get('host')}/uploads/authors/${profile_image}` : null });
+        if (name !== undefined) author.name = name;
+        if (nationality !== undefined) author.nationality = nationality;
+        await author.save();
+        res.json(author);
     } catch (error) {
-        console.error('Error updating author:', error);
-        res.status(500).json({ error: 'Failed to update author' });
+        res.status(500).json({ message: error.message });
     }
 };
 
 // Delete an author
+// Delete an author
 exports.destroy = async (req, res) => {
     try {
         const author = await Author.findByPk(req.params.id);
-
         if (!author) {
-            return res.status(404).json({ error: 'Author not found' });
+            return res.status(404).json({ message: 'Author not found' });
         }
-
         await author.destroy();
-        res.status(200).json({ message: 'Author deleted successfully.' });
+        res.json({ message: 'Author deleted successfully' });
     } catch (error) {
-        console.error('Error deleting author:', error);
-        res.status(500).json({ error: 'Failed to delete author' });
+        res.status(500).json({ message: error.message });
     }
 };

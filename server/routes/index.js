@@ -23,9 +23,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let folder = uploadDir;
 
-    if (req.baseUrl.includes('/authors')) {
-      folder = path.join(uploadDir, 'authors');
-    } else if (req.baseUrl.includes('/books')) {
+    if (req.baseUrl.includes('/books')) {
       folder = path.join(uploadDir, 'books');
     } else if (req.baseUrl.includes('/categories')) {
       folder = path.join(uploadDir, 'categories');
@@ -55,10 +53,7 @@ const resources = [
   apiResource('/borrow', borrowController),
   apiResource('/categories', categoryController),
   apiResource('/language', languageBook),
-  apiResource('/authors', authorController, {
-    store: [upload.single('profile_image')],
-    update: [upload.single('profile_image')],
-  }),
+  apiResource('/authors', authorController),
   apiResource('/donations', donationController, {
     store: [upload.single('cover_image')],
     update: [upload.single('cover_image')],
