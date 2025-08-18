@@ -1,3 +1,17 @@
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+</style>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -28,7 +42,7 @@ const navItems = [
   { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' }, roles: ['admin', 'librarian', 'user'] },
   { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' }, roles: ['admin', 'librarian', 'user'] },
   { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/donations', icon: 'volunteer_activism', label: { en: 'Donations', kh: 'ការបរិច្ចាគ' }, roles: ['admin', 'librarian'] },
+  { path: '/Language', icon: 'language', label: { en: 'Languages', kh: 'ភាសា' }, roles: ['admin', 'librarian'] },
   { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' }, roles: ['admin', 'librarian'] },
   { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian'] },
   { path: '/profile', icon: 'account_circle', label: { en: 'Account', kh: 'ប្រវត្តិរូប' }, roles: ['admin', 'librarian', 'user'] },
@@ -62,7 +76,7 @@ const pageTitle = computed(() => {
     users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
     authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
     categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    donations: { en: 'Donations', kh: 'ការបរិច្ចាគ' },
+    Language: { en: 'Language', kh: 'ភាសា' },
     history: { en: 'History', kh: 'ប្រវត្តិការខ្ចី' },
     profile: { en: 'Profile', kh: 'ប្រវត្តិរូប' },
   }
@@ -162,7 +176,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           {{ language === 'en' ? 'PNC LIBRARY' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
       </div>
-      <nav class="flex-1 overflow-y-auto">
+      <nav class="flex-1 overflow-y-auto no-scrollbar">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
           <li v-for="item in filteredNav" :key="item.path">
             <RouterLink :to="item.path" :class="[
@@ -271,7 +285,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
           <!-- Profile -->
           <div class="relative">
-            <div class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+            <div
+              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
               @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
               <img :src="profileImageUrl" alt="Profile" class="h-full w-full rounded-full object-cover"
                 @error="handleImageError" />
