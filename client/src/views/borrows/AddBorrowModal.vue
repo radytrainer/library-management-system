@@ -60,18 +60,75 @@
               </div>
             </div>
 
-            <div v-else>
-              <label class="block text-sm font-medium text-gray-700 mb-0.5">User Barcode</label>
-              <input
-                v-model="localForm.user_barcode"
-                type="text"
-                @input="fetchUserDetails"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200"
-                placeholder="Enter or scan user barcode..."
-              />
-              <p class="text-sm text-gray-400 mt-0">
-                <span class="text-gray-400">User Name:</span>
-                <span>{{ localForm.borrower_name || ' ..............' }}</span>
+            <div v-else class="space-y-4">
+              <label for="user-barcode" class="block text-sm font-medium text-gray-700 mb-1">User Barcode</label>
+              <div class="flex items-center space-x-4">
+                <input
+                  id="user-barcode"
+                  v-model="localForm.user_barcode"
+                  type="text"
+                  @input="fetchUserDetails"
+                  class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none"
+                  placeholder="Enter or scan user barcode..."
+                  aria-describedby="user-barcode-error"
+                />
+                <button
+                  type="button"
+                  @click="startQrScanner"
+                  class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 font-medium text-sm flex items-center gap-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                  :disabled="showQrScanner || scannerLoading"
+                  aria-label="Scan QR code"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m-3 4h6M3 3h2v2M3 21h2v-2m16 2h-2v-2m2-16h-2v2M9 3h6m-6 18h6"
+                    />
+                  </svg>
+                  Scan QR
+                </button>
+              </div>
+              <p v-if="formError && !showQrScanner" id="user-barcode-error" class="text-sm text-red-600 mt-1">{{ formError }}</p>
+              <div v-if="showQrScanner" class="mt-4 space-y-3">
+                <div
+                  id="qr-reader"
+                  class="w-full max-w-md mx-auto rounded-lg overflow-hidden border border-gray-200 shadow-sm"
+                  :class="{ 'opacity-50': scannerLoading }"
+                ></div>
+                <p v-if="scannerLoading" class="text-sm text-gray-600 text-center" role="status">Initializing QR scanner...</p>
+                <p v-if="scannerError" class="text-sm text-red-600 text-center" role="alert">{{ scannerError }}</p>
+                <button
+                  type="button"
+                  @click="stopQrScanner"
+                  class="w-full max-w-xs mx-auto px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 disabled:bg-red-400 disabled:cursor-not-allowed"
+                  :disabled="scannerLoading"
+                  aria-label="Stop QR scanner"
+                >
+                  <svg
+                    v-if="scannerLoading"
+                    class="animate-spin w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"></path>
+                  </svg>
+                  {{ scannerLoading ? 'Stopping...' : 'Stop Scanner' }}
+                </button>
+              </div>
+              <p class="text-sm text-gray-500 mt-2">
+                <span class="font-medium text-gray-600">User Name:</span>
+                <span class="ml-1">{{ localForm.borrower_name || 'Not selected' }}</span>
               </p>
             </div>
 
@@ -135,9 +192,9 @@
                   placeholder="Enter or scan book ISBN..."
                 />
               </div>
-              <p class="text-sm text-gray-400">
-                <span class="text-gray-400">Book Name:</span>
-                <span>{{ book.book_name || ' ..............' }}</span>
+              <p class="text-sm text-gray-500">
+                <span class="font-medium text-gray-600">Book Name:</span>
+                <span class="ml-1">{{ book.book_name || 'Not selected' }}</span>
               </p>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Return Date</label>
@@ -261,12 +318,12 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, nextTick } from "vue";
 import { inject } from "vue";
 import { useUserStore } from '@/stores/userStore';
 import { debounce } from "lodash";
+import { Html5Qrcode } from "html5-qrcode";
 
 const authStore = useUserStore();
 const props = defineProps({
@@ -277,7 +334,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "submit", "close"]);
-const { getBook, getUser, showToast, fetchBooksData, fetchUsersData, booksData } = inject("borrowManagement");
+const { getBook, getUser, showToast, fetchBooksData, fetchUsersData, booksData, usersData } = inject("borrowManagement");
 
 const today = new Date().toISOString().split('T')[0];
 
@@ -299,12 +356,24 @@ const formError = ref("");
 const loading = ref(false);
 const showModal = ref(true);
 const currentStep = ref(1);
+const showQrScanner = ref(false);
+const qrScanner = ref(null);
+const scannerLoading = ref(false);
+const scannerError = ref("");
 
 onMounted(async () => {
-  console.log("AddBorrowModel mounted, fetching data...");
-  await fetchBooksData();
-  await fetchUsersData();
-  console.log(`Books data after fetch (length: ${booksData.value.length}):`, JSON.stringify(booksData.value, null, 2));
+  console.log("AddBorrowModal mounted, fetching data...");
+  try {
+    await Promise.all([fetchBooksData(), fetchUsersData()]);
+    console.log(`Books data after fetch (length: ${booksData.value.length}):`, JSON.stringify(booksData.value, null, 2));
+    console.log(`Users data after fetch (length: ${usersData.value.length}):`, JSON.stringify(usersData.value, null, 2));
+    if (!usersData.value.length) {
+      showToast("No users available. Please add users to scan barcodes.", "error");
+    }
+  } catch (err) {
+    console.error("Error in onMounted:", err);
+    showToast("Failed to load initial data. Please try again.", "error");
+  }
 });
 
 watch(
@@ -324,6 +393,7 @@ function resetUserFields() {
   localForm.value.borrower_email = "";
   localForm.value.user_barcode = "";
   localForm.value.user_id = "";
+  stopQrScanner();
 }
 
 function addBook() {
@@ -342,6 +412,118 @@ function removeBook(index) {
   }
 }
 
+async function startQrScanner() {
+  showQrScanner.value = true;
+  scannerLoading.value = true;
+  scannerError.value = "";
+  console.log("Starting QR scanner, showQrScanner:", showQrScanner.value);
+
+  // Wait for Vue to render the #qr-reader element
+  await nextTick();
+
+  // Retry finding the #qr-reader element up to 3 times
+  let qrReaderElement = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    qrReaderElement = document.getElementById("qr-reader");
+    if (qrReaderElement) break;
+    console.warn(`Attempt ${attempt}: QR reader element (#qr-reader) not found, retrying...`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  if (!qrReaderElement) {
+    console.error("QR reader element (#qr-reader) not found after retries");
+    scannerError.value = "Failed to initialize QR scanner: Element not found.";
+    showToast("QR scanner element not found. Please try again.", "error");
+    scannerLoading.value = false;
+    showQrScanner.value = false;
+    return;
+  }
+
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  qrScanner.value = new Html5Qrcode("qr-reader");
+
+  try {
+    // List available cameras
+    const cameras = await Html5Qrcode.getCameras();
+    console.log("Available cameras:", JSON.stringify(cameras, null, 2));
+    if (!cameras || cameras.length === 0) {
+      throw new Error("No cameras found on this device.");
+    }
+
+    // Prefer back camera (environment), fall back to first available
+    const cameraId = cameras.find(cam => cam.facingMode === "environment")?.id || cameras[0].id;
+
+    await qrScanner.value.start(
+      cameraId,
+      config,
+      async (decodedText) => {
+        console.log("QR code scanned:", decodedText);
+        localForm.value.user_barcode = decodedText.trim();
+        scannerLoading.value = true;
+        try {
+          const user = await fetchUserDetails();
+          if (user) {
+            // Stop scanner only if user data is successfully retrieved
+            await stopQrScanner();
+            showToast(`Scanned barcode: ${decodedText}`, "success");
+          } else {
+            // Keep scanner open if no user is found to allow rescanning
+            scannerError.value = `No user found with barcode ${decodedText}. Please scan another code.`;
+            showToast(scannerError.value, "error");
+          }
+        } catch (err) {
+          scannerError.value = `Failed to process barcode: ${err.message}`;
+          showToast(`Failed to process barcode: ${err.message}`, "error");
+        } finally {
+          scannerLoading.value = false;
+        }
+      },
+      (error) => {
+        console.warn("QR scan error:", error);
+        scannerError.value = "Unable to scan QR code. Ensure the code is clear and well-lit.";
+      }
+    );
+    scannerLoading.value = false;
+    console.log("QR scanner started successfully with camera ID:", cameraId);
+  } catch (err) {
+    console.error("Failed to start QR scanner:", err);
+    scannerError.value = err.message.includes("Permission denied")
+      ? "Camera access denied. Please allow camera permissions in your browser."
+      : `Failed to start QR scanner: ${err.message}`;
+    showToast(scannerError.value, "error");
+    scannerLoading.value = false;
+    showQrScanner.value = false;
+  }
+}
+
+async function stopQrScanner() {
+  if (qrScanner.value) {
+    scannerLoading.value = true;
+    try {
+      const state = await qrScanner.value.getState();
+      if (state !== Html5Qrcode.ScannerState.NOT_STARTED) {
+        await qrScanner.value.stop();
+        qrScanner.value.clear();
+      }
+      showQrScanner.value = false;
+      scannerError.value = "";
+      console.log("QR scanner stopped, showQrScanner:", showQrScanner.value);
+    } catch (err) {
+      console.error("Failed to stop QR scanner:", err);
+      scannerError.value = `Failed to stop QR scanner: ${err.message}`;
+      showToast(scannerError.value, "error");
+    } finally {
+      scannerLoading.value = false;
+      qrScanner.value = null;
+    }
+  } else {
+    showQrScanner.value = false;
+    scannerLoading.value = false;
+    scannerError.value = "";
+    console.log("No QR scanner instance, showQrScanner:", showQrScanner.value);
+  }
+}
+
 const fetchUserDetails = debounce(async () => {
   try {
     const barcode = localForm.value.user_barcode?.trim().replace(/[\r\n]+/g, '');
@@ -349,34 +531,44 @@ const fetchUserDetails = debounce(async () => {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
-      return;
+      formError.value = "Please enter or scan a valid barcode.";
+      showToast("Please enter or scan a valid barcode.", "error");
+      return null;
     }
     if (!/^[A-Za-z0-9]{8,20}$/.test(barcode)) {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
-      showToast("Invalid user barcode format. Use 8-20 alphanumeric characters.", "error");
-      return;
+      formError.value = "Invalid barcode format. Use 8-20 alphanumeric characters.";
+      showToast("Invalid barcode format. Use 8-20 alphanumeric characters.", "error");
+      return null;
     }
     console.log(`Fetching user for barcode: ${barcode}`);
+    console.log(`Current usersData length: ${usersData.value.length}`, JSON.stringify(usersData.value, null, 2));
     const user = await getUser(barcode);
     if (user) {
-      localForm.value.borrower_name = user.username || user.name;
+      localForm.value.borrower_name = user.username || user.name || "";
       localForm.value.borrower_email = user.email || "";
-      localForm.value.user_id = user.id;
+      localForm.value.user_id = user.id || "";
+      formError.value = "";
       showToast(`User found: ${user.username || user.name}`, "success");
+      return user; // Return user to indicate success
     } else {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
+      formError.value = `No user found with barcode ${barcode}.`;
       showToast(`No user found with barcode ${barcode}.`, "error");
+      return null;
     }
   } catch (error) {
     console.error("Error fetching user details:", error.message, error.stack);
+    formError.value = `Failed to fetch user: ${error.message}`;
     showToast(`Failed to fetch user: ${error.message}`, "error");
     localForm.value.borrower_name = "";
     localForm.value.borrower_email = "";
     localForm.value.user_id = "";
+    return null;
   }
 }, 500);
 
@@ -462,6 +654,7 @@ function nextStep() {
   }
   if (currentStep.value < 3) {
     currentStep.value++;
+    stopQrScanner();
   }
 }
 
