@@ -22,16 +22,6 @@ import DonateView from '@/views/Donate/DonateView.vue'
 import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
-  // Redirect root to login or role-based page
-  { path: '/', redirect: () => {
-      const authStore = useUserStore()
-      const role = authStore.user?.role || null
-      if (role === 'admin') return '/dashboard'
-      if (role === 'librarian' || role === 'user') return '/books'
-      return '/login'
-    }
-  },
-
   // Public Auth Routes
   { path: '/login', name: 'login', component: Login, meta: { requiresAuth: false } },
   { path: '/register', name: 'register', component: Register, meta: { requiresAuth: false } },
@@ -41,24 +31,12 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
+      { path: '', redirect: '/website' }, // default home
       { path: 'website', name: 'website', component: Website },
       { path: 'about-us', name: 'about', component: AboutWebView },
       { path: 'web-book', name: 'web-book', component: BookWebView },
     ]
   },
-
-  // Role-based redirect
-  {
-    path: '/',
-    redirect: () => {
-      const authStore = useAuthStore()
-      const role = authStore.user?.role
-      if (role === 'admin') return '/dashboard'
-      if (role === 'librarian' || role === 'user') return '/books'
-      return '/login'
-    }
-  },
-
 
   // Protected Routes (AppLayout)
   {
@@ -66,19 +44,22 @@ const routes = [
     component: AppLayout,
     meta: { requiresAuth: true },
     children: [
+      // Admin only
       { path: 'dashboard', name: 'dashboard', component: Dashboard, meta: { roles: ['admin'] } },
       { path: 'users', name: 'users', component: UserListView, meta: { roles: ['admin', 'librarian'] } },
       { path: 'donations', name: 'donations', component: DonateView, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
+
+      // Admin, Librarian, and User (view-only for user)
       { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian', 'user'] } },
-      { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
       { path: 'profile', name: 'profile', component: UserProfile, meta: { roles: ['admin', 'librarian', 'user'] } },
     ],
   },
 
-  // Fallback to login for unmatched routes (optional)
+  // Catch-all fallback
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
@@ -89,19 +70,11 @@ const router = createRouter({
 
 // Global Navigation Guard
 router.beforeEach(async (to, from, next) => {
-  console.log('--- Navigation Attempt ---')
-  console.log('From:', from.fullPath)
-  console.log('To:', to.fullPath)
-  console.log('Token:', localStorage.getItem('token'))
-  console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
-
   const authStore = useUserStore()
 
-  // Try to fetch profile if token exists but no user in store
+  // Fetch profile if token exists but no user in store
   if (!authStore.user && localStorage.getItem('token')) {
-    console.log('Attempting to fetch profile...')
     const result = await authStore.fetchUserProfile()
-    console.log('Profile fetch result:', result)
     if (!result.success) {
       authStore.resetAuth()
       return next('/login')
@@ -111,7 +84,7 @@ router.beforeEach(async (to, from, next) => {
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
-  // Public pages
+  // Public routes
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
       if (userRole === 'admin') return next('/dashboard')
@@ -120,10 +93,8 @@ router.beforeEach(async (to, from, next) => {
     return next()
   }
 
-  // Protected pages - not logged in
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    return next('/login')
-  }
+  // Protected routes
+  if (to.meta.requiresAuth && !isLoggedIn) return next('/login')
 
   // Role-based restriction
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
@@ -134,6 +105,5 @@ router.beforeEach(async (to, from, next) => {
 
   next()
 })
-
 
 export default router
