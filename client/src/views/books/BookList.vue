@@ -32,18 +32,17 @@
               <div class="flex items-start gap-8">
                 <!-- Book Cover -->
                 <div class="flex-shrink-0">
-                  <div v-if="book.cover_image_url && imageCache[book.id]" class="w-20 h-28 shadow-md">
-                    <img :src="imageCache[book.id]" :alt="book.title" :title="book.title"
-                      :key="`${book.id}-${book.cover_image_url}`"
-                      class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105 image-no-flicker"
-                      :class="{ 'opacity-50': loadingImages[book.id] }"
-                      @error="handleImageError($event, book.id)" @load="handleImageLoad(book.id)" />
+                  <div v-if="book.cover_image_url" class="w-20 h-auto shadow-md">
+                    <img :src="book.cover_image_url" :alt="book.title" :title="book.title"
+                      class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105"
+                      @error="handleImageError" @load="handleImageLoad" />
                   </div>
                   <div v-else
-                    class="w-20 h-28 rounded-lg shadow-md bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center image-no-flicker">
-                    <span class="text-2xl font-bold text-gray-600">
-                      {{ book.title ? book.title.charAt(0).toUpperCase() : 'N/A' }}
-                    </span>
+                    class="w-16 h-20 rounded-lg shadow-md bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                      <path
+                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -185,8 +184,6 @@ const form = ref({});
 const imageFile = ref(null);
 const previewImage = ref(null);
 const updateFromDetail = ref(false);
-const imageCache = ref({});
-const loadingImages = ref({}); // Track loading state per book
 
 const notification = ref({
   visible: false,
@@ -211,7 +208,7 @@ const unavailableBooks = computed(() => books.value.filter(book => {
 
 const bookTitle = computed(() => selectedBook.value?.title || 'N/A');
 const bookDescription = computed(() => selectedBook.value?.description || 'No description available');
-const bookCover = computed(() => imageCache.value[selectedBook.value?.id] || selectedBook.value?.cover_image_url || '/path/to/fallback-image.jpg');
+const bookCover = computed(() => selectedBook.value?.cover_image_url || '/path/to/fallback-image.jpg');
 const authorName = computed(() => selectedBook.value?.author?.name || 'N/A');
 const authorBiography = computed(() => selectedBook.value?.author?.biography || 'No biography available');
 const authorNationality = computed(() => selectedBook.value?.author?.nationality || 'N/A');
@@ -283,35 +280,14 @@ const showNotification = (message, type) => {
   }, 3000);
 };
 
-// Image Preloading
-const preloadImage = (url, bookId) => {
-  if (!url || imageCache.value[bookId]) return;
-  loadingImages.value[bookId] = true;
-  const img = new Image();
-  img.src = url;
-  img.onload = () => {
-    imageCache.value[bookId] = url;
-    loadingImages.value[bookId] = false;
-    console.log(`Image preloaded for book ${bookId}: ${url}`);
-  };
-  img.onerror = () => {
-    imageCache.value[bookId] = '/path/to/fallback-image.jpg';
-    loadingImages.value[bookId] = false;
-    console.warn(`Failed to preload image for book ${bookId}: ${url}`);
-  };
-};
-
 // Event Handlers
-const handleImageLoad = (bookId) => {
-  loadingImages.value[bookId] = false;
-  console.log(`Image loaded for book ${bookId}`);
+const handleImageLoad = () => {
+  console.log('Image loaded successfully');
 };
 
-const handleImageError = (event, bookId) => {
-  console.warn(`Failed to load image for book ${bookId}`);
+const handleImageError = (event) => {
+  console.warn('Failed to load image');
   event.target.src = '/path/to/fallback-image.jpg';
-  imageCache.value[bookId] = '/path/to/fallback-image.jpg';
-  loadingImages.value[bookId] = false;
 };
 
 const toggleActionMenu = (id) => {
@@ -350,11 +326,6 @@ const handleAddByImport = () => {
 const viewBook = (book) => {
   console.log('Viewing book:', book);
   selectedBook.value = { ...book, ...getRelationalData(book) };
-  if (book.cover_image_url) {
-    preloadImage(book.cover_image_url, book.id);
-  } else {
-    imageCache.value[book.id] = '/path/to/fallback-image.jpg';
-  }
   showDetail.value = true;
   openActionMenu.value = null;
   updateFromDetail.value = false;
@@ -503,8 +474,6 @@ const deleteBookById = async (id) => {
   try {
     await deleteBook(id);
     books.value = books.value.filter(book => book.id !== id);
-    delete imageCache.value[id];
-    delete loadingImages.value[id];
     showNotification('Deleted!', 'success');
   } catch (err) {
     console.error('Error deleting book:', err, err.response?.data);
@@ -512,6 +481,7 @@ const deleteBookById = async (id) => {
   }
 };
 
+// In ParentComponent.vue <script setup>
 const submitForm = async () => {
   try {
     const formData = new FormData();
@@ -536,18 +506,15 @@ const submitForm = async () => {
       console.log('Update response:', updatedBook);
       bookWithRelations = {
         ...updatedBook,
-        cover_image_url: updatedBook.cover_image_url || null,
+        cover_image_url: imageFile.value
+          ? `${updatedBook.cover_image_url}${updatedBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : updatedBook.cover_image_url || '/path/to/fallback-image.jpg',
         ...getRelationalData(updatedBook),
       };
 
       const index = books.value.findIndex(book => book.id === form.value.id);
       if (index !== -1) {
         books.value[index] = bookWithRelations;
-        if (bookWithRelations.cover_image_url) {
-          preloadImage(bookWithRelations.cover_image_url, form.value.id);
-        } else {
-          imageCache.value[form.value.id] = '/path/to/fallback-image.jpg';
-        }
       }
 
       if (updateFromDetail.value) {
@@ -562,22 +529,20 @@ const submitForm = async () => {
       console.log('Create response:', newBook);
       bookWithRelations = {
         ...newBook,
-        cover_image_url: newBook.cover_image_url || null,
+        cover_image_url: newBook.cover_image_url
+          ? `${newBook.cover_image_url}${newBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : '/path/to/fallback-image.jpg',
         ...getRelationalData(newBook),
       };
 
       books.value.unshift(bookWithRelations);
-      if (bookWithRelations.cover_image_url) {
-        preloadImage(bookWithRelations.cover_image_url, newBook.id);
-      } else {
-        imageCache.value[newBook.id] = '/path/to/fallback-image.jpg';
-      }
       showNotification('The book has been added successfully.', 'success');
     }
 
+    // Delay form closure to prevent abrupt UI changes
     setTimeout(() => {
       closeForm();
-    }, 500);
+    }, 500); // Increased to 500ms for smoother transition
   } catch (err) {
     console.error('Error submitting form:', err, err.response?.data);
     const errorMessage = err.response?.data?.message || 'Failed to save book. Please check the form and try again.';
@@ -598,14 +563,7 @@ const fetchBooks = async () => {
       getCategories(),
       getLanguages(),
     ]);
-    books.value = booksRes.data.books.map(book => {
-      if (book.cover_image_url) {
-        preloadImage(book.cover_image_url, book.id);
-      } else {
-        imageCache.value[book.id] = '/path/to/fallback-image.jpg';
-      }
-      return book;
-    });
+    books.value = booksRes.data.books;
     authors.splice(0, authors.length, ...authorsRes.data);
     categories.splice(0, categories.length, ...categoriesRes.data);
     languages.splice(0, languages.length, ...languagesRes.data);
@@ -679,16 +637,5 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.image-no-flicker {
-  image-rendering: optimizeQuality;
-  will-change: transform;
-  width: 80px;
-  height: 112px; /* Fixed height to match image dimensions */
-  background-color: #f0f0f0; /* Placeholder background */
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 </style>

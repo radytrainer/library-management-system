@@ -1,5 +1,5 @@
 <template>
-  <div class="relative top-[90px] mx-auto bg-white rounded-xl w-full max-w-full sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+  <div class="relative top-[90px] mx-auto bg-white rounded-xl w-full max-w-full sm:max-w-4xl max-h-[80vh] overflow-y-auto no-scrollbar">
     <ModalHeader @edit-book="handleEditBook" @close-detail="handleCloseDetail" :selected-book="selectedBook" />
     <ModalContent v-if="selectedBook" :selected-book="selectedBook" :book-cover="bookCover" :book-title="bookTitle" :book-description="bookDescription" :category-name="categoryName" :language-name="languageName" :author-name="authorName" :author-biography="authorBiography" :author-nationality="authorNationality" :formatted-birth-date="formattedBirthDate" @open-full-image="openFullImage" />
     <LoadingState v-else />
