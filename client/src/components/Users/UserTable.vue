@@ -53,8 +53,8 @@ onUnmounted(() => {
           <th class="px-4 py-3 font-medium text-gray-600">Role</th>
           <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
           <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
-          <th class="px-4 py-3 font-medium text-gray-600">Barcode Image</th>
-          <th class="px-4 py-3 font-medium text-gray-600">QR Code Image</th> <!-- New column -->
+          <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
+          <th class="px-4 py-3 font-medium text-gray-600">QR</th> <!-- New column -->
           <th class="px-4 py-3 font-medium text-gray-600">Status</th>
           <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
         </tr>
