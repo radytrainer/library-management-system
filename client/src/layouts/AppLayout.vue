@@ -1,3 +1,17 @@
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+</style>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -162,7 +176,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           {{ language === 'en' ? 'PNC LIBRARY' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
       </div>
-      <nav class="flex-1 overflow-y-auto">
+      <nav class="flex-1 overflow-y-auto no-scrollbar">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
           <li v-for="item in filteredNav" :key="item.path">
             <RouterLink :to="item.path" :class="[
@@ -271,7 +285,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
           <!-- Profile -->
           <div class="relative">
-            <div class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+            <div
+              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
               @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
               <img :src="profileImageUrl" alt="Profile" class="h-full w-full rounded-full object-cover"
                 @error="handleImageError" />
