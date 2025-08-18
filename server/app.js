@@ -7,6 +7,7 @@ import routes from "./routes/index.js";       // centralized routes
 import authRoutes from "./routes/authRoute.js";
 import userRoutes from "./routes/userRoute.js";
 import './cron/sendReminders.js';
+import './cron/sendEmailUser.js';
 
 dotenv.config();
 const app = express();
