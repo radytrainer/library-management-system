@@ -25,26 +25,25 @@
       <!-- Book Cards -->
       <div class="px-6 pb-10">
         <div class="grid gap-4">
-
           <div v-for="book in filteredBooks" :key="book.id"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out transform hover:-translate-y-1 cursor-pointer"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer"
             @click="viewBook(book)">
             <div class="p-4">
-
               <div class="flex items-start gap-8">
                 <!-- Book Cover -->
                 <div class="flex-shrink-0">
-                  <div v-if="book.cover_image_url" class="w-20 h-auto shadow-md">
-                    <img :src="book.cover_image_url" :alt="book.title" :title="book.title"
-                      class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105"
-                      @error="handleImageError" @load="handleImageLoad" />
+                  <div v-if="book.cover_image_url && imageCache[book.id]" class="w-20 h-28 shadow-md">
+                    <img :src="imageCache[book.id]" :alt="book.title" :title="book.title"
+                      :key="`${book.id}-${book.cover_image_url}`"
+                      class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105 image-no-flicker"
+                      :class="{ 'opacity-50': loadingImages[book.id] }"
+                      @error="handleImageError($event, book.id)" @load="handleImageLoad(book.id)" />
                   </div>
                   <div v-else
-                    class="w-16 h-20 rounded-lg shadow-md bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                    <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path
-                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-                    </svg>
+                    class="w-20 h-28 rounded-lg shadow-md bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center image-no-flicker">
+                    <span class="text-2xl font-bold text-gray-600">
+                      {{ book.title ? book.title.charAt(0).toUpperCase() : 'N/A' }}
+                    </span>
                   </div>
                 </div>
 
@@ -128,7 +127,6 @@
                     </span>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -162,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import Swal from 'sweetalert2';
 import BookForm from '@/components/books/BookForm.vue';
 import BookManagerHeader from '@/components/books/headers/BookManagerHeader.vue';
@@ -187,6 +185,8 @@ const form = ref({});
 const imageFile = ref(null);
 const previewImage = ref(null);
 const updateFromDetail = ref(false);
+const imageCache = ref({});
+const loadingImages = ref({}); // Track loading state per book
 
 const notification = ref({
   visible: false,
@@ -204,7 +204,6 @@ const filterType = ref('all');
 // Computed Properties
 const totalBooks = computed(() => books.value.length);
 const availableBooks = computed(() => books.value.filter(book => getBookStatus(book.quantity) === 'available').length);
-
 const unavailableBooks = computed(() => books.value.filter(book => {
   const status = getBookStatus(book.quantity);
   return status === 'limited' || status === 'unavailable';
@@ -212,7 +211,7 @@ const unavailableBooks = computed(() => books.value.filter(book => {
 
 const bookTitle = computed(() => selectedBook.value?.title || 'N/A');
 const bookDescription = computed(() => selectedBook.value?.description || 'No description available');
-const bookCover = computed(() => selectedBook.value?.cover_image_url || '/path/to/fallback-image.jpg');
+const bookCover = computed(() => imageCache.value[selectedBook.value?.id] || selectedBook.value?.cover_image_url || '/path/to/fallback-image.jpg');
 const authorName = computed(() => selectedBook.value?.author?.name || 'N/A');
 const authorBiography = computed(() => selectedBook.value?.author?.biography || 'No biography available');
 const authorNationality = computed(() => selectedBook.value?.author?.nationality || 'N/A');
@@ -284,14 +283,35 @@ const showNotification = (message, type) => {
   }, 3000);
 };
 
-// Event Handlers
-const handleImageLoad = () => {
-  console.log('Image loaded successfully');
+// Image Preloading
+const preloadImage = (url, bookId) => {
+  if (!url || imageCache.value[bookId]) return;
+  loadingImages.value[bookId] = true;
+  const img = new Image();
+  img.src = url;
+  img.onload = () => {
+    imageCache.value[bookId] = url;
+    loadingImages.value[bookId] = false;
+    console.log(`Image preloaded for book ${bookId}: ${url}`);
+  };
+  img.onerror = () => {
+    imageCache.value[bookId] = '/path/to/fallback-image.jpg';
+    loadingImages.value[bookId] = false;
+    console.warn(`Failed to preload image for book ${bookId}: ${url}`);
+  };
 };
 
-const handleImageError = (event) => {
-  console.warn('Failed to load image');
+// Event Handlers
+const handleImageLoad = (bookId) => {
+  loadingImages.value[bookId] = false;
+  console.log(`Image loaded for book ${bookId}`);
+};
+
+const handleImageError = (event, bookId) => {
+  console.warn(`Failed to load image for book ${bookId}`);
   event.target.src = '/path/to/fallback-image.jpg';
+  imageCache.value[bookId] = '/path/to/fallback-image.jpg';
+  loadingImages.value[bookId] = false;
 };
 
 const toggleActionMenu = (id) => {
@@ -330,6 +350,11 @@ const handleAddByImport = () => {
 const viewBook = (book) => {
   console.log('Viewing book:', book);
   selectedBook.value = { ...book, ...getRelationalData(book) };
+  if (book.cover_image_url) {
+    preloadImage(book.cover_image_url, book.id);
+  } else {
+    imageCache.value[book.id] = '/path/to/fallback-image.jpg';
+  }
   showDetail.value = true;
   openActionMenu.value = null;
   updateFromDetail.value = false;
@@ -380,7 +405,7 @@ const openForm = (book = null) => {
       quantity: 4,
       cover_image: '',
       donated_by: '',
-      public_year: 2020,
+      public_year: new Date().getFullYear(),
       description: '',
       available: true,
       AuthorId: '',
@@ -401,8 +426,13 @@ const closeForm = () => {
 
 const handleFile = (e) => {
   const file = e.target.files[0];
-  imageFile.value = file;
-  previewImage.value = file ? URL.createObjectURL(file) : null;
+  if (file) {
+    imageFile.value = file;
+    previewImage.value = URL.createObjectURL(file);
+  } else {
+    imageFile.value = null;
+    previewImage.value = form.value.cover_image_url || null;
+  }
 };
 
 const handleAuthorUpdate = (updatedAuthor) => {
@@ -437,6 +467,10 @@ const handleCategoryUpdate = (updatedCategory) => {
   }
 };
 
+const handleFormUpdate = (updates) => {
+  form.value = { ...form.value, ...updates };
+};
+
 const confirmDeleteBook = async (bookId) => {
   console.log('Confirming deletion for book ID:', bookId);
   const result = await Swal.fire({
@@ -469,6 +503,8 @@ const deleteBookById = async (id) => {
   try {
     await deleteBook(id);
     books.value = books.value.filter(book => book.id !== id);
+    delete imageCache.value[id];
+    delete loadingImages.value[id];
     showNotification('Deleted!', 'success');
   } catch (err) {
     console.error('Error deleting book:', err, err.response?.data);
@@ -487,6 +523,8 @@ const submitForm = async () => {
 
     if (imageFile.value) {
       formData.append('cover_image', imageFile.value);
+    } else {
+      console.log('No cover image provided; proceeding without image.');
     }
 
     console.log('FormData entries:', [...formData.entries()]);
@@ -495,17 +533,21 @@ const submitForm = async () => {
     if (form.value.id) {
       const res = await updateBook(form.value.id, formData);
       const updatedBook = res.data.book;
+      console.log('Update response:', updatedBook);
       bookWithRelations = {
         ...updatedBook,
-        cover_image_url: updatedBook.cover_image_url
-          ? `${updatedBook.cover_image_url}${updatedBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
-          : '/path/to/fallback-image.jpg',
+        cover_image_url: updatedBook.cover_image_url || null,
         ...getRelationalData(updatedBook),
       };
 
       const index = books.value.findIndex(book => book.id === form.value.id);
       if (index !== -1) {
-        books.value.splice(index, 1, bookWithRelations);
+        books.value[index] = bookWithRelations;
+        if (bookWithRelations.cover_image_url) {
+          preloadImage(bookWithRelations.cover_image_url, form.value.id);
+        } else {
+          imageCache.value[form.value.id] = '/path/to/fallback-image.jpg';
+        }
       }
 
       if (updateFromDetail.value) {
@@ -517,22 +559,29 @@ const submitForm = async () => {
     } else {
       const res = await apiCreateBook(formData);
       const newBook = res.data.book;
+      console.log('Create response:', newBook);
       bookWithRelations = {
         ...newBook,
-        cover_image_url: newBook.cover_image_url
-          ? `${newBook.cover_image_url}${newBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
-          : '/path/to/fallback-image.jpg',
+        cover_image_url: newBook.cover_image_url || null,
         ...getRelationalData(newBook),
       };
 
       books.value.unshift(bookWithRelations);
+      if (bookWithRelations.cover_image_url) {
+        preloadImage(bookWithRelations.cover_image_url, newBook.id);
+      } else {
+        imageCache.value[newBook.id] = '/path/to/fallback-image.jpg';
+      }
       showNotification('The book has been added successfully.', 'success');
     }
 
-    closeForm();
+    setTimeout(() => {
+      closeForm();
+    }, 500);
   } catch (err) {
     console.error('Error submitting form:', err, err.response?.data);
-    showNotification(err.response?.data?.message || 'Failed to save book. Please check the form and try again.', 'error');
+    const errorMessage = err.response?.data?.message || 'Failed to save book. Please check the form and try again.';
+    showNotification(errorMessage, 'error');
   }
 };
 
@@ -549,7 +598,14 @@ const fetchBooks = async () => {
       getCategories(),
       getLanguages(),
     ]);
-    books.value = booksRes.data.books;
+    books.value = booksRes.data.books.map(book => {
+      if (book.cover_image_url) {
+        preloadImage(book.cover_image_url, book.id);
+      } else {
+        imageCache.value[book.id] = '/path/to/fallback-image.jpg';
+      }
+      return book;
+    });
     authors.splice(0, authors.length, ...authorsRes.data);
     categories.splice(0, categories.length, ...categoriesRes.data);
     languages.splice(0, languages.length, ...languagesRes.data);
@@ -566,6 +622,20 @@ const fetchBooks = async () => {
       categories.splice(0, categories.length, ...JSON.parse(cachedCategories));
     }
     showNotification('Failed to fetch data. Please try again later.', 'error');
+  }
+};
+
+// ESC Key Handler
+const handleEsc = (event) => {
+  if (event.key === 'Escape') {
+    if (showDetail.value) {
+      closeDetail();
+    } else if (showForm.value) {
+      closeForm();
+    }
+    openActionMenu.value = null;
+    showDropdown.value = false;
+    showImportModal.value = false;
   }
 };
 
@@ -590,40 +660,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleEsc);
   console.log('Unmounted: ESC key listener removed');
 });
-
-watch([showForm, showDetail, showFullImage], ([f, d, img]) => {
-  document.body.style.overflow = f || d || img ? 'hidden' : '';
-});
-
-const handleEsc = (e) => {
-  if (e.key === 'Escape') {
-    console.log('ESC key pressed');
-    if (showForm.value) closeForm();
-    if (showFullImage.value) closeFullImage();
-    if (showDetail.value) closeDetail();
-  }
-};
-
-const handleFormUpdate = (updatedForm) => {
-  form.value = { ...form.value, ...updatedForm };
-};
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.description {
-  min-width: 300px;
-  max-width: 85%;
-  word-break: break-word;
-  white-space: normal;
-}
-
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.2s ease;
@@ -635,34 +674,21 @@ const handleFormUpdate = (updatedForm) => {
   transform: translateY(-10px);
 }
 
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
+.description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.fixed {
-  transition: opacity 0.2s ease;
-}
-
-@media (max-width: 640px) {
-  button {
-    width: 12vw;
-    height: 12vw;
-    min-width: 44px;
-    min-height: 44px;
-  }
+.image-no-flicker {
+  image-rendering: optimizeQuality;
+  will-change: transform;
+  width: 80px;
+  height: 112px; /* Fixed height to match image dimensions */
+  background-color: #f0f0f0; /* Placeholder background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
