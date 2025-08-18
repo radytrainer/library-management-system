@@ -123,7 +123,7 @@ const isLoadingInterests = ref(false);
                   <div class="flex flex-col gap-1">
                     <span class="text-sm font-medium text-gray-600">Role</span>
                     <span
-                      class="text-base text-gray-900 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg font-medium"
+                      class="text-base bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg font-medium"
                       >{{ user.role || user.Role?.name || 'User' }}</span
                     >
                   </div>
