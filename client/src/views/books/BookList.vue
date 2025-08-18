@@ -25,12 +25,10 @@
       <!-- Book Cards -->
       <div class="px-6 pb-10">
         <div class="grid gap-4">
-
           <div v-for="book in filteredBooks" :key="book.id"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out transform hover:-translate-y-1 cursor-pointer"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer"
             @click="viewBook(book)">
             <div class="p-4">
-
               <div class="flex items-start gap-8">
                 <!-- Book Cover -->
                 <div class="flex-shrink-0">
@@ -128,7 +126,6 @@
                     </span>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -162,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import Swal from 'sweetalert2';
 import BookForm from '@/components/books/BookForm.vue';
 import BookManagerHeader from '@/components/books/headers/BookManagerHeader.vue';
@@ -204,7 +201,6 @@ const filterType = ref('all');
 // Computed Properties
 const totalBooks = computed(() => books.value.length);
 const availableBooks = computed(() => books.value.filter(book => getBookStatus(book.quantity) === 'available').length);
-
 const unavailableBooks = computed(() => books.value.filter(book => {
   const status = getBookStatus(book.quantity);
   return status === 'limited' || status === 'unavailable';
@@ -380,7 +376,7 @@ const openForm = (book = null) => {
       quantity: 4,
       cover_image: '',
       donated_by: '',
-      public_year: 2020,
+      public_year: new Date().getFullYear(),
       description: '',
       available: true,
       AuthorId: '',
@@ -401,8 +397,13 @@ const closeForm = () => {
 
 const handleFile = (e) => {
   const file = e.target.files[0];
-  imageFile.value = file;
-  previewImage.value = file ? URL.createObjectURL(file) : null;
+  if (file) {
+    imageFile.value = file;
+    previewImage.value = URL.createObjectURL(file);
+  } else {
+    imageFile.value = null;
+    previewImage.value = form.value.cover_image_url || null;
+  }
 };
 
 const handleAuthorUpdate = (updatedAuthor) => {
@@ -435,6 +436,10 @@ const handleCategoryUpdate = (updatedCategory) => {
       category: updatedCategory,
     };
   }
+};
+
+const handleFormUpdate = (updates) => {
+  form.value = { ...form.value, ...updates };
 };
 
 const confirmDeleteBook = async (bookId) => {
@@ -476,6 +481,7 @@ const deleteBookById = async (id) => {
   }
 };
 
+// In ParentComponent.vue <script setup>
 const submitForm = async () => {
   try {
     const formData = new FormData();
@@ -487,6 +493,8 @@ const submitForm = async () => {
 
     if (imageFile.value) {
       formData.append('cover_image', imageFile.value);
+    } else {
+      console.log('No cover image provided; proceeding without image.');
     }
 
     console.log('FormData entries:', [...formData.entries()]);
@@ -495,17 +503,18 @@ const submitForm = async () => {
     if (form.value.id) {
       const res = await updateBook(form.value.id, formData);
       const updatedBook = res.data.book;
+      console.log('Update response:', updatedBook);
       bookWithRelations = {
         ...updatedBook,
-        cover_image_url: updatedBook.cover_image_url
+        cover_image_url: imageFile.value
           ? `${updatedBook.cover_image_url}${updatedBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
-          : '/path/to/fallback-image.jpg',
+          : updatedBook.cover_image_url || '/path/to/fallback-image.jpg',
         ...getRelationalData(updatedBook),
       };
 
       const index = books.value.findIndex(book => book.id === form.value.id);
       if (index !== -1) {
-        books.value.splice(index, 1, bookWithRelations);
+        books.value[index] = bookWithRelations;
       }
 
       if (updateFromDetail.value) {
@@ -517,6 +526,7 @@ const submitForm = async () => {
     } else {
       const res = await apiCreateBook(formData);
       const newBook = res.data.book;
+      console.log('Create response:', newBook);
       bookWithRelations = {
         ...newBook,
         cover_image_url: newBook.cover_image_url
@@ -529,10 +539,14 @@ const submitForm = async () => {
       showNotification('The book has been added successfully.', 'success');
     }
 
-    closeForm();
+    // Delay form closure to prevent abrupt UI changes
+    setTimeout(() => {
+      closeForm();
+    }, 500); // Increased to 500ms for smoother transition
   } catch (err) {
     console.error('Error submitting form:', err, err.response?.data);
-    showNotification(err.response?.data?.message || 'Failed to save book. Please check the form and try again.', 'error');
+    const errorMessage = err.response?.data?.message || 'Failed to save book. Please check the form and try again.';
+    showNotification(errorMessage, 'error');
   }
 };
 
@@ -569,6 +583,20 @@ const fetchBooks = async () => {
   }
 };
 
+// ESC Key Handler
+const handleEsc = (event) => {
+  if (event.key === 'Escape') {
+    if (showDetail.value) {
+      closeDetail();
+    } else if (showForm.value) {
+      closeForm();
+    }
+    openActionMenu.value = null;
+    showDropdown.value = false;
+    showImportModal.value = false;
+  }
+};
+
 // Lifecycle Hooks
 onMounted(() => {
   fetchBooks();
@@ -590,40 +618,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleEsc);
   console.log('Unmounted: ESC key listener removed');
 });
-
-watch([showForm, showDetail, showFullImage], ([f, d, img]) => {
-  document.body.style.overflow = f || d || img ? 'hidden' : '';
-});
-
-const handleEsc = (e) => {
-  if (e.key === 'Escape') {
-    console.log('ESC key pressed');
-    if (showForm.value) closeForm();
-    if (showFullImage.value) closeFullImage();
-    if (showDetail.value) closeDetail();
-  }
-};
-
-const handleFormUpdate = (updatedForm) => {
-  form.value = { ...form.value, ...updatedForm };
-};
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.description {
-  min-width: 300px;
-  max-width: 85%;
-  word-break: break-word;
-  white-space: normal;
-}
-
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.2s ease;
@@ -635,34 +632,10 @@ const handleFormUpdate = (updatedForm) => {
   transform: translateY(-10px);
 }
 
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.fixed {
-  transition: opacity 0.2s ease;
-}
-
-@media (max-width: 640px) {
-  button {
-    width: 12vw;
-    height: 12vw;
-    min-width: 44px;
-    min-height: 44px;
-  }
+.description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
