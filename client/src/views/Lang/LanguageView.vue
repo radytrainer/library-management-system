@@ -1,276 +1,229 @@
 <template>
-  <div class="max-w-7xl mx-auto space-y-6 p-8">
+  <div class="min-h-screen bg-white">
     <!-- Header -->
-    <div class="w-full bg-sky-500 rounded-xl shadow-md p-12 flex flex-col md:flex-row md:justify-between justify-center gap-12 py-5">
-      <div class="flex flex-col gap-4 pr-4 md:pr-12">
-        <h1 class="text-4xl font-bold text-white mt-8">📚 Welcome and Thank You for Your Kindness</h1>
-        <p class="text-sm text-white mt-3">
-          We sincerely welcome you to our book donation program. Your generous support helps us grow a meaningful library for the community. Every book you donate is a gift of knowledge, and we truly appreciate your contribution.
-        </p>
-      </div>
-      <div class="flex justify-end items-center p-6">
-        <div class="relative w-40 h-40 overflow-hidden rounded-xl shadow-md">
-          <img src="https://media.gq.com/photos/5ad64204c8be07604e8b5f2f/1:1/w_1332,h_1332,c_limit/21-books-GQ-April-2018-041718-3x2.jpg" class="w-full h-full object-cover" alt="Book Image" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Search and Donate -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div class="w-full sm:w-1/2">
-        <input v-model="searchTerm" type="text" placeholder="Search by title, ISBN, or owner..." class="w-full border border-gray-400 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-      </div>
-      <button @click="openAddDialog" class="flex items-center gap-2 px-5 py-2.5 bg-sky-500 text-white rounded-md hover:bg-blue-400 text-sm shadow" aria-label="Donate Book">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M12 4v16m8-8H4" />
-        </svg>
-        Donate
-      </button>
-    </div>
-
-    <!-- Book Cards -->
-    <div v-if="visibleBooks.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 pb-4">
-      <div v-for="book in visibleBooks" :key="book.id" class="bg-white shadow border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer" @click="viewBook(book)">
-        <div class="relative">
-          <img v-if="book.book_image" :src="book.book_image" alt="Book Cover" class="w-full h-44 object-cover bg-gray-100" />
-          <img v-else src="https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg" alt="No Book Cover" class="w-full h-44 object-cover bg-gray-100" />
-          <button @click.stop="toggleMenu(book.id)" class="absolute top-2 right-2 text-white hover:bg-black/80 rounded-full p-1 text-lg z-30">⋮</button>
-          <div v-if="activeMenuId === book.id" class="absolute top-10 right-2 w-24 bg-white border border-gray-200 rounded-md shadow z-30">
-            <button @click="viewBook(book); closeMenu();" class="block w-full text-left px-3 py-1 text-xs text-gray-700 hover:bg-gray-100">View</button>
-            <button @click="openEditDialog(book); closeMenu();" class="block w-full text-left px-3 py-1 text-xs text-gray-700 hover:bg-gray-100">Edit</button>
-            <button @click="deleteBook(book.id); closeMenu();" class="block w-full text-left px-3 py-1 text-xs text-red-600 hover:bg-red-50">Delete</button>
-          </div>
-        </div>
-        <div class="p-4 space-y-2 text-sm">
-          <h2 class="font-semibold text-gray-800 truncate">{{ book.title }}</h2>
-          <p class="text-xs text-gray-500 truncate">ISBN: {{ book.isbn }}</p>
-          <span class="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-medium">Qty: {{ book.quantity }}</span>
-          <div class="grid grid-cols-2 gap-1 text-[11px] text-gray-600 pt-1">
-            <div><span class="font-medium">Lang:</span> {{ getLanguageName(book.language_id) }}</div>
-            <div><span class="font-medium">Cat:</span> {{ getCategoryName(book.category_id) }}</div>
-            <div><span class="font-medium">Owner:</span> {{ book.owner }}</div>
-            <div><span class="font-medium">ID:</span> {{ book.id }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Show More -->
-    <div v-if="canShowMore" class="flex justify-center mt-6">
-      <button @click="showMore" class="px-6 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition shadow">Show More</button>
-    </div>
-
-    <!-- No Results -->
-    <div v-else-if="!visibleBooks.length" class="text-center text-gray-500 italic p-6 w-full">No books found.</div>
-
-    <!-- Modal -->
-    <div v-if="showAddDialog" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div role="dialog" aria-modal="true" class="bg-white p-5 sm:p-6 rounded-xl w-full max-w-md shadow-lg relative">
-        <button class="absolute top-2.5 right-3 text-gray-400 hover:text-gray-800 text-xl" @click="closeDialog" aria-label="Close Modal">×</button>
-        <h2 class="text-xl font-bold text-center text-gray-800 mb-5">
-          {{ isEditing ? "✏️ Edit Book" : isViewing ? "📖 Book Details" : "📘 Donate a New Book" }}
-        </h2>
-
-        <!-- View Mode -->
-        <div v-if="isViewing" class="space-y-3 text-sm">
-          <div><span class="font-medium text-gray-700">Title:</span> {{ donation.title }}</div>
-          <div><span class="font-medium text-gray-700">ISBN:</span> {{ donation.isbn }}</div>
-          <div><span class="font-medium text-gray-700">Quantity:</span> {{ donation.quantity }}</div>
-          <div><span class="font-medium text-gray-700">Owner:</span> {{ donation.owner }}</div>
-          <div><span class="font-medium text-gray-700">Email:</span> {{ donation.email }}</div>
-          <div><span class="font-medium text-gray-700">Phone:</span> {{ donation.phone }}</div>
-          <div><span class="font-medium text-gray-700">Language:</span> {{ getLanguageName(donation.language_id) }}</div>
-          <div><span class="font-medium text-gray-700">Category:</span> {{ getCategoryName(donation.category_id) }}</div>
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Top Section: Title + Add Button -->
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <span class="font-medium text-gray-700">Cover Image:</span>
-            <img :src="donation.book_image || 'https://i.pinimg.com/736x/d1/0e/91/d10e9103d8cb653c62a0d87adaf171cd.jpg'" class="h-28 object-contain rounded border mt-1" />
+            <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+              📚 Library Collection
+            </h1>
+            <p class="text-gray-500 mt-1 text-base">
+              Discover books by language and explore our collection
+            </p>
           </div>
-          <div class="flex justify-end pt-2">
-            <button @click="closeDialog" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1.5 rounded-md font-medium shadow-sm transition">Close</button>
-          </div>
+
+          <button
+            class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-200"
+          >
+          Add Lang
+          </button>
         </div>
 
-        <!-- Add/Edit Mode -->
-        <form v-else @submit.prevent="submitDonation" class="space-y-3 text-sm">
-          <div>
-            <label class="block mb-1 text-gray-700">Donor's Full Name</label>
-            <input v-model="donation.owner" required class="w-full border px-3 py-1.5 rounded-md" />
+        <!-- Bottom Section: Search + Filters -->
+        <div class="mt-6 flex flex-col sm:flex-row gap-4">
+          <!-- Search Bar -->
+          <div class="flex-1 relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search books by title or category..."
+              class="w-full border border-gray-300 rounded-lg py-2.5 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 text-gray-900"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 6.65a7.5 7.5 0 016.5 6.5z"/>
+            </svg>
           </div>
-          <div>
-            <label class="block mb-1 text-gray-700">Total Books to Donate</label>
-            <input v-model.number="donation.quantity" type="number" min="1" required class="w-full border px-3 py-1.5 rounded-md" />
+
+          <!-- Filter Dropdown -->
+          <select
+            v-model="selectedCategory"
+            class="border border-gray-300 rounded-lg py-2.5 px-3 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+          >
+            <option value="">All Categories</option>
+            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+        
+        <!-- Books Grid -->
+        <div class="lg:col-span-3">
+          <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">
+              {{ selectedLanguage ? `Books in ${selectedLanguage}` : 'All Books' }}
+            </h2>
+            <p class="text-gray-500 mt-1">{{ filteredBooks.length }} books available</p>
           </div>
-          <div>
-            <label class="block mb-1 text-gray-700">Book Category</label>
-            <select v-model="donation.category_id" required class="w-full border px-3 py-1.5 rounded-md">
-              <option disabled value="">Select</option>
-              <option :value="1">Fiction</option>
-              <option :value="2">Classic</option>
-              <option :value="3">Science</option>
-              <option :value="3">Different</option>
-            </select>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div 
+              v-for="book in filteredBooks" 
+              :key="book.id"
+              class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all duration-300"
+            >
+              <div class="aspect-[3/4] bg-gray-100 relative overflow-hidden">
+                <img 
+                  :src="book.image" 
+                  :alt="book.title"
+                  class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                  @error="handleImageError($event)"
+                />
+              </div>
+              <div class="p-5">
+                <h3 class="font-semibold text-gray-900 text-lg mb-2 line-clamp-2">{{ book.title }}</h3>
+                <div class="space-y-1 text-sm text-gray-600 mb-4">
+                  <p><span class="font-medium">Language:</span> {{ book.language }}</p>
+                  <p><span class="font-medium">Category:</span> {{ book.category }}</p>
+                  <p><span class="font-medium">Published:</span> {{ book.publicationYear }}</p>
+                </div>
+                <button class="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl hover:bg-gray-700 transition-colors duration-300 text-sm font-medium shadow-sm">
+                  View Details
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="flex justify-end pt-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md font-medium shadow-sm transition">
-              {{ isEditing ? "Update Book" : "Donate" }}
+        </div>
+
+        <!-- Language Sidebar -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-10">
+            <h3 class="text-xl font-bold text-gray-900 mb-5">Browse by Language</h3>
+            
+            <div class="space-y-2">
+              <button
+                @click="selectedLanguage = null"
+                :class="[ 
+                  'w-full text-left p-3 rounded-lg transition-colors duration-200 flex justify-between items-center',
+                  !selectedLanguage 
+                    ? 'bg-gray-100 text-gray-900 border border-gray-300 font-semibold' 
+                    : 'hover:bg-gray-50 text-gray-700'
+                ]"
+              >
+                <span>🌍 All Languages</span>
+                <span class="text-sm bg-gray-200 text-gray-800 px-2 py-1 rounded-full">
+                  {{ books.length }}
+                </span>
+              </button>
+
+              <div v-for="language in displayedLanguages" :key="language.name">
+                <button
+                  @click="selectedLanguage = language.name"
+                  :class="[ 
+                    'w-full text-left p-3 rounded-lg transition-colors duration-200 flex justify-between items-center',
+                    selectedLanguage === language.name 
+                      ? 'bg-gray-100 text-gray-900 border border-gray-300 font-semibold' 
+                      : 'hover:bg-gray-50 text-gray-700'
+                  ]"
+                >
+                  <div>
+                    <div>{{ language.name }}</div>
+                    <div v-if="language.country" class="text-xs text-gray-500">{{ language.country }}</div>
+                  </div>
+                  <span class="text-sm bg-gray-200 text-gray-800 px-2 py-1 rounded-full">
+                    {{ language.count }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              v-if="!showAllLanguages && languages.length > 5"
+              @click="showAllLanguages = true"
+              class="w-full mt-4 text-gray-600 hover:text-gray-700 text-sm font-medium py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Show More Languages ({{ languages.length - 5 }} more)
+            </button>
+
+            <button
+              v-if="showAllLanguages && languages.length > 5"
+              @click="showAllLanguages = false"
+              class="w-full mt-4 text-gray-600 hover:text-gray-700 text-sm font-medium py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Show Less
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { getDonations, createDonation, updateDonation, deleteDonation } from "@/services/Api/donation";
+import { ref, computed } from 'vue'
 
-const searchTerm = ref("");
-const visibleCount = ref(8);
-const sortBy = ref("");
-const showAddDialog = ref(false);
-const isEditing = ref(false);
-const isViewing = ref(false);
-const editingBookId = ref(null);
-const activeMenuId = ref(null);
+// same script as your version
+const books = ref([
+  { id: 1, title: "The Great Gatsby", language: "English", category: "Classic Literature", publicationYear: 1925, image: "https://picsum.photos/200/300?random=1" },
+  { id: 2, title: "Le Petit Prince", language: "French", category: "Children's Literature", publicationYear: 1943, image: "https://picsum.photos/200/300?random=2" },
+  { id: 3, title: "ព្រះរាជពង្សាវតារខ្មែរ", language: "Khmer", category: "History", publicationYear: 1928, image: "https://picsum.photos/200/300?random=3" },
+  { id: 4, title: "Don Quixote", language: "Spanish", category: "Classic Literature", publicationYear: 1605, image: "https://picsum.photos/200/300?random=4" },
+  { id: 5, title: "Pride and Prejudice", language: "English", category: "Romance", publicationYear: 1813, image: "https://picsum.photos/200/300?random=5" },
+  { id: 6, title: "Les Misérables", language: "French", category: "Historical Fiction", publicationYear: 1862, image: "https://picsum.photos/200/300?random=6" },
+  { id: 7, title: "រឿងទេវតាអប្សរា", language: "Khmer", category: "Mythology", publicationYear: 1950, image: "https://picsum.photos/200/300?random=7" },
+  { id: 8, title: "Cien Años de Soledad", language: "Spanish", category: "Magical Realism", publicationYear: 1967, image: "https://picsum.photos/200/300?random=8" },
+  { id: 9, title: "Der Prozess", language: "German", category: "Philosophical Fiction", publicationYear: 1925, image: "https://picsum.photos/200/300?random=9" }
+])
 
-const books = ref([]);
-const donation = ref({
-  title: "",
-  isbn: "",
-  quantity: 1,
-  owner: "",
-  email: "",
-  phone: "",
-  author: "",
-  status: "pending",
-  available: 1,
-  language_id: "",
-  category_id: "",
-  user_id: null,
-  book_image: "",
-});
+const allLanguages = ref([
+  { name: "English", country: "United Kingdom" },
+  { name: "French", country: "France" },
+  { name: "Khmer", country: "Cambodia" },
+  { name: "Spanish", country: "Spain" },
+  { name: "German", country: "Germany" },
+  { name: "Japanese", country: "Japan" },
+  { name: "Chinese", country: "China" },
+  { name: "Arabic", country: "Saudi Arabia" },
+])
 
-const fetchDonations = async () => {
-  try {
-    const response = await getDonations();
-    books.value = response.data;
-  } catch (error) {
-    console.error("Error fetching donations:", error);
-  }
-};
+const selectedLanguage = ref(null)
+const showAllLanguages = ref(false)
+const searchQuery = ref("")
+const selectedCategory = ref("")
 
-onMounted(fetchDonations);
+const categories = computed(() => [...new Set(books.value.map(book => book.category))])
 
-const toggleMenu = (id) => {
-  activeMenuId.value = activeMenuId.value === id ? null : id;
-};
+const languages = computed(() => {
+  return allLanguages.value.map(lang => ({
+    ...lang,
+    count: books.value.filter(book => book.language === lang.name).length
+  })).filter(lang => lang.count > 0)
+})
 
-const closeMenu = () => (activeMenuId.value = null);
-
-const openAddDialog = () => {
-  isEditing.value = false;
-  isViewing.value = false;
-  resetForm();
-  showAddDialog.value = true;
-};
-
-const openEditDialog = (book) => {
-  isEditing.value = true;
-  isViewing.value = false;
-  editingBookId.value = book.id;
-  Object.assign(donation.value, { ...book });
-  showAddDialog.value = true;
-};
-
-const viewBook = (book) => {
-  isEditing.value = false;
-  isViewing.value = true;
-  Object.assign(donation.value, { ...book });
-  showAddDialog.value = true;
-  closeMenu();
-};
-
-const closeDialog = () => {
-  showAddDialog.value = false;
-  isViewing.value = false;
-  resetForm();
-};
-
-const resetForm = () => {
-  Object.assign(donation.value, {
-    title: "",
-    isbn: "",
-    quantity: 1,
-    owner: "",
-    email: "",
-    phone: "",
-    language_id: "",
-    category_id: "",
-    book_image: "",
-  });
-  editingBookId.value = null;
-};
-
-const submitDonation = async () => {
-  const formData = new FormData();
-  for (const key in donation.value) {
-    formData.append(key, donation.value[key]);
-  }
-
-  try {
-    if (isEditing.value) {
-      await updateDonation(editingBookId.value, formData);
-    } else {
-      await createDonation(formData);
-      alert("Donation submitted! Librarian has been notified to confirm the donation.");
-    }
-    await fetchDonations();
-    closeDialog();
-  } catch (error) {
-    console.error("Error submitting donation:", error);
-    alert("Something went wrong. Please try again.");
-  }
-};
-
-const deleteBook = async (id) => {
-  if (!confirm("Are you sure you want to delete this donation?")) return;
-  try {
-    await deleteDonation(id);
-    await fetchDonations();
-  } catch (error) {
-    console.error("Error deleting donation:", error);
-  }
-};
+const displayedLanguages = computed(() => showAllLanguages.value ? languages.value : languages.value.slice(0, 5))
 
 const filteredBooks = computed(() => {
-  const term = searchTerm.value.toLowerCase();
-  return books.value.filter(
-    (b) =>
-      b.title.toLowerCase().includes(term) ||
-      b.isbn.toLowerCase().includes(term) ||
-      b.owner.toLowerCase().includes(term)
-  );
-});
+  return books.value.filter(book => {
+    const matchesLanguage = !selectedLanguage.value || book.language === selectedLanguage.value
+    const matchesCategory = !selectedCategory.value || book.category === selectedCategory.value
+    const matchesSearch = !searchQuery.value || 
+      book.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      book.category.toLowerCase().includes(searchQuery.value.toLowerCase())
+    return matchesLanguage && matchesCategory && matchesSearch
+  })
+})
 
-const sortedBooks = computed(() => {
-  const copy = [...filteredBooks.value];
-  if (sortBy.value === "title") return copy.sort((a, b) => a.title.localeCompare(b.title));
-  if (sortBy.value === "quantity") return copy.sort((a, b) => b.quantity - a.quantity);
-  return copy;
-});
-
-const visibleBooks = computed(() => sortedBooks.value.slice(0, visibleCount.value));
-const canShowMore = computed(() => visibleCount.value < sortedBooks.value.length);
-const showMore = () => (visibleCount.value += 8);
-
-const getLanguageName = (id) => ({ 1: "English", 2: "French", 3: "Khmer" }[id] || "Unknown");
-const getCategoryName = (id) => ({ 1: "Fiction", 2: "Classic", 3: "Science" }[id] || "Unknown");
+const handleImageError = (event) => {
+  event.target.src = "https://via.placeholder.com/200x300?text=No+Image"
+}
 </script>
 
-<style>
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
