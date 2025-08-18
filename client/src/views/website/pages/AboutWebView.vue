@@ -4,7 +4,7 @@
         <section class="relative text-white py-10">
             <!-- Background Image -->
             <div class="absolute inset-0 bg-cover bg-center"
-                style="background-image: url('https://www.passerellesnumeriques.org/wp-content/uploads/2024/07/About-us-banner.png');">
+                style="background-image: url('');">
             </div>
 
             <!-- Sky Blue Half Overlay -->

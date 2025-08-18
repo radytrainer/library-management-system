@@ -19,8 +19,10 @@
       <!-- Phone -->
       <div>
         <label class="block text-sm font-medium text-white mb-1">Phone Number</label>
-        <input v-model="form.phone" type="tel" required placeholder="+1234567890"
-          class="w-full px-4 py-2 bg-transparent text-white border border-white/50 rounded-xl focus:ring-4 focus:ring-blue-300"/>
+        <input v-model="form.phone" type="tel" required pattern="\d{10}" placeholder="0987654333"
+          class="w-full px-4 py-2 bg-transparent text-white border border-white/50 rounded-xl focus:ring-4 focus:ring-blue-300"
+          @input="validatePhone"/>
+        <span v-if="phoneError" class="text-red-400 text-xs">{{ phoneError }}</span>
       </div>
 
       <!-- Password -->
@@ -36,6 +38,9 @@
         <input v-model="form.confirmPassword" type="password" required placeholder="Re-enter your password"
           class="w-full px-4 py-2 bg-transparent text-white border border-white/50 rounded-xl focus:ring-4 focus:ring-blue-300"/>
       </div>
+
+      <!-- Hidden roleId (default to 1 for 'user') -->
+      <input type="hidden" v-model="form.roleId" value="1" />
 
       <button type="submit"
         class="w-full py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition"
@@ -54,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 
@@ -66,18 +71,35 @@ const form = ref({
   email: '',
   phone: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  roleId: 1 // Default to 'user' role
 })
 
 const formError = ref('')
 const isSubmitting = ref(false)
+const phoneError = ref('')
 
 const goToSignIn = () => router.push('/login')
 
+const validatePhone = () => {
+  const phoneRegex = /^\d{9,10}$/
+  phoneError.value = phoneRegex.test(form.value.phone) ? '' : 'Phone must be 9-10 digits'
+}
+
 const handleSubmit = async () => {
   formError.value = ''
+  phoneError.value = ''
   isSubmitting.value = true
 
+  // Validate phone
+  const phoneRegex = /^\d{9,10}$/
+  if (form.value.phone && !phoneRegex.test(form.value.phone)) {
+    formError.value = 'Phone must be 9 to 10 digits'
+    isSubmitting.value = false
+    return
+  }
+
+  // Validate password match
   if (form.value.password !== form.value.confirmPassword) {
     formError.value = 'Passwords do not match'
     isSubmitting.value = false
@@ -94,7 +116,7 @@ const handleSubmit = async () => {
     }
   } catch (err) {
     console.error('Registration error:', err)
-    formError.value = err.message || 'Something went wrong!'
+    formError.value = err.response?.data?.message || err.message || 'Something went wrong!'
   } finally {
     isSubmitting.value = false
   }

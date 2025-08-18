@@ -1,0 +1,119 @@
+<template>
+  <div class="p-6 overflow-y-auto" style="flex-grow: 1;">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Book Cover -->
+      <div class="flex-shrink-0">
+        <div class="relative group cursor-pointer" @click="$emit('open-full-image')" title="Click to view full image">
+          <img :src="bookCover" :alt="`${bookTitle} cover`"
+            class="w-80 h-auto rounded-xl object-cover shadow-lg border border-gray-200 transition-transform duration-300 group-hover:scale-105" />
+          <div
+            class="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-xl transition-all duration-300 flex items-center justify-center">
+            <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Book Information -->
+      <div class="flex-1 space-y-6 over-flow">
+        <!-- Title and Description -->
+        <div class="space-y-3 w-full max-w-full">
+          <h3 class="text-3xl font-bold text-gray-900 leading-tight">{{ bookTitle }}</h3>
+          <p class="text-gray-600 text-lg leading-relaxed break-all">{{ bookDescription }}</p>
+        </div>
+
+        <!-- Badges -->
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            {{ categoryName }}
+          </span>
+          <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+            {{ languageName }}
+          </span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+            {{ selectedBook.public_year || 'N/A' }}
+          </span>
+        </div>
+
+        <!-- Book Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Author</span>
+              <p class="text-gray-900 font-medium text-lg">{{ authorName }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ISBN</span>
+              <p class="text-gray-900 font-mono">{{ selectedBook.isbn || 'N/A' }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Quantity Available</span>
+              <p class="text-gray-900 font-medium">
+                <span class="text-2xl font-bold text-green-600">{{ selectedBook.quantity || 0 }}</span> copies
+              </p>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Publication Year</span>
+              <p class="text-gray-900 font-medium text-lg">{{ selectedBook.public_year || 'N/A' }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Language</span>
+              <p class="text-gray-900 font-medium text-lg">{{ languageName }}</p>
+            </div>
+            <div v-if="selectedBook.donated_by">
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Donated By</span>
+              <p class="text-gray-900 font-medium text-lg">{{ selectedBook.donated_by }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Author Details Section -->
+    <div class="border-t border-gray-200 mt-8 pt-8">
+      <h4 class="text-xl font-bold text-gray-900 mb-4">About the Author</h4>
+      <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Biography</span>
+            <p class="text-gray-700 leading-relaxed mt-2">{{ authorBiography }}</p>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Birth Date</span>
+              <p class="text-gray-900 font-medium text-lg">{{ formattedBirthDate }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nationality</span>
+              <p class="text-gray-900 font-medium text-lg">{{ authorNationality }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { defineProps, defineEmits } from 'vue';
+
+defineProps({
+  selectedBook: Object,
+  bookCover: String,
+  bookTitle: String,
+  bookDescription: String,
+  categoryName: String,
+  languageName: String,
+  authorName: String,
+  authorBiography: String,
+  authorNationality: String,
+  formattedBirthDate: String,
+});
+
+defineEmits(['open-full-image']);
+</script>

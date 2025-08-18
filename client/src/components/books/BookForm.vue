@@ -64,7 +64,7 @@
                 </svg>
                 Quantity *
               </label>
-              <input v-model="form.quantity" required type="number" min="1" class="form-input" placeholder="1" />
+              <input v-model="form.quantity" required type="number" min="1" class="form-input" placeholder="0" />
             </div>
             <div class="form-group">
               <label class="form-label">
@@ -88,7 +88,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Donated By
+                From *
               </label>
               <input v-model="form.donated_by" type="text" class="form-input" placeholder="Donor name" />
             </div>

@@ -52,9 +52,9 @@ onUnmounted(() => {
           <th class="px-4 py-3 font-medium text-gray-600">Phone</th>
           <th class="px-4 py-3 font-medium text-gray-600">Role</th>
           <th class="px-4 py-3 font-medium text-gray-600">Birthday</th>
-          <!-- <th class="px-4 py-3 font-medium text-gray-600">Barcode</th> -->
-          <th class="px-4 py-3 font-medium text-gray-600">Barcode Image</th>
-          <th class="px-4 py-3 font-medium text-gray-600">QR Code Image</th> <!-- New column -->
+          <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
+          <th class="px-4 py-3 font-medium text-gray-600">Barcode</th>
+          <th class="px-4 py-3 font-medium text-gray-600">QR</th> <!-- New column -->
           <th class="px-4 py-3 font-medium text-gray-600">Status</th>
           <th class="px-4 py-3 font-medium text-gray-600 text-right">Actions</th>
         </tr>
@@ -76,7 +76,7 @@ onUnmounted(() => {
             </span>
           </td>
           <td class="px-4 py-3">{{ user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : '-' }}</td>
-          <!-- <td class="px-4 py-3">{{ user.barcode || '-' }}</td> -->
+          <td class="px-4 py-3">{{ user.barcode || '-' }}</td>
           <td class="px-4 py-3">
             <img v-if="user.barcode_image" :src="user.barcode_image" class="h-12 w-auto" />
             <span v-else>-</span>

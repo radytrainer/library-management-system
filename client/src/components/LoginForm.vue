@@ -1,5 +1,8 @@
 <template>
   <div class="relative z-10 w-full max-w-md backdrop-blur-md border border-white/30 rounded-2xl shadow-2xl p-8">
+    <div class="flex justify-center ">
+      <img class="w-20 h-auto" src="../../public/logo.png" alt="Logo">
+    </div>
     <h2 class="text-2xl font-bold text-white text-center mb-6">Sign In</h2>
 
     <form @submit.prevent="handleLogin" class="space-y-5">
