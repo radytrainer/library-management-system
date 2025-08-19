@@ -108,6 +108,7 @@
                 <p v-if="scannerError" class="text-sm text-red-600 text-center" role="alert">{{ scannerError }}</p>
                 <button
                   type="button"
+                  style="display: none;"
                   @click="stopQrScanner"
                   class="w-full max-w-xs mx-auto px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 disabled:bg-red-400 disabled:cursor-not-allowed"
                   :disabled="scannerLoading"
@@ -361,15 +362,18 @@ const showQrScanner = ref(false);
 const qrScanner = ref(null);
 const scannerLoading = ref(false);
 const scannerError = ref("");
+let cameraStream = ref(null);
 
 onMounted(async () => {
   try {
     await Promise.all([fetchBooksData(), fetchUsersData()]);
     if (!usersData.value.length) {
       showToast("No users available. Please add users to scan barcodes.", "error");
+      console.error("No users available for scanning.");
     }
   } catch (err) {
     showToast("Failed to load initial data. Please try again.", "error");
+    console.error("Failed to load initial data:", err);
   }
 });
 
@@ -425,6 +429,8 @@ async function startQrScanner() {
     scannerError.value = "Failed to initialize QR scanner: Element not found.";
     scannerLoading.value = false;
     showQrScanner.value = false;
+    showToast(scannerError.value, "error");
+    console.error(scannerError.value);
     return;
   }
 
@@ -432,9 +438,8 @@ async function startQrScanner() {
   qrScanner.value = new Html5Qrcode("qr-reader");
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    stream.getTracks().forEach(track => track.stop());
-
+    cameraStream.value = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    
     const cameras = await Html5Qrcode.getCameras();
     if (!cameras || cameras.length === 0) {
       throw new Error("No cameras found on this device.");
@@ -451,15 +456,17 @@ async function startQrScanner() {
         try {
           const user = await fetchUserDetails();
           if (user) {
-            await stopQrScanner();
-            await nextTick();
+            await stopQrScanner(); // Automatically stop scanner and camera after successful scan
+            showToast("QR code scanned successfully.", "success");
           } else {
             scannerError.value = `No user found with barcode ${decodedText}. Scan another code.`;
             showToast(scannerError.value, "error");
+            console.warn(scannerError.value);
           }
         } catch (err) {
           scannerError.value = `Failed to process barcode: ${err.message}`;
-          showToast(`Failed to process barcode: ${err.message}`, "error");
+          showToast(scannerError.value, "error");
+          console.error("Failed to process barcode:", err);
         } finally {
           scannerLoading.value = false;
         }
@@ -467,6 +474,7 @@ async function startQrScanner() {
       (error) => {
         if (!scannerError.value) {
           scannerError.value = "Unable to scan QR code. Ensure the code is clear and well-lit.";
+          console.warn("QR scan error:", error);
         }
       }
     );
@@ -475,33 +483,73 @@ async function startQrScanner() {
     scannerError.value = err.message.includes("Permission denied")
       ? "Camera access denied. Please allow camera permissions in your browser settings."
       : `Failed to start QR scanner: ${err.message}`;
+    showToast(scannerError.value, "error");
+    console.error("Failed to start QR scanner:", err);
     scannerLoading.value = false;
     showQrScanner.value = false;
-    qrScanner.value = null;
+    await stopQrScanner();
   }
 }
 
 async function stopQrScanner() {
-  if (qrScanner.value) {
+  try {
     scannerLoading.value = true;
-    try {
-      const state = qrScanner.value.getState();
-      if (state !== Html5Qrcode.ScannerState.NOT_STARTED) {
+
+    // Stop and clear the QR scanner if it exists
+    if (qrScanner.value && typeof qrScanner.value.stop === 'function') {
+      try {
         await qrScanner.value.stop();
-        await qrScanner.value.clear();
+        console.log("QR scanner stopped");
+      } catch (stopErr) {
+        console.warn("Error stopping QR scanner:", stopErr);
       }
-    } catch (err) {
-      scannerError.value = `Failed to stop QR scanner: ${err.message}`;
-    } finally {
+      try {
+        await qrScanner.value.clear();
+        console.log("QR scanner cleared");
+      } catch (clearErr) {
+        console.warn("Error clearing QR scanner:", clearErr);
+      }
       qrScanner.value = null;
-      showQrScanner.value = false;
-      scannerLoading.value = false;
-      scannerError.value = "";
     }
-  } else {
+
+    // Stop all camera stream tracks
+    if (cameraStream.value && cameraStream.value.getTracks) {
+      const tracks = cameraStream.value.getTracks();
+      tracks.forEach(track => {
+        try {
+          track.stop();
+          console.log("Camera track stopped:", track.label);
+        } catch (trackErr) {
+          console.warn("Error stopping camera track:", trackErr);
+        }
+      });
+      cameraStream.value = null;
+    }
+
+    // Retry stopping any remaining tracks after a short delay
+    setTimeout(() => {
+      if (cameraStream.value && cameraStream.value.getTracks) {
+        cameraStream.value.getTracks().forEach(track => {
+          try {
+            track.stop();
+            console.log("Fallback: Camera track stopped:", track.label);
+          } catch (trackErr) {
+            console.warn("Fallback: Error stopping camera track:", trackErr);
+          }
+        });
+        cameraStream.value = null;
+      }
+    }, 500);
+  } catch (err) {
+    console.error("Failed to stop QR scanner:", err);
+    showToast(`Failed to stop QR scanner: ${err.message}`, "error");
+  } finally {
+    qrScanner.value = null;
+    cameraStream.value = null;
     showQrScanner.value = false;
     scannerLoading.value = false;
     scannerError.value = "";
+    console.log("Scanner cleanup completed");
   }
 }
 
@@ -534,12 +582,13 @@ const fetchUserDetails = debounce(async () => {
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
       formError.value = `No user found with barcode ${barcode}.`;
-      showToast(`No user found with barcode ${barcode}.`, "error");
+      showToast(formError.value, "error");
       return null;
     }
   } catch (error) {
     formError.value = `Failed to fetch user: ${error.message}`;
-    showToast(`Failed to fetch user: ${error.message}`, "error");
+    showToast(formError.value, "error");
+    console.error("Failed to fetch user:", error);
     localForm.value.borrower_name = "";
     localForm.value.borrower_email = "";
     localForm.value.user_id = "";
@@ -573,6 +622,8 @@ const fetchBookDetails = debounce(async (index) => {
     }
   } catch (error) {
     localForm.value.books[index].book_name = "";
+    showToast(`Failed to fetch book: ${error.message}`, "error");
+    console.error("Failed to fetch book:", error);
   }
 }, 300);
 
@@ -618,7 +669,7 @@ function isStepValid() {
 function nextStep() {
   if (!isStepValid()) {
     formError.value = "Please complete all required fields correctly.";
-    showToast("Please complete all required fields correctly.", "error");
+    showToast(formError.value, "error");
     setTimeout(() => (formError.value = ""), 5000);
     return;
   }
@@ -632,7 +683,7 @@ async function submitForm() {
   const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
   if (!isStepValid()) {
     formError.value = "Please complete all required fields correctly.";
-    showToast("Please complete all required fields correctly.", "error");
+    showToast(formError.value, "error");
     setTimeout(() => (formError.value = ""), 5000);
     return;
   }
