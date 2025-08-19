@@ -102,7 +102,7 @@
                 <div
                   id="qr-reader"
                   class="w-full max-w-md mx-auto rounded-lg overflow-hidden border border-gray-200 shadow-sm"
-                  :class="{ 'opacity-50': scannerLoading }"
+                  :class="{ 'opacity-50': scannerLoading, 'border-green-500': !scannerError && localForm.user_barcode }"
                 ></div>
                 <p v-if="scannerLoading" class="text-sm text-gray-600 text-center" role="status">Initializing QR scanner...</p>
                 <p v-if="scannerError" class="text-sm text-red-600 text-center" role="alert">{{ scannerError }}</p>
@@ -318,8 +318,9 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { ref, watch, onMounted, nextTick } from "vue";
+import { ref, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { inject } from "vue";
 import { useUserStore } from '@/stores/userStore';
 import { debounce } from "lodash";
@@ -362,18 +363,18 @@ const scannerLoading = ref(false);
 const scannerError = ref("");
 
 onMounted(async () => {
-  console.log("AddBorrowModal mounted, fetching data...");
   try {
     await Promise.all([fetchBooksData(), fetchUsersData()]);
-    console.log(`Books data after fetch (length: ${booksData.value.length}):`, JSON.stringify(booksData.value, null, 2));
-    console.log(`Users data after fetch (length: ${usersData.value.length}):`, JSON.stringify(usersData.value, null, 2));
     if (!usersData.value.length) {
       showToast("No users available. Please add users to scan barcodes.", "error");
     }
   } catch (err) {
-    console.error("Error in onMounted:", err);
     showToast("Failed to load initial data. Please try again.", "error");
   }
+});
+
+onUnmounted(() => {
+  stopQrScanner();
 });
 
 watch(
@@ -416,59 +417,44 @@ async function startQrScanner() {
   showQrScanner.value = true;
   scannerLoading.value = true;
   scannerError.value = "";
-  console.log("Starting QR scanner, showQrScanner:", showQrScanner.value);
 
-  // Wait for Vue to render the #qr-reader element
   await nextTick();
 
-  // Retry finding the #qr-reader element up to 3 times
-  let qrReaderElement = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    qrReaderElement = document.getElementById("qr-reader");
-    if (qrReaderElement) break;
-    console.warn(`Attempt ${attempt}: QR reader element (#qr-reader) not found, retrying...`);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
+  const qrReaderElement = document.getElementById("qr-reader");
   if (!qrReaderElement) {
-    console.error("QR reader element (#qr-reader) not found after retries");
     scannerError.value = "Failed to initialize QR scanner: Element not found.";
-    showToast("QR scanner element not found. Please try again.", "error");
     scannerLoading.value = false;
     showQrScanner.value = false;
     return;
   }
 
-  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
   qrScanner.value = new Html5Qrcode("qr-reader");
 
   try {
-    // List available cameras
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    stream.getTracks().forEach(track => track.stop());
+
     const cameras = await Html5Qrcode.getCameras();
-    console.log("Available cameras:", JSON.stringify(cameras, null, 2));
     if (!cameras || cameras.length === 0) {
       throw new Error("No cameras found on this device.");
     }
 
-    // Prefer back camera (environment), fall back to first available
     const cameraId = cameras.find(cam => cam.facingMode === "environment")?.id || cameras[0].id;
 
     await qrScanner.value.start(
       cameraId,
       config,
       async (decodedText) => {
-        console.log("QR code scanned:", decodedText);
         localForm.value.user_barcode = decodedText.trim();
         scannerLoading.value = true;
         try {
           const user = await fetchUserDetails();
           if (user) {
-            // Stop scanner only if user data is successfully retrieved
             await stopQrScanner();
-            showToast(`Scanned barcode: ${decodedText}`, "success");
+            await nextTick();
           } else {
-            // Keep scanner open if no user is found to allow rescanning
-            scannerError.value = `No user found with barcode ${decodedText}. Please scan another code.`;
+            scannerError.value = `No user found with barcode ${decodedText}. Scan another code.`;
             showToast(scannerError.value, "error");
           }
         } catch (err) {
@@ -479,20 +465,19 @@ async function startQrScanner() {
         }
       },
       (error) => {
-        console.warn("QR scan error:", error);
-        scannerError.value = "Unable to scan QR code. Ensure the code is clear and well-lit.";
+        if (!scannerError.value) {
+          scannerError.value = "Unable to scan QR code. Ensure the code is clear and well-lit.";
+        }
       }
     );
     scannerLoading.value = false;
-    console.log("QR scanner started successfully with camera ID:", cameraId);
   } catch (err) {
-    console.error("Failed to start QR scanner:", err);
     scannerError.value = err.message.includes("Permission denied")
-      ? "Camera access denied. Please allow camera permissions in your browser."
+      ? "Camera access denied. Please allow camera permissions in your browser settings."
       : `Failed to start QR scanner: ${err.message}`;
-    showToast(scannerError.value, "error");
     scannerLoading.value = false;
     showQrScanner.value = false;
+    qrScanner.value = null;
   }
 }
 
@@ -500,27 +485,23 @@ async function stopQrScanner() {
   if (qrScanner.value) {
     scannerLoading.value = true;
     try {
-      const state = await qrScanner.value.getState();
+      const state = qrScanner.value.getState();
       if (state !== Html5Qrcode.ScannerState.NOT_STARTED) {
         await qrScanner.value.stop();
-        qrScanner.value.clear();
+        await qrScanner.value.clear();
       }
-      showQrScanner.value = false;
-      scannerError.value = "";
-      console.log("QR scanner stopped, showQrScanner:", showQrScanner.value);
     } catch (err) {
-      console.error("Failed to stop QR scanner:", err);
       scannerError.value = `Failed to stop QR scanner: ${err.message}`;
-      showToast(scannerError.value, "error");
     } finally {
-      scannerLoading.value = false;
       qrScanner.value = null;
+      showQrScanner.value = false;
+      scannerLoading.value = false;
+      scannerError.value = "";
     }
   } else {
     showQrScanner.value = false;
     scannerLoading.value = false;
     scannerError.value = "";
-    console.log("No QR scanner instance, showQrScanner:", showQrScanner.value);
   }
 }
 
@@ -532,7 +513,6 @@ const fetchUserDetails = debounce(async () => {
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
       formError.value = "Please enter or scan a valid barcode.";
-      showToast("Please enter or scan a valid barcode.", "error");
       return null;
     }
     if (!/^[A-Za-z0-9]{8,20}$/.test(barcode)) {
@@ -540,19 +520,15 @@ const fetchUserDetails = debounce(async () => {
       localForm.value.borrower_email = "";
       localForm.value.user_id = "";
       formError.value = "Invalid barcode format. Use 8-20 alphanumeric characters.";
-      showToast("Invalid barcode format. Use 8-20 alphanumeric characters.", "error");
       return null;
     }
-    console.log(`Fetching user for barcode: ${barcode}`);
-    console.log(`Current usersData length: ${usersData.value.length}`, JSON.stringify(usersData.value, null, 2));
     const user = await getUser(barcode);
     if (user) {
       localForm.value.borrower_name = user.username || user.name || "";
       localForm.value.borrower_email = user.email || "";
       localForm.value.user_id = user.id || "";
       formError.value = "";
-      showToast(`User found: ${user.username || user.name}`, "success");
-      return user; // Return user to indicate success
+      return user;
     } else {
       localForm.value.borrower_name = "";
       localForm.value.borrower_email = "";
@@ -562,7 +538,6 @@ const fetchUserDetails = debounce(async () => {
       return null;
     }
   } catch (error) {
-    console.error("Error fetching user details:", error.message, error.stack);
     formError.value = `Failed to fetch user: ${error.message}`;
     showToast(`Failed to fetch user: ${error.message}`, "error");
     localForm.value.borrower_name = "";
@@ -570,7 +545,7 @@ const fetchUserDetails = debounce(async () => {
     localForm.value.user_id = "";
     return null;
   }
-}, 500);
+}, 300);
 
 const fetchBookDetails = debounce(async (index) => {
   try {
@@ -585,7 +560,6 @@ const fetchBookDetails = debounce(async (index) => {
       showToast("Invalid ISBN format. Use 10 or 13 digits.", "error");
       return;
     }
-    console.log(`Fetching book for ISBN: ${normalizedIsbn}`);
     const book = await getBook(normalizedIsbn, "isbn");
     if (book) {
       if (book.quantity <= 0) {
@@ -593,18 +567,14 @@ const fetchBookDetails = debounce(async (index) => {
         showToast(`Book "${book.title}" is out of stock.`, "error");
       } else {
         localForm.value.books[index].book_name = book.title;
-        showToast(`Book found: ${book.title}`, "success");
       }
     } else {
       localForm.value.books[index].book_name = "";
-      showToast(`No book found with ISBN ${normalizedIsbn}.`, "error");
     }
   } catch (error) {
-    console.error("Error fetching book details:", error.message, error.stack);
-    showToast(`Failed to fetch book: ${error.message}`, "error");
     localForm.value.books[index].book_name = "";
   }
-}, 500);
+}, 300);
 
 function isStepValid() {
   const today = new Date().toISOString().split('T')[0];
@@ -660,10 +630,8 @@ function nextStep() {
 
 async function submitForm() {
   const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
-  console.log(`Submitting form with data at ${now}:`, JSON.stringify(localForm.value, null, 2));
   if (!isStepValid()) {
     formError.value = "Please complete all required fields correctly.";
-    console.error(`Form validation failed at ${now}`);
     showToast("Please complete all required fields correctly.", "error");
     setTimeout(() => (formError.value = ""), 5000);
     return;
@@ -687,25 +655,19 @@ async function submitForm() {
       quantity: localForm.value.books.length,
       status: localForm.value.status,
     };
-    console.log(`Emitting submit event with data at ${now}:`, JSON.stringify(submitData, null, 2));
-
     const response = await new Promise((resolve, reject) => {
       emit("submit", submitData, (err, res) => {
         if (err) reject(err);
         else resolve(res);
       });
     });
-
-    console.log(`Submit event response at ${now}:`, JSON.stringify(response, null, 2));
     if (!response || response.status >= 400) {
       throw new Error(response?.data?.message || "Failed to create borrow record.");
     }
 
-    showToast("Borrow record created successfully.", "success");
     showModal.value = false;
     emit("close");
   } catch (error) {
-    console.error(`Error during form submission at ${now}:`, error.message, error.stack, error.response || error);
     formError.value = error.message || "Failed to create borrow record.";
     errorMessage.value = formError.value;
     showToast(`Error: ${formError.value}`, "error");
