@@ -36,8 +36,10 @@
           <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
             {{ selectedBook.public_year || 'N/A' }}
           </span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+            {{ selectedBook.quantity || 0 }}
+          </span>
         </div>
-
         <!-- Book Details Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-4">
@@ -49,14 +51,16 @@
               <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ISBN</span>
               <p class="text-gray-900 font-mono">{{ selectedBook.isbn || 'N/A' }}</p>
             </div>
-            <div>
-              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Quantity Available</span>
-              <p class="text-gray-900 font-medium">
-                <span class="text-2xl font-bold text-green-600">{{ selectedBook.quantity || 0 }}</span> copies
-              </p>
+            <div v-if="selectedBook.donated_by">
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">From</span>
+              <p class="text-gray-900 font-medium text-lg">{{ selectedBook.donated_by }}</p>
             </div>
           </div>
           <div class="space-y-4">
+            <div>
+              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nationality</span>
+              <p class="text-gray-900 font-medium text-lg">{{ authorNationality }}</p>
+            </div>
             <div>
               <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Publication Year</span>
               <p class="text-gray-900 font-medium text-lg">{{ selectedBook.public_year || 'N/A' }}</p>
@@ -64,33 +68,6 @@
             <div>
               <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Language</span>
               <p class="text-gray-900 font-medium text-lg">{{ languageName }}</p>
-            </div>
-            <div v-if="selectedBook.donated_by">
-              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Donated By</span>
-              <p class="text-gray-900 font-medium text-lg">{{ selectedBook.donated_by }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Author Details Section -->
-    <div class="border-t border-gray-200 mt-8 pt-8">
-      <h4 class="text-xl font-bold text-gray-900 mb-4">About the Author</h4>
-      <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Biography</span>
-            <p class="text-gray-700 leading-relaxed mt-2">{{ authorBiography }}</p>
-          </div>
-          <div class="space-y-4">
-            <div>
-              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Birth Date</span>
-              <p class="text-gray-900 font-medium text-lg">{{ formattedBirthDate }}</p>
-            </div>
-            <div>
-              <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nationality</span>
-              <p class="text-gray-900 font-medium text-lg">{{ authorNationality }}</p>
             </div>
           </div>
         </div>
