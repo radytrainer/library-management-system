@@ -118,7 +118,7 @@ exports.store = async (req, res) => {
   }
 };
 
-// PUT update a book by ID
+// PUT update a book by ID (partial update supported)
 exports.update = async (req, res) => {
   try {
     const bookId = req.params.id;
@@ -135,45 +135,40 @@ exports.update = async (req, res) => {
       language_id,
       language,
     } = req.body;
+
     const book = await Book.findByPk(bookId);
     if (!book) return res.status(404).json({ message: 'Book not found.' });
+
+    // Handle language if provided
     if (!language_id && language) {
       const lang = await Language.findOne({ where: { name: language } });
-      if (!lang) {
-        return res.status(400).json({ message: `Language '${language}' not found.` });
-      }
+      if (!lang) return res.status(400).json({ message: `Language '${language}' not found.` });
       language_id = lang.id;
     }
+
+    // Cover image handling
     const cover_image = req.file ? req.file.filename : book.cover_image;
-    // Verify image file exists if a new file was uploaded
     if (req.file) {
       const imagePath = path.join(__dirname, '../Uploads/books', cover_image);
       await fs.access(imagePath);
       console.log(`Image verified for update: ${imagePath}`);
-    } else if (cover_image) {
-      // Verify existing image file
-      const imagePath = path.join(__dirname, '../Uploads/books', cover_image);
-      try {
-        await fs.access(imagePath);
-        console.log(`Existing image verified: ${imagePath}`);
-      } catch (error) {
-        console.warn(`Existing image not found: ${imagePath}, setting cover_image to null`);
-        cover_image = null; // Reset if the file doesn't exist
-      }
     }
-    book.title = title;
-    book.isbn = isbn;
-    book.quantity = quantity;
+
+    // Only update fields that are provided
+    if (title !== undefined) book.title = title;
+    if (isbn !== undefined) book.isbn = isbn;
+    if (quantity !== undefined) book.quantity = quantity;
+    if (donated_by !== undefined) book.donated_by = donated_by;
+    if (public_year !== undefined) book.public_year = public_year;
+    if (description !== undefined) book.description = description;
+    if (available !== undefined) book.available = available;
+    if (CategoryId !== undefined) book.CategoryId = CategoryId;
+    if (AuthorId !== undefined) book.AuthorId = AuthorId;
+    if (language_id !== undefined) book.language_id = language_id;
     book.cover_image = cover_image;
-    book.donated_by = donated_by;
-    book.public_year = public_year;
-    book.description = description;
-    book.available = available;
-    book.CategoryId = CategoryId;
-    book.AuthorId = AuthorId;
-    book.language_id = language_id || book.language_id;
+
     await book.save();
-    // Re-fetch the book with included relations to ensure full data
+
     const updatedBook = await Book.findByPk(bookId, {
       include: [
         { model: Category, as: 'category', attributes: ['name', 'description'] },
@@ -181,23 +176,24 @@ exports.update = async (req, res) => {
         { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
+
     const imageUrl = cover_image
       ? `${req.protocol}://${req.get('host')}/uploads/books/${cover_image}?t=${Date.now()}`
       : null;
-    const bookData = {
-      ...updatedBook.toJSON(),
-      cover_image_url: imageUrl,
-    };
-    console.log('Update response sent:', bookData); // Debug log
+
     res.json({
       message: 'Book updated successfully.',
-      book: bookData,
+      book: {
+        ...updatedBook.toJSON(),
+        cover_image_url: imageUrl,
+      },
     });
   } catch (error) {
     console.error('Error updating book:', error);
     res.status(500).json({ message: 'Failed to update book.' });
   }
 };
+
 
 // DELETE a book by ID
 exports.destroy = async (req, res) => {

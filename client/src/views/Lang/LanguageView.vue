@@ -19,7 +19,7 @@
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           <div class="transform hover:scale-[1.01] transition-transform duration-300">
             <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <span class="inline-block transition-all duration-500">📚</span>
+              <span class="inline-block transition-all duration-500"></span>
               Library Collection
             </h1>
             <p class="text-gray-500 mt-1 text-base">Discover books by language and explore our collection</p>

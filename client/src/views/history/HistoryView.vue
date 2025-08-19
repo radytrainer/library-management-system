@@ -35,31 +35,21 @@
             <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
           </select>
           <select
-            v-model="statusFilter"
-            class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-          >
-            <option value="">All Statuses</option>
-            <option value="available">Available</option>
-            <option value="borrowed">Borrowed</option>
-          </select>
-          <select
             v-model="userFilter"
             class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
           >
             <option value="">All Borrowers</option>
             <option v-for="borrower in borrowers" :key="borrower" :value="borrower">{{ borrower }}</option>
           </select>
-        </div>
-        <div>
-          <button
-            @click="exportToPDF"
-            class="px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
-            :disabled="isLoading || !filteredBooks.length"
-            :class="{ 'opacity-50 cursor-not-allowed': isLoading || !filteredBooks.length }"
-          >
-            <FileText class="w-5 h-5" />
-            Export PDF
-          </button>
+            <select
+    v-model="itemsPerPage"
+    class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+  ><option :value="0">All</option>
+    <option :value="10">10</option>
+    <option :value="30">30</option>
+    <option :value="50">50</option>
+    <option :value="100">100</option>
+  </select>
         </div>
       </div>
       <!-- Error Message -->
@@ -72,23 +62,6 @@
         <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
         <p class="mt-2">Loading books...</p>
       </div>
-
-      <!-- Quick Stats -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-          <div class="text-sm font-medium text-gray-500 uppercase tracking-wide">Total Books</div>
-          <div class="mt-2 text-2xl font-semibold text-gray-900">{{ filteredBooks.length }}</div>
-        </div>
-        <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-          <div class="text-sm font-medium text-gray-500 uppercase tracking-wide">Available</div>
-          <div class="mt-2 text-2xl font-semibold text-green-600">{{ availableBooks }}</div>
-        </div>
-        <div class="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-          <div class="text-sm font-medium text-gray-500 uppercase tracking-wide">Overdue</div>
-          <div class="mt-2 text-2xl font-semibold text-red-600">{{ borrowedBooks }}</div>
-        </div>
-      </div>
-
       <!-- Book List -->
       <div v-if="!isLoading && filteredBooks.length" class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -98,7 +71,6 @@
             <div class="col-span-2">Borrower</div>
             <div class="col-span-2">Category</div>
             <div class="col-span-2">Return Date</div>
-            <div class="col-span-2 text-right">Status</div>
           </div>
         </div>
         <div>
@@ -142,28 +114,11 @@
                 <div class="col-span-2">
                   <p class="text-sm text-gray-700">{{ formatDate(book.return_date) }}</p>
                 </div>
-                <div class="col-span-2 text-right">
-                  <span
-                    :class="[
-                      'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
-                      book.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    <span 
-                      :class="[
-                        'w-2 h-2 rounded-full mr-1.5',
-                        book.isAvailable ? 'bg-green-500' : 'bg-red-500'
-                      ]"
-                    ></span>
-                    {{ book.isAvailable ? 'Available' : 'Borrowed' }}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       <!-- Empty State -->
       <div v-else-if="!isLoading && !filteredBooks.length" class="text-center py-8 bg-white rounded-xl border shadow-sm">
         <p class="text-base text-gray-500">No books found matching your filters</p>
@@ -237,7 +192,7 @@
                 <History class="w-5 h-5 mr-2 text-gray-500" />
                 Borrowing History
               </h3>
-              <div v-if="selectedBook.borrowHistory.length > 0" class="border rounded-lg overflow-hidden shadow-sm">
+              <div v-if="selectedBook.borrowHistory.filter(record => record.status === 'returned').length > 0" class="border rounded-lg overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
                   <thead class="bg-gray-50">
                     <tr>
@@ -250,7 +205,7 @@
                   </thead>
                   <tbody class="divide-y divide-gray-200">
                     <tr
-                      v-for="(record, index) in selectedBook.borrowHistory"
+                      v-for="(record, index) in selectedBook.borrowHistory.filter(record => record.status === 'returned')"
                       :key="index"
                       class="hover:bg-gray-50 transition-colors duration-150"
                     >
@@ -259,13 +214,8 @@
                       <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(record.return_date) }}</td>
                       <td class="px-4 py-3 text-sm">{{ record.librarian.name }}</td>
                       <td class="px-4 py-3">
-                        <span
-                          :class="[
-                            'inline-block px-3 py-1 rounded-full text-xs font-medium',
-                            record.status === 'returned' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          ]"
-                        >
-                          {{ record.status === 'returned' ? 'Returned' : 'Not Returned' }}
+                        <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Returned
                         </span>
                       </td>
                     </tr>
@@ -273,34 +223,9 @@
                 </table>
               </div>
               <div v-else class="text-center py-6 bg-gray-50 rounded-lg border">
-                <p class="text-sm text-gray-500">No borrowing history available</p>
+                <p class="text-sm text-gray-500">No returned borrowing history available</p>
               </div>
             </div>
-          </div>
-          <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
-            <button
-              v-if="selectedBook.isAvailable"
-              @click="handleBorrowBook(selectedBook.id)"
-              class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
-              :disabled="isLoading"
-            >
-              {{ isLoading ? 'Borrowing...' : 'Borrow Book' }}
-            </button>
-            <button
-              v-else
-              @click="handleReturnBook(selectedBook.id)"
-              class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200"
-              :disabled="isLoading"
-            >
-              {{ isLoading ? 'Returning...' : 'Return Book' }}
-            </button>
-            <button
-              @click="closeBookDetails"
-              class="px-4 py-2 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200"
-              :disabled="isLoading"
-            >
-              Close
-            </button>
           </div>
         </div>
       </div>
@@ -311,7 +236,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { History, X, FileText } from 'lucide-vue-next';
-import { getBorrows} from '@/services/Api/borrow';
+import { getBorrows } from '@/services/Api/borrow';
+import { getCategories } from '@/services/Api/book';
 import { exportTableToPdf } from '@/utils/exportPDFHistory';
 
 const books = ref([]);
@@ -321,8 +247,18 @@ const error = ref(null);
 const successMessage = ref(null);
 const searchQuery = ref('');
 const categoryFilter = ref('');
-const statusFilter = ref('');
 const userFilter = ref('');
+const itemsPerPage = ref(10);
+const currentPage = ref(1);
+
+
+const paginatedBooks = computed(() => {
+  if (itemsPerPage.value === 0) return filteredBooks.value;
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredBooks.value.slice(start, end);
+});
+
 
 // Available categories (derived dynamically from data)
 const categories = computed(() => {
@@ -393,37 +329,22 @@ onMounted(async () => {
     console.log('Filtered Books:', filteredBooks.value.length);
   } catch (err) {
     error.value = 'Failed to load borrowing data. Please check if the server is running.';
-    console.error('Fetch Error:', err.message, err.response?.data);
-    // Mock data for testing
-    const mockData = [
-      {
-        book: { id: 1, title: 'Sample Book', author: 'John Doe', category: 'Fiction', cover_image: 'https://via.placeholder.com/150', description: 'A sample book' },
-        user: { name: 'Alice' },
-        borrow_date: '2025-07-01',
-        return_date: null,
-        librarian: { name: 'Bob' },
-        status: 'borrowed',
-      },
-      {
-        book: { id: 2, title: 'Another Book', author: 'Jane Smith', category: 'History', cover_image: 'https://via.placeholder.com/150', description: 'Another sample book' },
-        user: { name: 'Bob' },
-        borrow_date: '2025-06-15',
-        return_date: '2025-07-01',
-        librarian: { name: 'Alice' },
-        status: 'returned',
-      },
-    ];
     books.value = transformApiData(mockData);
-    console.log('Using Mock Data:', books.value);
   } finally {
     isLoading.value = false;
-    console.log('isLoading:', isLoading.value);
   }
 });
 
 // Filtered books for search and filters
+// Filtered books for search, filters, and only returned
 const filteredBooks = computed(() => {
   let filtered = books.value;
+
+  // Only include books with the latest record returned
+  filtered = filtered.filter(book => {
+    const latestRecord = book.borrowHistory[book.borrowHistory.length - 1];
+    return latestRecord && latestRecord.status === 'returned';
+  });
 
   // Apply search query filter
   if (searchQuery.value) {
@@ -440,56 +361,18 @@ const filteredBooks = computed(() => {
     filtered = filtered.filter(book => book.category === categoryFilter.value);
   }
 
-  // Apply status filter
-  if (statusFilter.value) {
-    filtered = filtered.filter(book => 
-      statusFilter.value === 'available' ? book.isAvailable : !book.isAvailable
-    );
-  }
-
   // Apply user filter
   if (userFilter.value) {
     filtered = filtered.filter(book => book.borrower === userFilter.value);
   }
 
-  console.log('Filtered Books Count:', filtered.length);
   return filtered;
 });
-
-// Stats
-const availableBooks = computed(() => filteredBooks.value.filter(book => book.isAvailable).length);
-const borrowedBooks = computed(() => filteredBooks.value.filter(book => !book.isAvailable).length);
-
-// Export to PDF
-const exportToPDF = async () => {
-  console.log('Exporting to PDF...');
-  const headers = ['Book', 'Author', 'Borrower', 'Category', 'Return Date', 'Status'];
-  const rows = filteredBooks.value.map(book => [
-    book.title || 'Unknown',
-    book.author || 'Unknown',
-    book.borrower || '—',
-    book.category || 'Uncategorized',
-    formatDate(book.return_date),
-    book.isAvailable ? 'Available' : 'Borrowed',
-  ]);
-  console.log('PDF Data Prepared:', { headers, rows });
-
-  try {
-    await exportTableToPdf(headers, rows, 'Library Borrowing History', 'borrowing_history.pdf');
-    console.log('PDF export completed');
-    successMessage.value = 'PDF exported successfully! Check your Downloads folder or browser download history.';
-    setTimeout(() => (successMessage.value = null), 5000);
-  } catch (err) {
-    error.value = `Failed to export PDF: ${err.message}. Check browser console for details.`;
-    console.error('PDF Export Error:', err.message, err.stack);
-  }
-};
 
 // Clear filters
 const clearFilters = () => {
   searchQuery.value = '';
   categoryFilter.value = '';
-  statusFilter.value = '';
   userFilter.value = '';
   console.log('Filters cleared');
 };
@@ -512,98 +395,45 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Category styling
+const predefinedColors = [
+  'bg-yellow-100 text-yellow-800',
+  'bg-blue-100 text-blue-800',
+  'bg-purple-100 text-purple-800',
+  'bg-green-100 text-green-800',
+  'bg-pink-100 text-pink-800',
+  'bg-indigo-100 text-indigo-800',
+  'bg-gray-100 text-gray-800',
+];
+
+const categoryColors = {};
+
+// Assign colors to categories (called after fetching books or categories)
+const assignCategoryColors = () => {
+  const uniqueCategories = [...new Set(books.value.map(b => b.category).filter(Boolean))];
+  uniqueCategories.forEach((cat, index) => {
+    categoryColors[cat.toLowerCase()] = predefinedColors[index % predefinedColors.length];
+  });
+};
+
+// Updated getCategoryStyle
 const getCategoryStyle = (category) => {
-  switch (category?.toLowerCase()) {
-    case 'history':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'programming':
-      return 'bg-blue-100 text-blue-800';
-    case 'fiction':
-      return 'bg-purple-100 text-purple-800';
-    case 'biography':
-      return 'bg-green-100 text-green-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
+  if (!category) return 'bg-gray-100 text-gray-800';
+  return categoryColors[category.toLowerCase()] || 'bg-gray-100 text-gray-800';
 };
 
-// Borrow and Return functions
-const handleBorrowBook = async (bookId) => {
+// After fetching books
+onMounted(async () => {
   try {
     isLoading.value = true;
-    const response = await borrowBook(bookId, { user: { name: 'Current User', email: 'user@example.com' } });
-    console.log('Borrow Response:', response.data);
-    const newRecord = response.data;
-    const bookIndex = books.value.findIndex(book => book.id === bookId);
-    if (bookIndex !== -1) {
-      const updatedBook = { ...books.value[bookIndex] };
-      updatedBook.borrowHistory.push({
-        user: { name: newRecord.user?.name || 'Current User' },
-        borrow_date: newRecord.borrow_date,
-        return_date: newRecord.return_date,
-        librarian: { name: newRecord.librarian?.name || 'Unknown' },
-        status: newRecord.status || 'borrowed',
-      });
-      updatedBook.isAvailable = newRecord.status === 'returned';
-      updatedBook.borrower = newRecord.user?.name || 'Current User';
-      updatedBook.return_date = newRecord.return_date;
-      books.value[bookIndex] = updatedBook;
-      if (selectedBook.value?.id === bookId) {
-        selectedBook.value = updatedBook;
-      }
-    } else {
-      console.warn(`Book with ID ${bookId} not found`);
-      error.value = `Book with ID ${bookId} not found`;
-    }
+    const response = await getBorrows();
+    books.value = transformApiData(response.data);
+    assignCategoryColors(); // Assign colors here
   } catch (err) {
-    error.value = `Failed to borrow book: ${err.message}`;
-    console.error('Borrow Error:', err.message, err.response?.data);
+    error.value = 'Failed to load borrowing data.';
+    books.value = transformApiData(mockData);
+    assignCategoryColors(); // Assign colors for mock data
   } finally {
     isLoading.value = false;
   }
-};
-
-const handleReturnBook = async (bookId) => {
-  try {
-    isLoading.value = true;
-    const response = await returnBook(bookId);
-    console.log('Return Response:', response.data);
-    const updatedRecord = response.data;
-    const bookIndex = books.value.findIndex(book => book.id === bookId);
-    if (bookIndex !== -1) {
-      const updatedBook = { ...books.value[bookIndex] };
-      const historyIndex = updatedBook.borrowHistory.findIndex(
-        record => record.borrow_date === updatedRecord.borrow_date && !record.return_date
-      );
-      if (historyIndex !== -1) {
-        updatedBook.borrowHistory[historyIndex] = {
-          user: { name: updatedRecord.user?.name || 'Current User' },
-          borrow_date: updatedRecord.borrow_date,
-          return_date: updatedRecord.return_date,
-          librarian: { name: updatedRecord.librarian?.name || 'Unknown' },
-          status: updatedRecord.status || 'returned',
-        };
-        updatedBook.isAvailable = updatedRecord.status === 'returned';
-        updatedBook.borrower = updatedRecord.user?.name || 'Current User';
-        updatedBook.return_date = updatedRecord.return_date;
-        books.value[bookIndex] = updatedBook;
-        if (selectedBook.value?.id === bookId) {
-          selectedBook.value = updatedBook;
-        }
-      } else {
-        console.warn(`Active borrow record for book ID ${bookId} not found`);
-        error.value = `No active borrow record found for book ID ${bookId}`;
-      }
-    } else {
-      console.warn(`Book with ID ${bookId} not found`);
-      error.value = `Book with ID ${bookId} not found`;
-    }
-  } catch (err) {
-    error.value = `Failed to return book: ${err.message}`;
-    console.error('Return Error:', err.message, err.response?.data);
-  } finally {
-    isLoading.value = false;
-  }
-};
+});
 </script>
