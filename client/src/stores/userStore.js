@@ -30,6 +30,7 @@ export const useUserStore = defineStore('user', {
     userQRCodeImageUrl: null, // Add state for QR code image URL
     error: '',
     loading: false,
+    language: localStorage.getItem('language') || 'en',
   }),
 
   getters: {
@@ -64,7 +65,10 @@ export const useUserStore = defineStore('user', {
           : null,
       };
     },
-
+    setLanguage(locale) {
+      this.language = locale;
+      localStorage.setItem('language', locale);
+    },
     setUser(user) {
       const normalizedUser = this.normalizeUser(user);
       this.user = normalizedUser;
@@ -78,7 +82,12 @@ export const useUserStore = defineStore('user', {
         this.profileImage = null;
       }
     },
-
+initializeFromStorage() {
+      const storedUser = localStorage.getItem("user")
+      if (storedUser) {
+        this.user = JSON.parse(storedUser)
+      }
+    },
     setToken(token) {
       this.token = token;
       localStorage.setItem('token', token);

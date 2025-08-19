@@ -1,0 +1,48 @@
+{
+  "sidebar": {
+    "title": "PNC LIBRARY"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "books": "Books",
+    "borrow": "Borrow",
+    "categories": "Categories",
+    "authors": "Authors",
+    "languages": "Languages",
+    "users": "Users",
+    "history": "History",
+    "account": "Account",
+    "website": "Website"
+  },
+  "page": {
+    "dashboard": "Library Dashboard",
+    "borrowManagement": "Borrow Management",
+    "bookManagement": "Book Management",
+    "userManagement": "User Management",
+    "authorManagement": "Author Management",
+    "categoryManagement": "Category Management",
+    "languages": "Language",
+    "history": "History",
+    "profile": "Profile",
+    "default": "Library System",
+    "defaultKh": "ប្រព័ន្ធបណ្ចាល័យ"
+  },
+  "search": {
+    "placeholder": "Search books..."
+  },
+  "language": {
+    "en": "English",
+    "kh": "Khmer"
+  },
+  "notifications": {
+    "youHave": "You have {count} new notifications",
+    "clearAll": "Clear All"
+  },
+  "profile": {
+    "unknown": "Unknown",
+    "noEmail": "No email",
+    "view": "View Profile",
+    "logout": "Logout"
+  },
+  "loading": "Loading..."
+}

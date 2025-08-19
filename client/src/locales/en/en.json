@@ -1,0 +1,105 @@
+{
+  "sidebar": {
+    "title": "PNC LIBRARY"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "books": "Books",
+    "borrow": "Borrow",
+    "categories": "Categories",
+    "authors": "Authors",
+    "languages": "Languages",
+    "users": "Users",
+    "history": "History",
+    "account": "Account",
+    "website": "Website"
+  },
+  "page": {
+    "dashboard": "Library Dashboard",
+    "borrowManagement": "Borrow Management",
+    "bookManagement": "Book Management",
+    "userManagement": "User Management",
+    "authorManagement": "Author Management",
+    "categoryManagement": "Category Management",
+    "languages": "Language",
+    "history": "History",
+    "profile": "Profile",
+    "default": "Library System"
+  },
+  "dashboard": {
+    "welcome": "Welcome to your library management system",
+    "systemStatus": "System Online",
+    "heroTitle": "Your Digital Library Hub",
+    "heroDescription": "Streamline your library operations with our intelligent management system. Track inventory, manage members, and analyze trends effortlessly.",
+    "viewBooks": "View Books",
+    "totalBooks": "Total Books",
+    "activeUsers": "Active Users",
+    "borrowedBooks": "Borrowed Books",
+    "overdueBooks": "Overdue Books",
+    "recentActivity": "Recent Activity",
+    "statsCard": {
+      "totalBooks": "Total Books",
+      "totalUsers": "Total Users",
+      "totalBorrowed": "Total Borrowed"
+    },
+    "popularBooks": "Popular Books",
+    "activityChart": {
+      "title": "Library Activity",
+      "subtitle": "Books borrowed over time",
+      "year": "Year",
+      "month": "Month",
+      "week": "Week",
+      "weekLabel": "Week {week}",
+      "chartType": {
+        "bar": "Bar",
+        "pie": "Pie",
+        "line": "Line"
+      },
+      "booksBorrowed": "Books Borrowed",
+      "loading": "Loading data..."
+    },
+    "topBorrower": "Top Borrower"
+  },
+  "search": {
+    "placeholder": "Search books..."
+  },
+  "language": {
+    "en": "English",
+    "kh": "ខ្មែរ"
+  },
+  "notifications": {
+    "youHave": "You have {count} new notifications",
+    "clearAll": "Clear All"
+  },
+  "profile": {
+    "unknown": "Unknown",
+    "noEmail": "No email",
+    "view": "View Profile",
+    "logout": "Logout"
+  },
+  "loading": "Loading...",
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "errors": {
+    "networkError": "Network connection error. Please try again.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "serverError": "Server error occurred. Please try again later.",
+    "validationError": "Please check your input and try again.",
+    "missingTranslation": "Translation not available"
+  }
+}

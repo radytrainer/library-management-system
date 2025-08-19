@@ -1,201 +1,263 @@
 <style scoped>
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Opera */
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none;
-  /* IE and Edge */
-  scrollbar-width: none;
-  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 </style>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { debounce } from 'lodash'
-import { defineEmits } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
+import { debounce } from 'lodash';
+import { useI18n } from 'vue-i18n';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
-// Stores and router
-const userStore = useUserStore()
-const router = useRouter()
-const route = useRoute()
+// Stores, router, and i18n
+const userStore = useUserStore();
+const router = useRouter();
+const route = useRoute();
+const { t, locale } = useI18n();
 
 // State
-const language = ref(localStorage.getItem('language') || 'en')
-const searchQuery = ref('')
-const notifications = ref(3)
-const showNotifications = ref(false)
-const showProfileDropdown = ref(false)
-const isSidebarOpen = ref(true)
-const isOpen = ref(false) // language dropdown
-const isLoading = ref(false)
-const emit = defineEmits(['profileClicked'])
+const searchQuery = ref('');
+const notifications = ref(3);
+const showNotifications = ref(false);
+const showProfileDropdown = ref(false);
+const isSidebarOpen = ref(true);
+const isOpen = ref(false); // Language dropdown
+const isLoading = ref(false);
+
+// Supported languages
+const supportedLanguages = [
+  { code: 'en', name: 'English', flag: 'https://flagcdn.com/w40/us.png' },
+  { code: 'kh', name: 'Khmer', flag: 'https://flagcdn.com/w40/kh.png' },
+];
 
 // Navigation items with role-based access
 const navItems = [
-  { path: '/dashboard', icon: 'dashboard', label: { en: 'Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រង' }, roles: ['admin'] },
-  { path: '/books', icon: 'menu_book', label: { en: 'Books', kh: 'សៀវភៅ' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/borrows', icon: 'autorenew', label: { en: 'Borrow', kh: 'ខ្ចី' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/categories', icon: 'category', label: { en: 'Categories', kh: 'ប្រភេទ' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/authors', icon: 'person', label: { en: 'Authors', kh: 'អ្នកនិពន្ធ' }, roles: ['admin', 'librarian', 'user'] },
-  { path: '/Language', icon: 'language', label: { en: 'Languages', kh: 'ភាសា' }, roles: ['admin', 'librarian'] },
-  { path: '/users', icon: 'people', label: { en: 'Users', kh: 'អ្នកប្រើប្រាស់' }, roles: ['admin', 'librarian'] },
-  { path: '/history', icon: 'history', label: { en: 'History', kh: 'ប្រវត្តិ' }, roles: ['admin', 'librarian'] },
-  { path: '/profile', icon: 'account_circle', label: { en: 'Account', kh: 'ប្រវត្តិរូប' }, roles: ['admin', 'librarian', 'user'] },
-]
+  { path: '/dashboard', icon: 'dashboard', label: 'nav.dashboard', roles: ['admin'] },
+  { path: '/books', icon: 'menu_book', label: 'nav.books', roles: ['admin', 'librarian', 'user'] },
+  { path: '/borrows', icon: 'autorenew', label: 'nav.borrow', roles: ['admin', 'librarian', 'user'] },
+  { path: '/categories', icon: 'category', label: 'nav.categories', roles: ['admin', 'librarian', 'user'] },
+  { path: '/authors', icon: 'person', label: 'nav.authors', roles: ['admin', 'librarian', 'user'] },
+  { path: '/languages', icon: 'language', label: 'nav.languages', roles: ['admin', 'librarian'] },
+  { path: '/users', icon: 'people', label: 'nav.users', roles: ['admin', 'librarian'] },
+  { path: '/history', icon: 'history', label: 'nav.history', roles: ['admin', 'librarian'] },
+  { path: '/profile', icon: 'account_circle', label: 'nav.account', roles: ['admin', 'librarian', 'user'] },
+];
 
 // Filter nav based on user role
 const filteredNav = computed(() => {
-  const role = userStore.user?.role
-  if (!role) return []
-  return role === 'admin'
-    ? navItems
-    : navItems.filter(item => item.roles.includes(role))
-})
+  const role = userStore.user?.role;
+  if (!role) return [];
+  return role === 'admin' ? navItems : navItems.filter(item => item.roles.includes(role));
+});
 
-const profileInitial = computed(() => userStore.user?.email?.charAt(0)?.toUpperCase() || '?')
+const profileInitial = computed(() => userStore.user?.email?.charAt(0)?.toUpperCase() || '?');
 
 const profileImageUrl = computed(() => {
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-  let image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
-  if (image && !image.startsWith('http') && !image.startsWith('data:image')) image = `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`
-  const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image'))
-  const finalImage = isValidUrl ? image : '/default-profile.png'
-  return finalImage.startsWith('http') ? `${finalImage}?t=${new Date().getTime()}` : finalImage
-})
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  let image = userStore.user?.profile_image || userStore.profileImage || '';
+  if (image && !image.startsWith('http') && !image.startsWith('data:image')) {
+    image = `${baseUrl}/uploads/profile/${image}`;
+  }
+  const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image'));
+  return isValidUrl ? `${image}?t=${new Date().getTime()}` : '/default-profile.png';
+});
 
 const pageTitle = computed(() => {
   const map = {
-    dashboard: { en: 'Library Dashboard', kh: 'ផ្ទាំងគ្រប់គ្រងបណ្ចាល័យ' },
-    borrows: { en: 'Borrow Management', kh: 'គ្រប់គ្រងការខ្ចីសៀវភៅ' },
-    books: { en: 'Book Management', kh: 'គ្រប់គ្រងសៀវភៅ' },
-    users: { en: 'User Management', kh: 'គ្រប់គ្រងអ្នកប្រើ' },
-    authors: { en: 'Author Management', kh: 'គ្រប់គ្រងអ្នកនិពន្ធ' },
-    categories: { en: 'Category Management', kh: 'គ្រប់គ្រងប្រភេទសៀវភៅ' },
-    Language: { en: 'Language', kh: 'ភាសា' },
-    history: { en: 'History', kh: 'ប្រវត្តិការខ្ចី' },
-    profile: { en: 'Profile', kh: 'ប្រវត្តិរូប' },
-  }
-  const key = route.name
-  return map[key]?.[language.value] || (language.value === 'en' ? 'Library System' : 'ប្រព័ន្ធបណ្ចាល័យ')
-})
+    dashboard: 'page.dashboard',
+    borrows: 'page.borrowManagement',
+    books: 'page.bookManagement',
+    users: 'page.userManagement',
+    authors: 'page.authorManagement',
+    categories: 'page.categoryManagement',
+    languages: 'page.languages',
+    history: 'page.history',
+    profile: 'page.profile',
+  };
+  const key = route.name || route.path.split('/')[1] || 'dashboard';
+  return t(map[key] || 'page.default');
+});
 
-// Dropdown functions
-function selectLanguage(lang) {
-  language.value = lang
-  localStorage.setItem('language', lang)
-  isOpen.value = false
+// Language switcher
+async function selectLanguage(lang) { // Line ~97
+  if (!supportedLanguages.some(l => l.code === lang)) {
+    Swal.fire({
+      icon: 'error',
+      title: t('error.title'),
+      text: t('error.unsupportedLanguage', { lang }),
+    });
+    return;
+  }
+  try {
+    isLoading.value = true;
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/languages/toggle`,
+      { locale: lang },
+      { headers: { Authorization: `Bearer ${userStore.token}` } }
+    );
+
+    if (response.data.success) {
+      locale.value = response.data.data.locale;
+      userStore.setLanguage(response.data.data.locale);
+      document.documentElement.setAttribute('lang', response.data.data.locale);
+      isOpen.value = false;
+      Swal.fire({
+        icon: 'success',
+        title: t('success.title'),
+        text: t('success.languageSwitched', { lang: t(`language.${response.data.data.locale}`) }),
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error('Error switching language:', error); // Line ~112
+    Swal.fire({
+      icon: 'error',
+      title: t('error.title'),
+      text: t('error.languageSwitchFailed', { message: error.response?.data?.message || error.message }),
+    });
+    // Fallback to local storage
+    locale.value = lang;
+    userStore.setLanguage(lang);
+    document.documentElement.setAttribute('lang', lang);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 function toggleNotifications() {
-  showNotifications.value = !showNotifications.value
-  showProfileDropdown.value = false
-  isOpen.value = false
+  showNotifications.value = !showNotifications.value;
+  showProfileDropdown.value = false;
+  isOpen.value = false;
 }
 
 function clearNotifications() {
-  notifications.value = 0
-  showNotifications.value = false
+  notifications.value = 0;
+  showNotifications.value = false;
 }
 
 function toggleProfileDropdown() {
-  showProfileDropdown.value = !showProfileDropdown.value
-  showNotifications.value = false
-  isOpen.value = false
+  showProfileDropdown.value = !showProfileDropdown.value;
+  showNotifications.value = false;
+  isOpen.value = false;
 }
 
 function toggleSidebar() {
-  isSidebarOpen.value = !isSidebarOpen.value
+  isSidebarOpen.value = !isSidebarOpen.value;
 }
 
 const performSearch = debounce(async () => {
-  if (searchQuery.value) console.log(`Searching for: ${searchQuery.value}`)
-}, 300)
+  if (searchQuery.value) console.log(`Searching for: ${searchQuery.value}`);
+}, 300);
 
-async function fetchUserProfile() {
-  if (!userStore.token) return false
-  userStore.loading = true
+async function fetchTranslations() {
   try {
-    const { success } = await userStore.fetchUserProfile()
-    if (!success) userStore.userProfile = null
-    return success
+    const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/language`, {
+      headers: { Authorization: `Bearer ${userStore.token}` },
+    });
+    if (response.data.success) {
+      locale.value = response.data.data.locale;
+      userStore.setLanguage(response.data.data.locale);
+      document.documentElement.setAttribute('lang', response.data.data.locale);
+    }
   } catch (error) {
-    console.error(error)
-    userStore.userProfile = null
-    return false
-  } finally {
-    userStore.loading = false
+    console.error('Error fetching translations:', error);
+    const browserLang = navigator.language.split('-')[0];
+    const defaultLang = supportedLanguages.some(l => l.code === browserLang) ? browserLang : 'en';
+    locale.value = userStore.language || defaultLang;
+    userStore.setLanguage(defaultLang);
+    document.documentElement.setAttribute('lang', defaultLang);
   }
 }
 
 function logout() {
-  userStore.logout()
-  showProfileDropdown.value = false
+  userStore.logout();
+  showProfileDropdown.value = false;
+  router.push('/login');
 }
 
-// Close dropdowns when clicking outside
 function handleClickOutside(event) {
   const dropdowns = [
     { button: '.profile-button', menu: '.profile-menu', state: showProfileDropdown },
     { button: '.notifications-button', menu: '.notifications-menu', state: showNotifications },
     { button: '.language-button', menu: '.language-menu', state: isOpen },
-  ]
+  ];
 
-  dropdowns.forEach(d => {
-    const btn = document.querySelector(d.button)
-    const menu = document.querySelector(d.menu)
-    if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) d.state.value = false
-  })
+  dropdowns.forEach((d) => {
+    const btn = document.querySelector(d.button);
+    const menu = document.querySelector(d.menu);
+    if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+      d.state.value = false;
+    }
+  });
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  const cachedImage = localStorage.getItem('profile_image')
-  if (cachedImage && (!userStore.user?.profile_image)) userStore.user = { ...userStore.user, profile_image: cachedImage }
-  fetchUserProfile()
-})
+onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
+  if (userStore.profileImage && !userStore.user?.profile_image) {
+    userStore.user = { ...userStore.user, profile_image: userStore.profileImage };
+  }
+  await userStore.fetchUserProfile();
+  await fetchTranslations();
+});
 
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
+  <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter" :dir="locale.value === 'kh' ? 'ltr' : 'ltr'">
     <!-- Sidebar -->
-    <aside :class="[
-      'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg',
-      isSidebarOpen ? 'w-64' : 'w-20',
-    ]">
+    <aside
+      :class="[
+        'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg',
+        isSidebarOpen ? 'w-64' : 'w-20',
+      ]"
+    >
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
-        <img src="/logo.png
-      " alt="Library Logo" class="h-20 w-30" />
-        <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
-          {{ language === 'en' ? 'PNC LIBRARY' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
+        <img src="/logo.png" alt="Library Logo" class="h-20 w-30" />
+        <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': locale.value === 'kh' }">
+          {{ t('sidebar.title') }}
         </h2>
       </div>
       <nav class="flex-1 overflow-y-auto no-scrollbar">
-        <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
+        <ul class="space-y-1 p-4" :class="{ 'font-khmer': locale.value === 'kh' }">
           <li v-for="item in filteredNav" :key="item.path">
-            <RouterLink :to="item.path" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
-            ]">
+            <RouterLink
+              :to="item.path"
+              :class="[
+                'flex items-center p-3 rounded-lg transition-colors duration-200',
+                isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+                $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
+              ]"
+              :aria-label="t(item.label)"
+            >
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">{{ item.icon }}</span>
-              <span v-if="isSidebarOpen">{{ item.label[language] }}</span>
+              <span v-if="isSidebarOpen">{{ t(item.label) }}</span>
             </RouterLink>
           </li>
           <li>
-            <RouterLink to="/website" :class="[
-              'flex items-center p-3 rounded-lg transition-colors duration-200',
-              isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
-              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
-            ]">
+            <RouterLink
+              to="/website"
+              :class="[
+                'flex items-center p-3 rounded-lg transition-colors duration-200',
+                isSidebarOpen ? 'hover:bg-custom-hover-page' : 'justify-center hover:bg-custom-hover-page',
+                $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
+              ]"
+              :aria-label="t('nav.website')"
+            >
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">public</span>
-              <span v-if="isSidebarOpen">{{ language === 'en' ? 'Website' : 'គេហទំព័រ' }}</span>
+              <span v-if="isSidebarOpen">{{ t('nav.website') }}</span>
             </RouterLink>
           </li>
         </ul>
@@ -203,17 +265,21 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col transition-all duration-300"
-      :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
+    <div
+      class="flex-1 flex flex-col transition-all duration-300"
+      :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }"
+    >
       <!-- Header -->
       <header class="sticky top-0 z-40 bg-white shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
-          <button @click="toggleSidebar"
+          <button
+            @click="toggleSidebar"
             class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100"
-            aria-label="Toggle sidebar">
+            :aria-label="t('aria.toggleSidebar')"
+          >
             <span class="material-icons text-2xl">{{ isSidebarOpen ? 'menu_open' : 'menu' }}</span>
           </button>
-          <h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
+          <h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': locale.value === 'kh' }">
             {{ pageTitle }}
           </h1>
         </div>
@@ -221,64 +287,95 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         <div class="flex items-center space-x-3">
           <!-- Search -->
           <div class="relative">
-            <input type="text" v-model="searchQuery"
-              :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
+            <input
+              type="text"
+              v-model="searchQuery"
+              :placeholder="t('search.placeholder')"
               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }" aria-label="Search books" />
-            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+              :class="{ 'font-khmer': locale.value === 'kh' }"
+              :aria-label="t('aria.searchBooks')"
+            />
+            <span
+              class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"
+            >
               search
             </span>
           </div>
 
           <!-- Language Switch -->
           <div class="relative">
-            <button @click="isOpen = !isOpen"
+            <button
+              @click="isOpen = !isOpen"
               class="language-button border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
-              :class="{ 'font-khmer': language === 'kh' }" aria-haspopup="true" :aria-expanded="isOpen.toString()"
-              aria-label="Select language">
-              <img :src="language === 'en' ? 'https://flagcdn.com/w40/us.png' : 'https://flagcdn.com/w40/kh.png'"
-                class="w-5 h-4 mr-2" :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'" />
-              {{ language === 'en' ? 'English' : 'ភាសាខ្មែរ' }}
+              :class="{ 'font-khmer': locale.value === 'kh' }"
+              aria-haspopup="true"
+              :aria-expanded="isOpen.toString()"
+              :aria-label="t('aria.selectLanguage')"
+            >
+              <img
+                :src="supportedLanguages.find(l => l.code === locale)?.flag || 'https://flagcdn.com/w40/us.png'"
+                class="w-5 h-4 mr-2"
+                :alt="t(`language.${locale}.flagAlt`)"
+              />
+              {{ t(`${locale}`) }}
               <span class="ml-2 material-icons">arrow_drop_down</span>
             </button>
-            <div v-if="isOpen"
+            <div
+              v-if="isOpen"
               class="language-menu absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-opacity duration-200"
-              role="menu" aria-orientation="vertical" tabindex="-1">
-              <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem" tabindex="0">
-                <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
-                English
-              </a>
-              <a href="#" @click.prevent="selectLanguage('kh')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem" tabindex="0">
-                <img src="https://flagcdn.com/w40/kh.png" class="w-5 h-4 mr-2" alt="Cambodia Flag" />
-                ភាសាខ្មែរ
+              role="menu"
+              aria-orientation="vertical"
+              tabindex="-1"
+            >
+              <a
+                v-for="lang in supportedLanguages"
+                :key="lang.code"
+                href="#"
+                @click.prevent="selectLanguage(lang.code)"
+                class="flex items-center p-2 hover:bg-gray-100 text-sm"
+                :class="{ 'font-khmer': lang.code === 'kh' }"
+                role="menuitem"
+                tabindex="0"
+                :aria-label="t(`language.${lang.code}`)"
+              >
+                <img :src="lang.flag" class="w-5 h-4 mr-2" :alt="t(`language.${lang.code}.flagAlt`)" />
+                {{ t(`language.${lang.code}`) }}
               </a>
             </div>
           </div>
 
           <!-- Notifications -->
           <div class="relative">
-            <button @click="toggleNotifications"
+            <button
+              @click="toggleNotifications"
               class="notifications-button material-icons text-gray-600 cursor-pointer hover:text-indigo-600 p-2 rounded-full hover:bg-gray-100"
-              aria-label="Toggle notifications" :aria-expanded="showNotifications.toString()">
+              :aria-label="t('aria.toggleNotifications')"
+              :aria-expanded="showNotifications.toString()"
+            >
               notifications
             </button>
-            <span v-if="notifications > 0"
+            <span
+              v-if="notifications > 0"
               class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-              aria-label="Notification count">
+              :aria-label="t('aria.notificationCount', { count: notifications })"
+            >
               {{ notifications }}
             </span>
-            <div v-if="showNotifications"
+            <div
+              v-if="showNotifications"
               class="notifications-menu absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
-              role="region" aria-live="polite">
-              <p class="text-sm text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
-                {{ language === 'en' ? 'You have' : 'អ្នកមាន' }} {{ notifications }}
-                {{ language === 'en' ? 'new notifications' : 'ការជូនដំណឹងថ្មី' }}
+              role="region"
+              aria-live="polite"
+            >
+              <p class="text-sm text-gray-600" :class="{ 'font-khmer': locale.value === 'kh' }">
+                {{ t('notifications.youHave', { count: notifications }) }}
               </p>
-              <button class="mt-3 text-sm text-indigo-600 hover:underline" @click="clearNotifications"
-                aria-label="Clear all notifications">
-                {{ language === 'en' ? 'Clear All' : 'លុបទាំងអស់' }}
+              <button
+                class="mt-3 text-sm text-indigo-600 hover:underline"
+                @click="clearNotifications"
+                :aria-label="t('aria.clearNotifications')"
+              >
+                {{ t('notifications.clearAll') }}
               </button>
             </div>
           </div>
@@ -287,31 +384,48 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <div class="relative">
             <div
               class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
-              @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
-              <img :src="profileImageUrl" alt="Profile" class="h-full w-full rounded-full object-cover"
-                @error="handleImageError" />
+              @click="toggleProfileDropdown"
+              role="button"
+              :aria-label="t('aria.toggleProfile')"
+            >
+              <img
+                :src="profileImageUrl"
+                alt="Profile"
+                class="h-full w-full rounded-full object-cover"
+                @error="() => userStore.profileImage = '/default-profile.png'"
+              />
             </div>
-            <div v-if="showProfileDropdown"
+            <div
+              v-if="showProfileDropdown"
               class="profile-menu absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
-              role="menu">
+              role="menu"
+            >
               <div class="border-b border-gray-200 pb-2 mb-2">
-                <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
-                  {{ userStore.user?.username || 'Unknown' }}
+                <p class="text-sm font-medium" :class="{ 'font-khmer': locale.value === 'kh' }">
+                  {{ userStore.user?.username || t('profile.unknown') }}
                 </p>
-                <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }">
-                  {{ userStore.user?.email || 'No email' }}
+                <p class="text-xs text-gray-500" :class="{ 'font-khmer': locale.value === 'kh' }">
+                  {{ userStore.user?.email || t('profile.noEmail') }}
                 </p>
               </div>
-              <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                role="menuitem" @click="showProfileDropdown = false">
+              <router-link
+                to="/profile"
+                class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                role="menuitem"
+                @click="showProfileDropdown = false"
+                :aria-label="t('profile.view')"
+              >
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
-                {{ language === 'en' ? 'View Profile' : 'មើលប្រវត្តិរូប' }}
+                {{ t('profile.view') }}
               </router-link>
-              <button @click="logout"
+              <button
+                @click="logout"
                 class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                role="menuitem">
+                role="menuitem"
+                :aria-label="t('profile.logout')"
+              >
                 <span class="material-symbols-outlined mr-2">logout</span>
-                {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
+                {{ t('profile.logout') }}
               </button>
             </div>
           </div>
@@ -319,11 +433,11 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       </header>
 
       <!-- Page Content -->
-      <main class="">
+      <main>
         <RouterView v-if="!isLoading" />
         <div v-else class="flex justify-center items-center h-full">
-          <p class="text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
-            {{ language === 'en' ? 'Loading...' : 'កំពុងផ្ទុក...' }}
+          <p class="text-gray-600" :class="{ 'font-khmer': locale.value === 'kh' }">
+            {{ t('loading') }}
           </p>
         </div>
       </main>

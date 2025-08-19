@@ -15,22 +15,18 @@
             <div class="text-white">
               <div class="inline-flex items-center px-4 py-2 bg-white/10 rounded-full text-sm font-medium mb-6">
                 <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                System Online
+                {{ $t("dashboard.systemStatus") }}
               </div>
               <h2 class="text-3xl font-bold mb-3 leading-tight">
-                Your Digital
-                <span class="block bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                  Library Hub
-                </span>
+                {{ $t("dashboard.heroTitle") }}
               </h2>
               <p class="text-l text-blue-100 mb-5 leading-relaxed">
-                Streamline your library operations with our intelligent management system.
-                Track inventory, manage members, and analyze trends effortlessly.
+                {{ $t("dashboard.heroDescription") }}
               </p>
               <div class="flex sm:flex-row gap-1">
                 <button @click="goToBooks"
                   class="bg-white text-blue-900 px-4 py-2 rounded-xl font-semibold hover:bg-gray-100 transition-all">
-                  View Books
+                  {{ $t("dashboard.viewBooks") }}
                 </button>
               </div>
             </div>
@@ -42,7 +38,7 @@
         </div>
       </div>
 
-      <!-- Card to show total of book -->
+      <!-- Stats Cards -->
       <StatsCardGrid />
 
       <!-- Popular Books -->

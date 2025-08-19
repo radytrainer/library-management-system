@@ -1,0 +1,48 @@
+{
+  "sidebar": {
+    "title": "ប្រព័ន្ធបណ្ចាល័យ"
+  },
+  "nav": {
+    "dashboard": "ផ្ទាំងគ្រប់គ្រង",
+    "books": "សៀវភៅ",
+    "borrow": "ខ្ចី",
+    "categories": "ប្រភេទ",
+    "authors": "អ្នកនិពន្ធ",
+    "languages": "ភាសា",
+    "users": "អ្នកប្រើប្រាស់",
+    "history": "ប្រវត្តិ",
+    "account": "ប្រវត្តិរូប",
+    "website": "គេហទំព័រ"
+  },
+  "page": {
+    "dashboard": "ផ្ទាំងគ្រប់គ្រងបណ្ចាល័យ",
+    "borrowManagement": "គ្រប់គ្រងការខ្ចីសៀវភៅ",
+    "bookManagement": "គ្រប់គ្រងសៀវភៅ",
+    "userManagement": "គ្រប់គ្រងអ្នកប្រើ",
+    "authorManagement": "គ្រប់គ្រងអ្នកនិពន្ធ",
+    "categoryManagement": "គ្រប់គ្រងប្រភេទសៀវភៅ",
+    "languages": "ភាសា",
+    "history": "ប្រវត្តិការខ្ចី",
+    "profile": "ប្រវត្តិរូប",
+    "default": "ប្រព័ន្ធបណ្ចាល័យ",
+    "defaultKh": "ប្រព័ន្ធបណ្ចាល័យ"
+  },
+  "search": {
+    "placeholder": "ស្វែងរកសៀវភៅ..."
+  },
+  "language": {
+    "en": "ភាសាអង់គ្លេស",
+    "kh": "ភាសាខ្មែរ"
+  },
+  "notifications": {
+    "youHave": "អ្នកមាន {count} ការជូនដំណឹងថ្មី",
+    "clearAll": "លុបទាំងអស់"
+  },
+  "profile": {
+    "unknown": "មិនស្គាល់",
+    "noEmail": "គ្មានអ៊ីមែល",
+    "view": "មើលប្រវត្តិរូប",
+    "logout": "ចាកចេញ"
+  },
+  "loading": "កំពុងផ្ទុក..."
+}

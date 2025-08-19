@@ -6,7 +6,7 @@ const multer = require("multer");
 
 const userController = require("../controllers/userController.js");
 const authJwt = require("../middlewares/authJwt");
-
+const languageController = require('../controllers/languageController'); 
 // Multer config for profile uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -83,6 +83,7 @@ router.post(
   [authJwt.verifyToken, uploadOptional],
   userController.uploadProfileImage
 );
+router.post('/language/toggle',[authJwt.verifyToken], languageController.toggleLanguage);
 // Profile routes
 router.get("/profile/me", [authJwt.verifyToken], userController.getUserProfile);
 router.delete("/profile/me", [authJwt.verifyToken], userController.deleteAccount);
