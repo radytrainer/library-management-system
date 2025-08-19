@@ -3,7 +3,10 @@ module.exports = (sequelize, DataTypes) => {
     title: DataTypes.STRING,
     isbn: DataTypes.STRING,
     quantity: DataTypes.INTEGER,
-    cover_image: DataTypes.STRING,
+    cover_image: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     donated_by: DataTypes.STRING,
     public_year: DataTypes.INTEGER,
     description: DataTypes.TEXT,

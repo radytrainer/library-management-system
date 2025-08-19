@@ -12,7 +12,7 @@ exports.index = async (req, res) => {
     const books = await Book.findAll({
       include: [
         { model: Category, as: 'category', attributes: ['name', 'description'] },
-        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Author, as: 'author', attributes: ['name', 'nationality'] },
         { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
@@ -36,7 +36,7 @@ exports.show = async (req, res) => {
     const book = await Book.findByPk(req.params.id, {
       include: [
         { model: Category, as: 'category', attributes: ['name', 'description'] },
-        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Author, as: 'author', attributes: ['name', 'nationality'] },
         { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
@@ -100,7 +100,7 @@ exports.store = async (req, res) => {
     const createdBook = await Book.findByPk(newBook.id, {
       include: [
         { model: Category, as: 'category', attributes: ['name', 'description'] },
-        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Author, as: 'author', attributes: ['name', 'nationality'] },
         { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
@@ -177,7 +177,7 @@ exports.update = async (req, res) => {
     const updatedBook = await Book.findByPk(bookId, {
       include: [
         { model: Category, as: 'category', attributes: ['name', 'description'] },
-        { model: Author, as: 'author', attributes: ['name', 'biography', 'birth_date', 'nationality'] },
+        { model: Author, as: 'author', attributes: ['name', 'nationality'] },
         { model: Language, as: 'language', attributes: ['name'] },
       ],
     });
@@ -238,7 +238,6 @@ exports.getBooksLastMonth = async (req, res) => {
       }
     });
 
-
     // Log the total count found
     console.log('Total books found:', total);
 
@@ -246,5 +245,193 @@ exports.getBooksLastMonth = async (req, res) => {
   } catch (error) {
     console.error('Error fetching books last month:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// POST import multiple books from Excel
+exports.importBooks = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ warnings: [], data: [] });
+  }
+
+  try {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      return res.status(400).json({ warnings: [], data: [] });
+    }
+
+    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+    if (!Array.isArray(sheet) || sheet.length < 1) {
+      return res.status(400).json({ warnings: [], data: [] });
+    }
+
+    const headers = sheet[0].map(h => h?.toString().trim().toLowerCase() || '');
+    const requiredColumns = [
+      'title', 'isbn', 'quantity', 'donated_by', 'public_year',
+      'description', 'available', 'category_name', 'author_name',
+      'language_name'
+    ];
+
+    const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+    const warnings = [];
+
+    if (missingColumns.length > 0) {
+      warnings.push(`Some required columns are missing: ${missingColumns.join(', ')}`);
+    }
+
+    const booksCreated = [];
+    const t = await sequelize.transaction();
+
+    try {
+      for (let i = 1; i < sheet.length; i++) {
+        const row = sheet[i];
+        if (!row || !Array.isArray(row)) {
+          warnings.push(`Row ${i + 1} skipped: invalid or empty data.`);
+          continue;
+        }
+
+        const data = {};
+        headers.forEach((header, index) => {
+          data[header] = row[index] ? row[index].toString().trim() : null;
+        });
+
+        if (!data.title || !data.isbn) {
+          warnings.push(`Row ${i + 1} skipped: missing title or ISBN.`);
+          continue;
+        }
+
+        const existingBook = await Book.findOne({ where: { isbn: data.isbn } });
+        if (existingBook) {
+          warnings.push(`Row ${i + 1}: Book with ISBN '${data.isbn}' already exists. Skipped.`);
+          continue;
+        }
+
+        // Category
+        let CategoryId;
+        const category = await Category.findOne({ where: { name: data.category_name } });
+        if (category) {
+          CategoryId = category.id;
+        } else if (data.category_name) {
+          const newCategory = await Category.create({ name: data.category_name, description: '' }, { transaction: t });
+          CategoryId = newCategory.id;
+          warnings.push(`Row ${i + 1}: New category '${data.category_name}' created.`);
+        } else {
+          warnings.push(`Row ${i + 1} skipped: missing category name.`);
+          continue;
+        }
+
+        // Author
+        let AuthorId;
+        const author = await Author.findOne({ where: { name: data.author_name } });
+        if (author) {
+          AuthorId = author.id;
+        } else if (data.author_name) {
+          const newAuthor = await Author.create({ name: data.author_name, nationality: '' }, { transaction: t });
+          AuthorId = newAuthor.id;
+          warnings.push(`Row ${i + 1}: New author '${data.author_name}' created.`);
+        } else {
+          warnings.push(`Row ${i + 1} skipped: missing author name.`);
+          continue;
+        }
+
+        // Language
+        let language_id;
+        const language = await Language.findOne({ where: { name: data.language_name } });
+        if (language) {
+          language_id = language.id;
+        } else if (data.language_name) {
+          const newLanguage = await Language.create({ name: data.language_name }, { transaction: t });
+          language_id = newLanguage.id;
+          warnings.push(`Row ${i + 1}: New language '${data.language_name}' created.`);
+        } else {
+          warnings.push(`Row ${i + 1} skipped: missing language name.`);
+          continue;
+        }
+
+        const available = data.available?.toLowerCase() === 'true' || data.available === '1';
+        const quantity = parseInt(data.quantity, 10);
+        const public_year = parseInt(data.public_year, 10);
+        const coverImage = data.cover_image || null;
+
+        if (!coverImage) {
+          warnings.push(`Row ${i + 1}: No cover image provided. Please update cover image later.`);
+        }
+
+        const newBook = await Book.create({
+          title: data.title,
+          isbn: data.isbn,
+          quantity: Number.isInteger(quantity) ? quantity : 1,
+          cover_image: coverImage,
+          donated_by: data.donated_by,
+          public_year: Number.isInteger(public_year) ? public_year : null,
+          description: data.description,
+          available,
+          CategoryId,
+          AuthorId,
+          language_id
+        }, { transaction: t });
+
+        booksCreated.push(newBook);
+      }
+
+      await t.commit();
+
+      return res.status(200).json({
+        warnings: warnings.length > 0 ? warnings : undefined,
+        data: booksCreated
+      });
+
+    } catch (err) {
+      await t.rollback();
+      // Return any successfully created books and warnings
+      return res.status(400).json({
+        warnings,
+        data: booksCreated
+      });
+    }
+
+  } catch (error) {
+    console.error('Error importing books:', error);
+    // Remove generic error message
+    return res.status(400).json({
+      warnings: [],
+      data: []
+    });
+  }
+};
+
+
+// GET sample Excel template
+exports.sampleExcel = (req, res) => {
+  try {
+    const wb = XLSX.utils.book_new();
+
+    const data = [
+      [
+        'title', 'isbn', 'quantity', 'donated_by', 'public_year', 'description',
+        'available', 'category_name', 'author_name', 'language_name', 'cover_image'
+      ]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 },
+      { wch: 40 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 25 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Books');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename=sample_books_import.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Error generating sample Excel:', error);
+    res.status(500).json({ message: 'Failed to generate sample Excel.' });
   }
 };

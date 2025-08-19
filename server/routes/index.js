@@ -13,8 +13,6 @@ const borrowController = require('../controllers/borrowController');
 const languageBook = require('../controllers/langaugeBook');
 const donationController = require('../controllers/donationController');
 
-router.get('/books/last-month', bookController.getBooksLastMonth);
-
 // Upload base folder
 const uploadDir = path.join(__dirname, '../Uploads');
 
@@ -44,6 +42,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+const uploadMemory = multer({ storage: multer.memoryStorage() });
+
 // Register all routes
 const resources = [
   apiResource('/books', bookController, {
@@ -59,6 +59,11 @@ const resources = [
     update: [upload.single('cover_image')],
   }),
 ];
+
+// Add custom routes for import and sample
+router.post('/books/import-book', uploadMemory.single('file'), bookController.importBooks);
+router.get('/books/sample-excel', bookController.sampleExcel);
+router.get('/books/last-month', bookController.getBooksLastMonth);
 
 // Custom route for monthly borrow activity
 router.get('/borrows/activity', borrowController.activity);

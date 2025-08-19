@@ -7,6 +7,19 @@
 
     <div class="flex flex-row flex-nowrap items-center gap-3">
       <div class="relative">
+        <button @click="emitViewTrash"
+          class="flex items-center gap-2 px-4 py-3 bg-gray-500 text-white rounded-xl font-medium shadow-md
+         hover:bg-gray-700 hover:text-white-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative">
+          Trash
+          <span v-if="trashedBooksCount > 0"
+            class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-sm">
+            {{ trashedBooksCount }}
+          </span>
+        </button>
+
+      </div>
+
+      <div class="relative">
         <button @click="toggleDropdown"
           class="bg-gradient-to-r bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +48,7 @@
               </div>
             </button>
             <button @click="handleAddByImport"
-              class="w-full text-left px-4 py-3 text-gray-700 hover:bg-purple-50 transition-colors duration-150 flex items-center gap-3">
+              class="w-full text-left px-4 py-2 text-gray-700 hover:bg-purple-50 transition-colors duration-150 flex items-center gap-3">
               <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -57,13 +70,23 @@
 <script setup>
 import { ref } from 'vue';
 
-const emit = defineEmits(['toggle-dropdown', 'add-by-form', 'add-by-import']);
+defineProps({
+  trashedBooksCount: {
+    type: Number,
+    default: 0,
+  },
+});
+
+const emit = defineEmits(['view-trash', 'add-by-form', 'add-by-import']);
 
 const showDropdown = ref(false);
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value;
-  emit('toggle-dropdown', showDropdown.value);
+};
+
+const emitViewTrash = () => {
+  emit('view-trash');
 };
 
 const handleAddByForm = () => {

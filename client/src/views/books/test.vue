@@ -14,115 +14,16 @@
           :unavailable-books="unavailableBooks" :categories="categories" />
       </div>
 
-      <!-- Trash View -->
-      <div v-if="showTrash" class="px-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-gray-900">Trashed Books</h2>
-          <button @click="showTrash = false" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Back to Books
-          </button>
-        </div>
-        <div v-if="trashedBooks.length === 0" class="text-center py-12">
-          <EmptyState title="Trash Empty" message="No books in trash" />
-        </div>
-        <div v-else class="grid grid-cols-2 grid gap-4">
-          <div v-for="book in trashedBooks" :key="book.id"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out">
-
-            <div class="p-4">
-              <div class="flex items-start gap-8">
-                <div class="flex-shrink-0">
-                  <div v-if="book.cover_image_url && book.cover_image_url !== ''" class="w-20 h-28 shadow-md">
-                    <img :src="book.cover_image_url" :alt="book.title" :title="book.title"
-                      class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105"
-                      @error="handleImageError" @load="handleImageLoad" />
-                  </div>
-                  <div v-else
-                    class="w-20 h-28 rounded-lg shadow-md bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                    <svg class="w-10 h-10 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path
-                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between h-full">
-                  <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                      <h3 class="font-semibold text-gray-900 text-lg leading-tight mb-1 mt-1 line-clamp-2">
-                        {{ book.title }}
-                      </h3>
-                      <p class="text-gray-600 text-sm mb-2">
-                        Author: {{ book.author?.name || 'Unknown Author' }}
-                      </p>
-                      <p class="text-gray-500 text-sm mb-3 description">
-                        {{ book.description && book.description.length > 180 ? book.description.slice(0, 70) + ' ...' :
-                          book.description || 'N/A' }}
-                      </p>
-                    </div>
-                    <div class="relative ml-2" data-action-menu>
-                      <button @click.stop="toggleActionMenu(book.id)"
-                        class="text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-lg hover:bg-gray-100 transition-colors">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path
-                            d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                        </svg>
-                      </button>
-                      <Transition name="fade-slide">
-                        <div v-if="openActionMenu === book.id"
-                          class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                          <div class="py-2">
-                            <button @click.stop="restoreBook(book.id)"
-                              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M4 4v5h5m-5 0l8 8m0 0l-8 8m8-8H4" />
-                              </svg>
-                              Restore
-                            </button>
-                            <button @click.stop="permanentlyDeleteBook(book.id)"
-                              class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Delete Permanently
-                            </button>
-                          </div>
-                        </div>
-                      </Transition>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <span v-if="book.category?.name"
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {{ book.category.name }}
-                    </span>
-                    <span v-if="book.language?.name"
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-gray-800">
-                      {{ book.language.name }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
       <!-- Main Content -->
-      <div v-else class="px-6 mb-6">
-        <Collection :categories="categories" :languages="languages" :trashed-books="trashedBooks"
-          :show-trash="showTrash" @view-trash="viewTrash" @add-by-form="handleAddByForm"
-          @add-by-import="handleAddByImport" @back-to-books="showTrash = false" @restore-book="restoreBook"
-          @permanently-delete-book="permanentlyDeleteBook" @update:search="searchQuery = $event"
+      <div class="px-6 mb-6">
+        <Collection :categories="categories" :languages="languages" @add-by-form="handleAddByForm"
+          @add-by-import="handleAddByImport" @update:search="searchQuery = $event"
           @update:category="selectedCategory = $event" @update:status="onStatusChange"
           @update:language="selectedLanguage = $event" />
       </div>
 
       <!-- Book Cards -->
-      <div v-if="!showTrash" class="px-6 pb-10">
+      <div class="px-6 pb-10">
         <div class="grid gap-4">
           <div v-for="book in filteredBooks" :key="book.id"
             class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer"
@@ -131,7 +32,7 @@
               <div class="flex items-start gap-8">
                 <!-- Book Cover -->
                 <div class="flex-shrink-0">
-                  <div v-if="book.cover_image_url && book.cover_image_url !== ''" class="w-20 h-28 shadow-md">
+                  <div v-if="book.cover_image_url" class="w-20 h-28 shadow-md">
                     <img :src="book.cover_image_url" :alt="book.title" :title="book.title"
                       class="w-full h-full rounded-lg object-cover transition-transform duration-300 hover:scale-105"
                       @error="handleImageError" @load="handleImageLoad" />
@@ -143,6 +44,7 @@
                         d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
                     </svg>
                   </div>
+
                 </div>
 
                 <!-- Book Info, Action Menu & Badges -->
@@ -166,7 +68,7 @@
                     <div class="relative ml-2" data-action-menu>
                       <button @click.stop="toggleActionMenu(book.id)"
                         class="text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-lg hover:bg-gray-100 transition-colors">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-8" fill="currentColor" viewBox="0 0 24 24">
                           <path
                             d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                         </svg>
@@ -280,12 +182,10 @@ const books = ref([]);
 const authors = reactive([]);
 const categories = reactive([]);
 const languages = reactive([]);
-const trashedBooks = ref([]); // Store trashed books
 const showForm = ref(false);
 const showImportModal = ref(false);
 const showDetail = ref(false);
 const showFullImage = ref(false);
-const showTrash = ref(false); // Toggle trash view
 const openActionMenu = ref(null);
 const selectedBook = ref(null);
 const form = reactive({
@@ -316,8 +216,6 @@ const selectedCategory = ref('');
 const selectedLanguage = ref('');
 const filterType = ref('all');
 
-
-
 // Computed Properties
 const totalBooks = computed(() => books.value.length);
 const availableBooks = computed(() => books.value.filter(book => getBookStatus(book.quantity) === 'available').length);
@@ -328,7 +226,7 @@ const unavailableBooks = computed(() => books.value.filter(book => {
 
 const bookTitle = computed(() => selectedBook.value?.title || 'N/A');
 const bookDescription = computed(() => selectedBook.value?.description || 'No description available');
-const bookCover = computed(() => selectedBook.value?.cover_image_url && selectedBook.value?.cover_image_url !== '' ? selectedBook.value.cover_image_url : null);
+const bookCover = computed(() => selectedBook.value?.cover_image_url || '/path/to/fallback-image.jpg');
 const authorName = computed(() => selectedBook.value?.author?.name || 'N/A');
 const authorBiography = computed(() => selectedBook.value?.author?.biography || 'No biography available');
 const authorNationality = computed(() => selectedBook.value?.author?.nationality || 'N/A');
@@ -380,20 +278,11 @@ const filteredBooks = computed(() => {
 });
 
 // Utility Functions
-const getRelationalData = (book) => {
-  console.log('getRelationalData for book:', { id: book.id, AuthorId: book.AuthorId, CategoryId: book.CategoryId, language_id: book.language_id });
-  const author = authors.find(a => String(a.id) == String(book.AuthorId));
-  const category = categories.find(c => String(c.id) == String(book.CategoryId));
-  const language = languages.find(l => String(l.id) == String(book.language_id));
-
-  console.log('Found relational data:', { author, category, language });
-
-  return {
-    author: author || { name: 'Unknown Author' },
-    category: category || { name: 'Unknown Category' },
-    language: language || { name: 'Unknown Language' },
-  };
-};
+const getRelationalData = (book) => ({
+  author: authors.find(a => a.id === book.AuthorId) || { name: 'Unknown Author' },
+  category: categories.find(c => c.id === book.CategoryId) || { name: 'Unknown Category' },
+  language: languages.find(l => l.id === book.language_id) || { name: 'Unknown Language' },
+});
 
 const getBookStatus = (quantity) => {
   const qty = Number(quantity);
@@ -409,26 +298,14 @@ const showNotification = (message, type) => {
   }, 3000);
 };
 
-// Persist trashed book IDs to localStorage
-const saveTrashedBooks = () => {
-  localStorage.setItem('trashedBooks', JSON.stringify(trashedBooks.value));
-};
-
-// Load trashed book IDs from localStorage
-const loadTrashedBooks = () => {
-  const stored = localStorage.getItem('trashedBooks');
-  return stored ? JSON.parse(stored) : [];
-};
-
 // Event Handlers
 const handleImageLoad = () => {
   console.log('Image loaded successfully');
 };
 
 const handleImageError = (event) => {
-  console.log('Image failed to load, switching to SVG fallback');
-  event.target.style.display = 'none'; // Hide the broken image
-  event.target.parentElement.nextElementSibling.style.display = 'flex'; // Show the SVG fallback
+  console.warn('Failed to load image');
+  event.target.src = '/path/to/fallback-image.jpg';
 };
 
 const toggleActionMenu = (id) => {
@@ -468,24 +345,26 @@ const closeImportModal = () => {
   showImportModal.value = false;
 };
 
-const handleImportSubmit = ({ books: newBooks, newCategories, newAuthors, newLanguages }) => {
-  // Add imported books to the beginning of the books array
-  books.value.unshift(
-    ...newBooks.map(book => ({
+const handleImportSubmit = async (formData) => {
+  try {
+    const res = await importBooks(formData);
+    const newBooks = res.data.books || res.data;
+    books.value.unshift(...newBooks.map(book => ({
       ...book,
-      cover_image_url: book.cover_image || null,
-      // Add relational data if needed
-      category: newCategories.find(c => c.id === book.CategoryId)?.name || book.category_name,
-      author: newAuthors.find(a => a.id === book.AuthorId)?.name || book.author_name,
-      language: newLanguages.find(l => l.id === book.language_id)?.name || book.language_name,
-    }))
-  );
+      cover_image_url: book.cover_image_url || '/path/to/fallback-image.jpg',
+      ...getRelationalData(book),
+    })));
+    showNotification('Books imported successfully.', 'success');
+    closeImportModal();
+  } catch (error) {
+    console.error('Error importing books:', error, error.response?.data);
+    showNotification(error.response?.data?.message || 'Failed to import books. Please check the file and try again.', 'error');
+  }
 };
-
 
 const viewBook = (book) => {
   console.log('Viewing book:', book);
-  selectedBook.value = { ...book, ...getRelationalData(book), cover_image_url: book.cover_image_url && book.cover_image_url !== '' ? book.cover_image_url : null };
+  selectedBook.value = { ...book, ...getRelationalData(book) };
   showDetail.value = true;
   openActionMenu.value = null;
   updateFromDetail.value = false;
@@ -518,6 +397,7 @@ const handleEditBook = (book) => {
 const openForm = (book = null) => {
   console.log('Opening form with book:', book);
   showForm.value = true;
+  previewImage.value = null;
   openActionMenu.value = null;
 
   if (book) {
@@ -533,7 +413,7 @@ const openForm = (book = null) => {
     form.AuthorId = book.AuthorId || '';
     form.CategoryId = book.CategoryId || '';
     form.language_id = book.language_id || '';
-    previewImage.value = book.cover_image_url && book.cover_image_url !== '' ? book.cover_image_url : null;
+    previewImage.value = book.cover_image_url || null;
   } else {
     form.id = null;
     form.title = '';
@@ -547,7 +427,6 @@ const openForm = (book = null) => {
     form.AuthorId = '';
     form.CategoryId = '';
     form.language_id = '';
-    previewImage.value = null;
   }
   imageFile.value = null;
 };
@@ -580,19 +459,19 @@ const handleFile = (e) => {
     previewImage.value = URL.createObjectURL(file);
   } else {
     imageFile.value = null;
-    previewImage.value = null;
+    previewImage.value = form.cover_image_url || null;
   }
 };
 
 const handleAuthorUpdate = (updatedAuthor) => {
-  const index = authors.findIndex(a => String(a.id) == String(updatedAuthor.id));
+  const index = authors.findIndex(a => a.id === updatedAuthor.id);
   if (index !== -1) {
     authors.splice(index, 1, updatedAuthor);
   } else {
     authors.push(updatedAuthor);
   }
   localStorage.setItem('authors', JSON.stringify(authors));
-  if (selectedBook.value && String(selectedBook.value.AuthorId) == String(updatedAuthor.id)) {
+  if (selectedBook.value && selectedBook.value.AuthorId === updatedAuthor.id) {
     selectedBook.value = {
       ...selectedBook.value,
       author: updatedAuthor,
@@ -604,14 +483,14 @@ const handleAuthorUpdate = (updatedAuthor) => {
 };
 
 const handleCategoryUpdate = (updatedCategory) => {
-  const index = categories.findIndex(c => String(c.id) == String(updatedCategory.id));
+  const index = categories.findIndex(c => c.id === updatedCategory.id);
   if (index !== -1) {
     categories.splice(index, 1, updatedCategory);
   } else {
     categories.push(updatedCategory);
   }
   localStorage.setItem('categories', JSON.stringify(categories));
-  if (selectedBook.value && String(selectedBook.value.CategoryId) == String(updatedCategory.id)) {
+  if (selectedBook.value && selectedBook.value.CategoryId === updatedCategory.id) {
     selectedBook.value = {
       ...selectedBook.value,
       category: updatedCategory,
@@ -623,14 +502,14 @@ const handleCategoryUpdate = (updatedCategory) => {
 };
 
 const handleLanguageUpdate = (updatedLanguage) => {
-  const index = languages.findIndex(l => String(l.id) == String(updatedLanguage.id));
+  const index = languages.findIndex(l => l.id === updatedLanguage.id);
   if (index !== -1) {
     languages.splice(index, 1, updatedLanguage);
   } else {
     languages.push(updatedLanguage);
   }
   localStorage.setItem('languages', JSON.stringify(languages));
-  if (selectedBook.value && String(selectedBook.value.language_id) == String(updatedLanguage.id)) {
+  if (selectedBook.value && selectedBook.value.language_id === updatedLanguage.id) {
     selectedBook.value = {
       ...selectedBook.value,
       language: updatedLanguage,
@@ -645,69 +524,15 @@ const handleFormUpdate = (updates) => {
   Object.assign(form, updates);
 };
 
-const viewTrash = () => {
-  showTrash.value = true;
-  showDetail.value = false;
-  showForm.value = false;
-  showImportModal.value = false;
-  openActionMenu.value = null;
-};
-
-const restoreBook = async (bookId) => {
-  const book = trashedBooks.value.find(b => String(b.id) == String(bookId));
-  if (book) {
-    books.value.unshift(book);
-    trashedBooks.value = trashedBooks.value.filter(b => String(b.id) != String(bookId));
-    saveTrashedBooks();
-    showNotification('Book restored successfully.', 'success');
-    openActionMenu.value = null;
-  }
-};
-
-const permanentlyDeleteBook = async (bookId) => {
-  const result = await Swal.fire({
-    title: 'Confirm Permanent Deletion',
-    text: 'This book will be permanently deleted. This action cannot be undone.',
-    icon: 'warning',
-    iconColor: '#f87171',
-    showCancelButton: true,
-    confirmButtonText: 'Delete Permanently',
-    cancelButtonText: 'Cancel',
-    buttonsStyling: false,
-    customClass: {
-      popup: 'rounded-xl shadow-lg bg-white p-6',
-      title: 'text-lg font-semibold text-gray-900',
-      htmlContainer: 'text-sm text-gray-600 mt-1 leading-tight',
-      confirmButton: 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium',
-      cancelButton: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium mr-4',
-      icon: 'animate-pulse',
-      actions: 'mt-3 flex justify-end gap-2',
-    },
-  });
-
-  if (result.isConfirmed) {
-    try {
-      await deleteBook(bookId);
-      trashedBooks.value = trashedBooks.value.filter(book => String(book.id) != String(bookId));
-      saveTrashedBooks();
-      showNotification('Book permanently deleted.', 'success');
-    } catch (err) {
-      console.error('Error permanently deleting book:', err, err.response?.data);
-      showNotification(err.response?.data?.message || 'Failed to delete the book.', 'error');
-    }
-  }
-  openActionMenu.value = null;
-};
-
 const confirmDeleteBook = async (bookId) => {
   console.log('Confirming deletion for book ID:', bookId);
   const result = await Swal.fire({
     title: 'Confirm Deletion',
-    text: 'This book will be moved to trash. You can restore it later.',
+    text: 'Are you sure you want to delete this book record? This action cannot be undone.',
     icon: 'warning',
     iconColor: '#f87171',
     showCancelButton: true,
-    confirmButtonText: 'Move to Trash',
+    confirmButtonText: 'Delete',
     cancelButtonText: 'Cancel',
     buttonsStyling: false,
     customClass: {
@@ -722,16 +547,20 @@ const confirmDeleteBook = async (bookId) => {
   });
 
   if (result.isConfirmed) {
-    console.log('Moving book to trash with ID:', bookId);
-    const book = books.value.find(b => String(b.id) == String(bookId));
-    if (book) {
-      trashedBooks.value.push({ ...book });
-      books.value = books.value.filter(book => String(book.id) != String(bookId));
-      saveTrashedBooks();
-      showNotification('Book moved to trash.', 'success');
-    }
+    console.log('Emitting deleteBookById with ID:', bookId);
+    deleteBookById(bookId);
   }
-  openActionMenu.value = null;
+};
+
+const deleteBookById = async (id) => {
+  try {
+    await deleteBook(id);
+    books.value = books.value.filter(book => book.id !== id);
+    showNotification('Deleted!', 'success');
+  } catch (err) {
+    console.error('Error deleting book:', err, err.response?.data);
+    showNotification(err.response?.data?.message || 'Failed to delete the book.', 'error');
+  }
 };
 
 const submitForm = async () => {
@@ -745,6 +574,8 @@ const submitForm = async () => {
 
     if (imageFile.value) {
       formData.append('cover_image', imageFile.value);
+    } else {
+      console.log('No cover image provided; proceeding without image.');
     }
 
     console.log('FormData entries:', [...formData.entries()]);
@@ -757,12 +588,12 @@ const submitForm = async () => {
       bookWithRelations = {
         ...updatedBook,
         cover_image_url: imageFile.value
-          ? `${updatedBook.cover_image_url}?t=${Date.now()}`
-          : updatedBook.cover_image_url && updatedBook.cover_image_url !== '' ? updatedBook.cover_image_url : null,
+          ? `${updatedBook.cover_image_url}${updatedBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : updatedBook.cover_image_url || '/path/to/fallback-image.jpg',
         ...getRelationalData(updatedBook),
       };
 
-      const index = books.value.findIndex(book => String(book.id) == String(form.id));
+      const index = books.value.findIndex(book => book.id === form.id);
       if (index !== -1) {
         books.value[index] = bookWithRelations;
       }
@@ -779,7 +610,9 @@ const submitForm = async () => {
       console.log('Create response:', newBook);
       bookWithRelations = {
         ...newBook,
-        cover_image_url: newBook.cover_image_url && newBook.cover_image_url !== '' ? newBook.cover_image_url : null,
+        cover_image_url: newBook.cover_image_url
+          ? `${newBook.cover_image_url}${newBook.cover_image_url.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : '/path/to/fallback-image.jpg',
         ...getRelationalData(newBook),
       };
 
@@ -810,36 +643,10 @@ const fetchBooks = async () => {
       getCategories(),
       getLanguages(),
     ]);
-    console.log('Fetched data:', {
-      books: booksRes.data.books || booksRes.data,
-      authors: authorsRes.data,
-      categories: categoriesRes.data,
-      languages: languagesRes.data,
-    });
-
+    books.value = booksRes.data.books || booksRes.data;
     authors.splice(0, authors.length, ...authorsRes.data);
     categories.splice(0, categories.length, ...categoriesRes.data);
     languages.splice(0, languages.length, ...languagesRes.data);
-
-    const allBooks = booksRes.data.books || booksRes.data;
-    const trashedBookIds = loadTrashedBooks().map(book => String(book.id));
-
-    // Filter out trashed books and populate trashedBooks
-    books.value = allBooks
-      .filter(book => !trashedBookIds.includes(String(book.id)))
-      .map(book => ({
-        ...book,
-        cover_image_url: book.cover_image_url && book.cover_image_url !== '' ? book.cover_image_url : null,
-        ...getRelationalData(book),
-      }));
-    trashedBooks.value = allBooks
-      .filter(book => trashedBookIds.includes(String(book.id)))
-      .map(book => ({
-        ...book,
-        cover_image_url: book.cover_image_url && book.cover_image_url !== '' ? book.cover_image_url : null,
-        ...getRelationalData(book),
-      }));
-
     localStorage.setItem('authors', JSON.stringify(authors));
     localStorage.setItem('categories', JSON.stringify(categories));
     localStorage.setItem('languages', JSON.stringify(languages));
@@ -871,8 +678,6 @@ const handleEsc = (event) => {
       closeForm();
     } else if (showImportModal.value) {
       closeImportModal();
-    } else if (showTrash.value) {
-      showTrash.value = false;
     }
     openActionMenu.value = null;
     showDropdown.value = false;
