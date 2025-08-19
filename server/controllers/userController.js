@@ -9,6 +9,9 @@ const ExcelJS = require('exceljs');
 const { createCanvas } = require('canvas');
 const { v4: uuidv4 } = require("uuid")
 const { User, Role } = db
+const nodemailer = require("nodemailer");
+const { transporter } = require("../utils/mailer");
+
 
 const allAccess = (req, res) => {
   res.status(200).json({ message: "Public Content." })
@@ -136,47 +139,73 @@ const getRoles = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
+    console.log('Starting createUser with body:', req.body, 'and file:', req.file);
+
     const { username, email, password, date_of_birth, phone, roleId } = req.body;
     const profile_image = req.file ? req.file.filename : null;
 
     // Check required fields
+    console.log('Checking required fields...');
     if (!username || !email || !password || !roleId) {
+      console.log('Missing required fields:', { username, email, password, roleId });
       return res.status(400).json({ message: 'Username, email, password, and role are required' });
     }
 
     // Only admin or librarian can create users
-    if (!['admin', 'librarian'].includes(req.user.role)) {
+    console.log('Checking user role:', req.user?.role);
+    if (!req.user || !['admin', 'librarian'].includes(req.user.role)) {
+      console.log('Unauthorized role or missing req.user:', req.user);
       return res.status(403).json({ message: 'Only admins or librarians can create users' });
     }
 
     // Check email uniqueness
+    console.log('Checking email uniqueness:', email);
     const existingEmail = await User.findOne({ where: { email } });
-    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
+    if (existingEmail) {
+      console.log('Email already exists:', email);
+      return res.status(400).json({ message: 'Email already exists' });
+    }
 
     // Hash password
+    console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 8);
 
     // Check Role
+    console.log('Checking roleId:', roleId);
     const targetRole = await Role.findByPk(roleId);
-    if (!targetRole) return res.status(400).json({ message: 'Invalid roleId' });
+    if (!targetRole) {
+      console.log('Invalid roleId:', roleId);
+      return res.status(400).json({ message: 'Invalid roleId' });
+    }
 
     if (targetRole.name === 'admin') {
+      console.log('Attempted to assign admin role');
       return res.status(403).json({ message: 'Cannot assign admin role' });
     }
 
     if (req.user.role === 'librarian' && targetRole.name !== 'user') {
+      console.log('Librarian attempted to assign non-user role:', targetRole.name);
       return res.status(403).json({ message: 'Librarians can only assign "user" role' });
     }
 
     // Generate unique barcode
+    console.log('Generating unique barcode...');
     let barcode, isUnique = false;
-    while (!isUnique) {
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
       barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+      console.log('Generated barcode:', barcode);
       const exist = await User.findOne({ where: { barcode } });
       if (!exist) isUnique = true;
+      attempts++;
+    }
+    if (!isUnique) {
+      console.log('Failed to generate unique barcode after 10 attempts');
+      return res.status(500).json({ message: 'Failed to generate unique barcode' });
     }
 
     // Create user
+    console.log('Creating user in database...');
     const user = await User.create({
       username,
       email,
@@ -189,10 +218,15 @@ const createUser = async (req, res) => {
       barcode_image: null,
       qr_code_image: null,
     });
+    console.log('User created with ID:', user.id);
 
     // Generate and save barcode image
+    console.log('Generating barcode image...');
     const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
-    if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
+    if (!fs.existsSync(barcodeDir)) {
+      console.log('Creating barcode directory:', barcodeDir);
+      fs.mkdirSync(barcodeDir, { recursive: true });
+    }
 
     const barcodeCanvas = createCanvas(400, 150);
     const ctx = barcodeCanvas.getContext('2d');
@@ -204,20 +238,30 @@ const createUser = async (req, res) => {
     const barcodeFilename = `barcode_${user.id}.png`;
     const barcodePath = path.join(barcodeDir, barcodeFilename);
     const barcodeImageUrl = `${req.protocol}://${req.get('host')}/uploads/barcodes/${barcodeFilename}`;
+    console.log('Saving barcode to:', barcodePath);
 
     const barcodeOut = fs.createWriteStream(barcodePath);
     barcodeCanvas.createPNGStream().pipe(barcodeOut);
-    await new Promise(resolve => barcodeOut.on('finish', resolve));
+    await new Promise((resolve, reject) => {
+      barcodeOut.on('finish', resolve);
+      barcodeOut.on('error', reject);
+    });
+    console.log('Barcode image saved:', barcodeImageUrl);
 
     // Generate and save QR code image
+    console.log('Generating QR code image...');
     const qrDir = path.join(process.cwd(), 'Uploads', 'qrcodes');
-    if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
+    if (!fs.existsSync(qrDir)) {
+      console.log('Creating QR code directory:', qrDir);
+      fs.mkdirSync(qrDir, { recursive: true });
+    }
 
     const qrFilename = `qrcode_${user.id}.png`;
     const qrPath = path.join(qrDir, qrFilename);
     const qrImageUrl = `${req.protocol}://${req.get('host')}/uploads/qrcodes/${qrFilename}`;
+    console.log('Saving QR code to:', qrPath);
 
-    await QRCode.toFile(qrPath, barcode, { // Changed from user.id.toString() to barcode
+    await QRCode.toFile(qrPath, barcode, {
       type: 'png',
       width: 300,
       margin: 2,
@@ -226,12 +270,22 @@ const createUser = async (req, res) => {
         light: '#ffffff',
       },
     });
+    console.log('QR code image saved:', qrImageUrl);
 
     // Update user with barcode and QR code image URLs
+    console.log('Updating user with barcode and QR code URLs...');
     user.barcode_image = barcodeImageUrl;
     user.qr_code_image = qrImageUrl;
     await user.save();
+    console.log('User updated with image URLs');
 
+    // Send welcome email asynchronously
+    console.log('Triggering welcome email for user ID:', user.id);
+    sendWelcomeEmail(user.id).catch(err => {
+      console.error(`Failed to send welcome email to ${email}:`, err.stack);
+    });
+
+    console.log('User creation successful, sending response...');
     res.status(201).json({
       message: 'User created successfully',
       user: {
@@ -250,10 +304,71 @@ const createUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Create user error:', error);
+    console.error('Create user error:', error.stack);
     res.status(500).json({ message: 'Server error during user creation', error: error.message });
   }
 };
+
+// Define sendWelcomeEmail as a local function
+const sendWelcomeEmail = async (userId) => {
+  try {
+    console.log('Starting sendWelcomeEmail for user ID:', userId);
+    const user = await User.findByPk(userId);
+    if (!user || !user.email) {
+      console.warn(`⚠️ No email found for user ID ${userId}`);
+      return;
+    }
+    const qrData = `${user.barcode}`;
+
+    const qrPngBuffer = await QRCode.toBuffer(qrData, {
+      width: 150,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+
+    const subject = "🎉 Welcome to the Library System!";
+    const message = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 8px;">
+          <h1 style="color: #1a3c6d; font-size: 24px;">Welcome, ${user.username || "Library User"}!</h1>
+          <p style="font-size: 16px; color: #333333;">We’re excited to have you join the <strong>Library System</strong>.</p>
+          <p style="font-size: 16px; color: #333333;">From now on, you can borrow books, track your due dates, and receive reminders via email.</p>
+
+          <div style="margin: 20px 0; text-align: center;">
+            <p style="font-size: 16px; margin-bottom: 10px;">Here’s your membership QR Code:</p>
+            <!-- Refer to the attachment via CID -->
+            <img src="cid:qr-${user.id}" alt="QR Code" width="150" height="150" style="display:block;margin:0 auto;"/>
+          </div>
+
+          <p style="margin-top: 20px; font-size: 16px;">📚 Happy Reading!</p>
+          <p style="margin: 5px 0 0;">– The Library Team</p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: `"Library System" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject,
+      html: message,
+      attachments: [
+        {
+          filename: `user-${user.id}-qr.png`,
+          content: qrPngBuffer,
+          cid: `qr-${user.id}` 
+        }
+      ]
+    };
+
+    console.log('Sending email to:', user.email);
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 Welcome email with QR sent to ${user.email}`);
+  } catch (err) {
+    console.error("❌ Failed to send welcome email:", err.stack);
+    throw err;
+  }
+};
+
 
 const updateUser = async (req, res) => {
   try {
@@ -695,6 +810,8 @@ const uploadProfileImage = async (req, res) => {
     res.status(500).json({ message: "Failed to upload profile image", error: error.message });
   }
 };
+
+exports.sendWelcomeEmail = sendWelcomeEmail;
 module.exports = {
   allAccess,
   userBoard,
@@ -712,5 +829,6 @@ module.exports = {
   deleteUserById,
   deleteAccount,
   uploadProfileImage,
-  generateQRCodesForExistingUsers
+  generateQRCodesForExistingUsers,
+  sendWelcomeEmail,
 }

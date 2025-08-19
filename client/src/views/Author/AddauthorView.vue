@@ -1,24 +1,18 @@
 <template>
   <div class="space-y-6 p-8 bg-[#F8F8F8]">
     <!-- Notification Area -->
-    <transition
-      enter-active-class="transition ease-out duration-300"
-      enter-from-class="opacity-0 transform translate-y-2"
-      enter-to-class="opacity-100 transform translate-y-0"
-      leave-active-class="transition ease-in duration-200"
-      leave-from-class="opacity-100 transform translate-y-0"
-      leave-to-class="opacity-0 transform translate-y-2"
-    >
-      <div
-        v-if="notification.visible"
-        :class="[
-          'fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-xl shadow-2xl border-l-4 p-6',
-          notification.type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800',
-        ]"
-      >
+    <transition enter-active-class="transition ease-out duration-300"
+      enter-from-class="opacity-0 transform translate-y-2" enter-to-class="opacity-100 transform translate-y-0"
+      leave-active-class="transition ease-in duration-200" leave-from-class="opacity-100 transform translate-y-0"
+      leave-to-class="opacity-0 transform translate-y-2">
+      <div v-if="notification.visible" :class="[
+        'fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-xl shadow-2xl border-l-4 p-6',
+        notification.type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800',
+      ]">
         <div class="flex items-start gap-4">
           <div class="flex-shrink-0">
-            <svg v-if="notification.type === 'success'" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg v-if="notification.type === 'success'" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             <svg v-else class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,7 +23,8 @@
             <p class="font-semibold">{{ notification.type === "success" ? "Success" : "Error" }}</p>
             <p class="text-sm mt-1">{{ notification.message }}</p>
           </div>
-          <button @click="notification.visible = false" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+          <button @click="notification.visible = false"
+            class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -44,12 +39,11 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
         <p class="text-gray-600 mb-6">Are you sure you want to delete this author?</p>
         <div class="flex justify-center gap-4">
-          <button @click="confirmDelete" 
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+          <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
             Yes, Delete
           </button>
-          <button @click="cancelDelete" 
-                  class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">
+          <button @click="cancelDelete"
+            class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">
             Cancel
           </button>
         </div>
@@ -59,12 +53,12 @@
     <div class="bg-sky-600 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/20">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <!-- Left -->
-<div>
-  <h2 class="text-3xl font-bold text-white">Directory Author </h2>
-  <p class="text-white/90 mt-1 max-w-2xl leading-relaxed">
-    View and manage all authors associated with your library in one simple, streamlined interface.
-  </p>
-</div>
+        <div>
+          <h2 class="text-3xl font-bold text-white">Directory Author </h2>
+          <p class="text-white/90 mt-1 max-w-2xl leading-relaxed">
+            View and manage all authors associated with your library in one simple, streamlined interface.
+          </p>
+        </div>
 
         <!-- Filters -->
         <div class="flex flex-wrap gap-3">
@@ -90,9 +84,9 @@
       <div class="mt-6 flex flex-col md:flex-row justify-between gap-4">
         <input v-model="search" type="text" placeholder="Search Author Name..."
           class="border border-white/40 bg-white/30 text-white placeholder-white/70 rounded-lg px-4 py-2 w-full md:w-1/3 focus:ring-2 focus:ring-white/50 transition-colors">
-        <button @click="openAddDialog" 
-                class="bg-white text-sky-700 px-4 py-2 rounded-lg hover:bg-sky-100 transition flex items-center gap-2"
-                :disabled="isLoading">
+        <button @click="openAddDialog"
+          class="bg-white text-sky-700 px-4 py-2 rounded-lg hover:bg-sky-100 transition flex items-center gap-2"
+          :disabled="isLoading">
           <span class="material-icons">add</span> Add Author
         </button>
       </div>
@@ -103,10 +97,8 @@
         <thead class="bg-sky-50 text-sky-700">
           <tr>
             <th class="px-4 py-3 text-left font-semibold">ID</th>
-            <th class="px-4 py-3 text-left font-semibold">Profile</th>
-            <th class="px-4 py-3 text-left font-semibold">Birth Date</th>
+            <th class="px-4 py-3 text-left font-semibold">name</th>
             <th class="px-4 py-3 text-left font-semibold">Nationality</th>
-            <th class="px-4 py-3 text-left font-semibold">Living</th>
             <th class="px-4 py-3 text-right font-semibold">Actions</th>
           </tr>
         </thead>
@@ -116,32 +108,19 @@
             <td class="px-4 py-3 text-gray-700 font-medium">{{ index + 1 }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <img
-                  :src="author.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=random`"
-                  class="w-10 h-10 rounded-full object-cover border border-sky-200 transition-transform hover:scale-105" alt="Author" />
                 <span class="font-semibold text-gray-900">{{ author.name }}</span>
               </div>
             </td>
-            <td class="px-4 py-3 text-gray-700">{{ formatDate(author.birth_date) }}</td>
             <td class="px-4 py-3 text-gray-700">{{ author.nationality }}</td>
-            <td class="px-4 py-3">
-              <span class="px-3 py-1 rounded-full text-xs font-medium"
-                :class="author.isLiving ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                {{ author.isLiving ? 'Yes' : 'No' }}
-              </span>
-            </td>
             <td class="px-4 py-3 text-right">
               <div class="relative">
-                <button @click="toggleActionMenu(author.id)" 
-                        class="text-2xl hover:text-sky-600 transition p-2"
-                        :disabled="isLoading">
+                <button @click="toggleActionMenu(author.id)" class="text-2xl hover:text-sky-600 transition p-2"
+                  :disabled="isLoading">
                   ⋮
                 </button>
 
                 <div v-if="activeActionMenu === author.id"
                   class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg ring-1 ring-black/10 z-10 py-1">
-                  <button @click="viewAuthor(author)"
-                    class="block w-full text-left px-4 py-2 hover:bg-sky-50">View</button>
                   <button @click="editAuthor(author)"
                     class="block w-full text-left px-4 py-2 hover:bg-sky-50">Edit</button>
                   <button @click="openDeleteConfirm(author.id)"
@@ -159,50 +138,20 @@
       <div class="bg-white p-6 rounded-lg w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-semibold">{{ isEditing ? 'Edit Author' : 'Add Author' }}</h3>
         <form @submit.prevent="submitAuthor" class="space-y-3">
-          <input v-model="currentAuthor.name" type="text" placeholder="Name" 
-                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
-                 required :disabled="isLoading" />
-          <input v-model="currentAuthor.birth_date" type="date" 
-                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
-                 required :disabled="isLoading" />
+          <input v-model="currentAuthor.name" type="text" placeholder="Name"
+            class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" required
+            :disabled="isLoading" />
           <input v-model="currentAuthor.nationality" type="text" placeholder="Nationality"
-                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" 
-                 :disabled="isLoading" />
-          <label class="flex items-center space-x-2">
-            <input v-model="currentAuthor.isLiving" type="checkbox" 
-                   class="w-4 h-4 accent-blue-600" :disabled="isLoading" />
-            <span>Is Living?</span>
-          </label>
-          <textarea v-model="currentAuthor.biography" placeholder="Biography"
-                    class="w-full p-2 border rounded resize-none focus:ring-2 focus:ring-blue-400 transition" 
-                    rows="2" :disabled="isLoading"></textarea>
-          <div
-            class="flex flex-col items-center border-2 border-dashed border-sky-300 rounded-xl p-1 cursor-pointer hover:bg-sky-50 transition">
-            <label class="flex flex-col items-center cursor-pointer">
-              <svg class="w-10 h-10 text-sky-500 mb-2" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4-4m0 0l-4 4m4-4v12"></path>
-              </svg>
-              <span class="text-sky-600 font-medium">Click to upload</span>
-              <input type="file" accept="image/*" @change="handleProfileImage" class="hidden" :disabled="isLoading" />
-            </label>
-
-            <div v-if="currentAuthor.profile_preview" class="flex justify-center mt-4">
-              <img :src="currentAuthor.profile_preview" alt="Preview"
-                class="w-24 h-24 object-cover border-2 border-sky-300 shadow rounded-lg" />
-            </div>
-          </div>
+            class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 transition" :disabled="isLoading" />
 
           <div class="flex justify-end gap-2 mt-4">
-            <button type="button" @click="closeAddEditDialog" 
-                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition" 
-                    :disabled="isLoading">
+            <button type="button" @click="closeAddEditDialog"
+              class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition" :disabled="isLoading">
               Cancel
             </button>
-            <button type="submit" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
-                    :disabled="isLoading">
+            <button type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+              :disabled="isLoading">
               <span v-if="isLoading" class="animate-spin">⟳</span>
               {{ isEditing ? 'Update' : 'Add' }}
             </button>
@@ -217,65 +166,22 @@
         <div class="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-5 border-b border-gray-100">
           <h3 class="text-2xl font-semibold text-gray-800">Author Profile</h3>
         </div>
-
         <div class="p-6 max-h-[calc(90vh-140px)]">
           <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-6 sm:space-y-0 sm:space-x-8 mb-8">
-            <div class="flex-shrink-0">
-              <div class="relative">
-                <img :src="selectedAuthorDetails.profile_image_url ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAuthorDetails.name)}&background=random`
-                  " alt="Author Portrait"
-                  class="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-lg ring-1 ring-gray-200 transition-transform hover:scale-105" />
-                <div
-                  class="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center">
-                  <div :class="selectedAuthorDetails.isLiving ? 'bg-emerald-400' : 'bg-slate-400'"
-                    class="w-3 h-3 rounded-full mr-2"></div>
-                </div>
-              </div>
-            </div>
-
             <div class="flex-1 space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div class="space-y-1">
                   <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide">Full Name</label>
                   <p class="text-lg font-semibold text-gray-900">{{ selectedAuthorDetails.name }}</p>
                 </div>
-
-                <div class="space-y-1">
-                  <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide">Birth Date</label>
-                  <p class="text-gray-800">{{ formatDate(selectedAuthorDetails.birth_date) }}</p>
-                </div>
-
                 <div class="space-y-1">
                   <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide">Nationality</label>
                   <p class="text-gray-800">{{ selectedAuthorDetails.nationality }}</p>
                 </div>
-
-                <div class="space-y-1">
-                  <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide">Status</label>
-                  <span
-                    :class="selectedAuthorDetails.isLiving ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'"
-                    class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border">
-                    <div :class="selectedAuthorDetails.isLiving ? 'bg-emerald-400' : 'bg-slate-400'"
-                      class="w-2 h-2 rounded-full mr-2"></div>
-                    {{ selectedAuthorDetails.isLiving ? 'Living' : 'Deceased' }}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
-
-          <div class="border-t border-gray-100 pt-6">
-            <label class="block text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Biography</label>
-            <div
-              class="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-6 border border-gray-100 max-h-64 overflow-y-auto">
-              <p class="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">
-                {{ selectedAuthorDetails.biography || 'No biography available for this author.' }}
-              </p>
-            </div>
-          </div>
         </div>
-
         <div class="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end">
           <button @click="closeViewDialog"
             class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm">
@@ -333,12 +239,7 @@ const isEditing = ref(false)
 const currentAuthor = ref({
   id: null,
   name: '',
-  birth_date: '',
   nationality: '',
-  isLiving: true,
-  biography: '',
-  profile_image: null,
-  profile_preview: null,
 })
 
 const showViewModal = ref(false)
@@ -440,41 +341,24 @@ const resetCurrentAuthor = () => {
   currentAuthor.value = {
     id: null,
     name: '',
-    birth_date: '',
     nationality: '',
-    isLiving: true,
-    biography: '',
-    profile_image: null,
-    profile_preview: null,
-  }
-}
-
-const handleProfileImage = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    currentAuthor.value.profile_image = file
-    currentAuthor.value.profile_preview = URL.createObjectURL(file)
   }
 }
 
 const submitAuthor = async () => {
   try {
     isLoading.value = true
-    const formData = new FormData()
-    formData.append('name', currentAuthor.value.name)
-    formData.append('birth_date', currentAuthor.value.birth_date)
-    formData.append('nationality', currentAuthor.value.nationality)
-    formData.append('isLiving', currentAuthor.value.isLiving)
-    formData.append('biography', currentAuthor.value.biography)
-    if (currentAuthor.value.profile_image) {
-      formData.append('profile_image', currentAuthor.value.profile_image)
+
+    const payload = {
+      name: currentAuthor.value.name,
+      nationality: currentAuthor.value.nationality
     }
 
     if (isEditing.value) {
-      await updateAuthor(currentAuthor.value.id, formData)
+      await updateAuthor(currentAuthor.value.id, payload)
       showNotification('Author updated successfully', 'success')
     } else {
-      await createAuthor(formData)
+      await createAuthor(payload)
       showNotification('Author added successfully', 'success')
     }
 
@@ -482,17 +366,12 @@ const submitAuthor = async () => {
     closeAddEditDialog()
   } catch (error) {
     showNotification(`Failed to ${isEditing.value ? 'update' : 'add'} author`, 'error')
-    console.error('Failed to submit author:', error)
+    console.error('Failed to submit author:', error.response?.data || error)
   } finally {
     isLoading.value = false
   }
 }
 
-const viewAuthor = (author) => {
-  selectedAuthorDetails.value = author
-  showViewModal.value = true
-  activeActionMenu.value = null
-}
 
 const closeViewDialog = () => {
   showViewModal.value = false
@@ -503,13 +382,7 @@ const editAuthor = (author) => {
   currentAuthor.value = {
     id: author.id,
     name: author.name,
-    birth_date: author.birth_date,
     nationality: author.nationality,
-    isLiving: author.isLiving,
-    biography: author.biography,
-    profile_image: null,
-    profile_preview:
-      author.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=random`,
   }
   isEditing.value = true
   showAddEditModal.value = true
@@ -543,15 +416,6 @@ const confirmDelete = async () => {
   }
 }
 
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
-
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
@@ -568,19 +432,3 @@ onMounted(() => {
   fetchAuthors()
 })
 </script>
-
-<style>
-.material-icons {
-  font-family: 'Material Icons';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-}
-</style>
