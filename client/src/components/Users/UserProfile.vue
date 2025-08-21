@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
@@ -28,23 +27,22 @@ const profileInitial = computed(() => userStore.userProfile?.user?.email?.charAt
 
 // Computed property to check if a valid profile image exists
 const hasValidProfileImage = computed(() => {
-  const image = userStore.userProfile?.profile_image || previewImage.value || ''
+  const image = previewImage.value || userStore.userProfile?.profile_image || userStore.profileImage || ''
   return image && (image.startsWith('http') || image.startsWith('data:image') || image.startsWith('blob:'))
 })
 
-// Watch for changes in userProfile to update previewImage
 watch(() => userStore.userProfile?.profile_image, (newImage) => {
-  previewImage.value = newImage ? `${newImage}?t=${new Date().getTime()}` : null // Add timestamp for cache busting
-  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), previewImage.value)
+  const imageUrl = newImage ? `${newImage}?t=${new Date().getTime()}` : userStore.profileImage || null
+  previewImage.value = imageUrl
+  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Image:', imageUrl, 'profileImage:', userStore.profileImage)
 })
 
 onMounted(async () => {
   console.log('Starting profile fetch at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   isLoading.value = true
-  console.log('Loading state set to:', isLoading.value)
   try {
     await userStore.fetchUserProfile()
-    console.log('Profile data fetched at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
+    console.log('Profile data fetched at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Data:', userStore.userProfile, 'profileImage:', userStore.profileImage)
     if (userStore.userProfile && userStore.userProfile.user && Object.keys(userStore.userProfile.user).length > 0) {
       const userData = userStore.userProfile.user
       Object.assign(editForm.value, {
@@ -53,11 +51,11 @@ onMounted(async () => {
         phone: userData.phone || '',
         date_of_birth: userData.date_of_birth || '',
       })
-      previewImage.value = userStore.userProfile.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : null
-      console.log('Edit form updated with:', editForm.value)
-      console.log('Nested user data:', userData)
+      previewImage.value = userStore.userProfile.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+      console.log('Edit form updated with:', editForm.value, 'Preview image:', previewImage.value)
     } else {
       console.warn('No user data available in profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No user data found. Please try again.' })
     }
   } catch (err) {
     console.error('Failed to load user profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
@@ -73,18 +71,31 @@ onUnmounted(() => {
     URL.revokeObjectURL(previewImage.value)
   }
   previewImage.value = null
+  imageFile.value = null
   console.log('Component unmounted, preview image revoked at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 })
 
 const handleImageChange = (e) => {
   const file = e.target.files[0]
   if (file) {
+    if (!file.type.startsWith('image/')) {
+      Swal.fire({ icon: 'error', title: 'Invalid File', text: 'Please select a valid image file (JPG, PNG)' })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Image size should be less than 5MB' })
+      return
+    }
     if (previewImage.value && previewImage.value.startsWith('blob:')) {
       URL.revokeObjectURL(previewImage.value)
     }
     imageFile.value = file
     previewImage.value = URL.createObjectURL(file)
-    console.log('Image changed, new file:', file.name, 'preview URL:', previewImage.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+    console.log('Image changed, file:', file.name, 'size:', file.size, 'type:', file.type, 'preview URL:', previewImage.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  } else {
+    console.log('No file selected at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+    imageFile.value = null
+    previewImage.value = userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
   }
 }
 
@@ -97,7 +108,10 @@ const validateForm = () => {
     Swal.fire({ icon: 'error', title: 'Validation Error', text: 'A valid email is required' })
     return false
   }
-  // Optional: Validate date_of_birth (e.g., not future date)
+  if (editForm.value.phone && !editForm.value.phone.startsWith('0')) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Phone number must start with 0' })
+    return false
+  }
   if (editForm.value.date_of_birth) {
     const dob = new Date(editForm.value.date_of_birth)
     if (dob > new Date()) {
@@ -105,7 +119,7 @@ const validateForm = () => {
       return false
     }
   }
-  console.log('Form validated successfully with:', editForm.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  console.log('Form validated successfully with:', editForm.value, 'Image file:', imageFile.value?.name, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   return true
 }
 
@@ -116,13 +130,16 @@ const updateProfile = async () => {
   const formData = new FormData()
   formData.append('username', editForm.value.username)
   formData.append('email', editForm.value.email)
-  formData.append('phone', editForm.value.phone)
-  formData.append('date_of_birth', editForm.value.date_of_birth)
+  formData.append('phone', editForm.value.phone || '')
+  formData.append('date_of_birth', editForm.value.date_of_birth || '')
   if (editForm.value.password) {
     formData.append('password', editForm.value.password)
   }
   if (imageFile.value) {
     formData.append('profile_image', imageFile.value)
+    console.log('Appending image to FormData:', imageFile.value.name, 'size:', imageFile.value.size, 'type:', imageFile.value.type, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  } else {
+    console.log('No image file to append at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   }
 
   const userId = userStore.userProfile?.user?.id
@@ -132,23 +149,33 @@ const updateProfile = async () => {
     return
   }
 
-  const result = await userStore.updateUser(userId, formData)
-  if (result.success) {
-    Swal.fire({
-      icon: 'success',
-      title: 'Profile Updated',
-      text: 'Your profile was updated successfully.',
-      timer: 2000,
-      showConfirmButton: false,
-    })
-    editMode.value = false
-    await userStore.fetchUserProfile()
-    imageFile.value = null
-    previewImage.value = userStore.userProfile?.profile_image || null
-  } else {
-    Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to update profile' })
+  try {
+    const result = await userStore.updateUser(userId, formData)
+    console.log('Update result:', result, 'Profile image from response:', result.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+    if (result.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Profile Updated',
+        text: 'Your profile was updated successfully.',
+        timer: 2000,
+        showConfirmButton: false,
+      })
+      editMode.value = false
+      // Set previewImage from response or userProfile
+      previewImage.value = result.profile_image ? `${result.profile_image}?t=${new Date().getTime()}` : userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+      console.log('Set previewImage after update:', previewImage.value, 'profileImage:', userStore.profileImage, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+      imageFile.value = null
+      // Fetch fresh profile to ensure sync
+      await userStore.fetchUserProfile()
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to update profile' })
+    }
+  } catch (err) {
+    console.error('Update failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
+    Swal.fire({ icon: 'error', title: 'Error', text: 'An unexpected error occurred while updating the profile' })
+  } finally {
+    isSubmitting.value = false
   }
-  isSubmitting.value = false
 }
 
 const goBack = () => {
@@ -157,63 +184,65 @@ const goBack = () => {
 }
 
 const handleImageError = () => {
-  previewImage.value = null
-  console.log('Image load failed, cleared preview at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  console.log('Image load failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+  // Fallback to userStore.profileImage or null
+  previewImage.value = userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
-    <div class="max-w-4xl mx-auto">
-      <div class="mb-8">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-4 sm:py-6 md:py-8 px-2 sm:px-4 md:px-6">
+    <div class="max-w-[90vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
+      <!-- Back Button -->
+      <div class="mb-4 sm:mb-6 md:mb-8">
         <button 
           @click="goBack" 
           class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors duration-200 group"
         >
-          <ArrowLeft class="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-          <span class="font-medium">Back</span>
+          <ArrowLeft class="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+          <span class="font-medium text-xs sm:text-sm md:text-base">Back</span>
         </button>
       </div>
 
       <!-- Profile Card -->
-      <div v-if="isLoading" class="bg-white rounded-2xl shadow-xl p-8 text-center">
-        <p class="text-slate-600">Loading profile...</p>
+      <div v-if="isLoading" class="bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 text-center">
+        <p class="text-slate-600 text-xs sm:text-sm md:text-base">Loading profile...</p>
       </div>
       <div v-else class="bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- Cover Section -->
-        <div class="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex justify-end items-center pr-4">
-          <img class="w-20" src="/logo.png" alt="Logo" />
+        <div class="h-20 sm:h-24 md:h-28 lg:h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 flex justify-end items-center pr-2 sm:pr-4 md:pr-6">
+          <img class="w-12 sm:w-16 md:w-20 lg:w-24" src="/logo.png" alt="Logo" />
         </div>
         
         <!-- Profile Content -->
-        <div class="relative px-8 pb-8">
+        <div class="relative px-4 sm:px-6 md:px-8 pb-4 sm:pb-6 md:pb-8">
           <!-- Profile Image -->
-          <div class="relative -mt-16 mb-6">
+          <div class="relative -mt-10 sm:-mt-12 md:-mt-14 lg:-mt-16 mb-4 sm:mb-6">
             <div class="relative inline-block">
-              <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-slate-100">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-slate-100">
                 <img
                   v-if="hasValidProfileImage"
-                  :src="previewImage || userStore.userProfile?.profile_image || 'https://placehold.co/128x128'"
+                  :src="previewImage || userStore.userProfile?.profile_image || userStore.profileImage || 'https://placehold.co/128x128'"
                   alt="Profile"
                   class="w-full h-full rounded-full object-cover"
                   @error="handleImageError"
                 />
                 <span
                   v-else
-                  class="text-3xl font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
+                  class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
                 >
                   {{ profileInitial }}
                 </span>
               </div>
               <!-- Online Status -->
               <div 
-                class="absolute bottom-2 right-2 w-6 h-6 rounded-full border-4 border-white shadow-sm"
+                class="absolute bottom-1 sm:bottom-1.5 md:bottom-2 right-1 sm:right-1.5 md:right-2 w-3 sm:w-4 md:w-5 lg:w-6 h-3 sm:h-4 md:h-5 lg:h-6 rounded-full border-2 sm:border-3 md:border-4 border-white shadow-sm"
                 :class="userStore.userProfile?.isOnline ? 'bg-green-500' : 'bg-slate-400'"
               ></div>
               
               <!-- Camera Icon for Edit Mode -->
               <div v-if="editMode" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer">
-                <Camera class="w-8 h-8 text-white" />
+                <Camera class="w-5 sm:w-6 md:w-7 lg:w-8 h-5 sm:h-6 md:h-7 lg:h-8 text-white" />
                 <input 
                   type="file" 
                   @change="handleImageChange" 
@@ -225,27 +254,27 @@ const handleImageError = () => {
           </div>
 
           <!-- Profile Info -->
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 sm:gap-6">
             <div class="flex-1">
-              <div class="mb-6">
-                <h1 class="text-3xl font-bold text-slate-900 mb-2">
+              <div class="mb-4 sm:mb-6">
+                <h1 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
                   {{ userStore.userProfile?.user?.username || 'Unknown User' }}
                 </h1>
-                <div v-if="!editMode" class="space-y-2 text-slate-600">
+                <div v-if="!editMode" class="space-y-2 text-slate-600 text-xs sm:text-sm md:text-base">
                   <div class="flex items-center gap-2">
-                    <Mail class="w-4 h-4" />
-                    <span>{{ userStore.userProfile?.user?.email || 'Not provided' }}</span>
+                    <Mail class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
+                    <span class="truncate">{{ userStore.userProfile?.user?.email || 'Not provided' }}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <Phone class="w-4 h-4" />
+                    <Phone class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     <span>{{ userStore.userProfile?.user?.phone || 'Not provided' }}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <Calendar class="w-4 h-4" />
+                    <Calendar class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     <span>{{ userStore.userProfile?.user?.date_of_birth || 'Not provided' }}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <Shield class="w-4 h-4" />
+                    <Shield class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     <span class="capitalize">{{ userStore.userProfile?.user?.role?.name || 'No Role Assigned' }}</span>
                   </div>
                 </div>
@@ -256,79 +285,79 @@ const handleImageError = () => {
             <div v-if="!editMode" class="flex-shrink-0">
               <button
                 @click="editMode = true"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl font-medium"
+                class="inline-flex items-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl font-medium text-xs sm:text-sm md:text-base"
                 :disabled="isSubmitting"
               >
-                <Edit3 class="w-4 h-4" />
+                <Edit3 class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                 <span>Edit Profile</span>
               </button>
             </div>
           </div>
 
           <!-- Edit Form -->
-          <div v-if="editMode" class="mt-8 border-t border-slate-200 pt-8">
-            <div class="mb-6">
-              <h2 class="text-xl font-semibold text-slate-900 mb-2">Edit Profile</h2>
-              <p class="text-slate-600">Update your profile information below.</p>
+          <div v-if="editMode" class="mt-4 sm:mt-6 md:mt-8 border-t border-slate-200 pt-4 sm:pt-6 md:pt-8">
+            <div class="mb-4 sm:mb-6">
+              <h2 class="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-slate-900 mb-2">Edit Profile</h2>
+              <p class="text-slate-600 text-xs sm:text-sm md:text-base">Update your profile information below.</p>
             </div>
 
-            <form @submit.prevent="updateProfile" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form @submit.prevent="updateProfile" class="space-y-4 sm:space-y-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <!-- Username -->
                 <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <User class="w-4 h-4" />
+                  <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                    <User class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     Username
                   </label>
                   <input 
                     v-model="editForm.username" 
                     type="text" 
                     placeholder="Enter username"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    class="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-xs sm:text-sm md:text-base"
                     :disabled="isSubmitting"
                   />
                 </div>
 
                 <!-- Email -->
                 <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <Mail class="w-4 h-4" />
+                  <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                    <Mail class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     Email
                   </label>
                   <input 
                     v-model="editForm.email" 
                     type="email" 
                     placeholder="Enter email"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    class="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-xs sm:text-sm md:text-base"
                     :disabled="isSubmitting"
                   />
                 </div>
 
                 <!-- Phone -->
                 <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <Phone class="w-4 h-4" />
+                  <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                    <Phone class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     Phone
                   </label>
                   <input 
                     v-model="editForm.phone" 
                     type="text" 
                     placeholder="Enter phone number"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    class="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-xs sm:text-sm md:text-base"
                     :disabled="isSubmitting"
                   />
                 </div>
 
                 <!-- Date of Birth -->
                 <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <Calendar class="w-4 h-4" />
+                  <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                    <Calendar class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                     Date of Birth
                   </label>
                   <input 
                     v-model="editForm.date_of_birth" 
                     type="date"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    class="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-xs sm:text-sm md:text-base"
                     :disabled="isSubmitting"
                   />
                 </div>
@@ -336,57 +365,57 @@ const handleImageError = () => {
 
               <!-- Password -->
               <div class="space-y-2">
-                <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <Shield class="w-4 h-4" />
+                <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                  <Shield class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                   New Password (leave blank to keep current)
                 </label>
                 <input 
                   v-model="editForm.password" 
                   type="password" 
                   placeholder="Enter new password"
-                  class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                  class="w-full px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-xs sm:text-sm md:text-base"
                   :disabled="isSubmitting"
                 />
               </div>
 
               <!-- Profile Image Upload -->
               <div class="space-y-2">
-                <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <Upload class="w-4 h-4" />
+                <label class="flex items-center gap-2 text-xs sm:text-sm md:text-base font-medium text-slate-700">
+                  <Upload class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                   Profile Image
                 </label>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 sm:gap-4">
                   <input 
                     type="file" 
                     @change="handleImageChange" 
                     accept="image/*"
-                    class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white file:mr-3 sm:mr-4 file:py-1 sm:py-1.5 md:py-2 file:px-3 sm:px-4 file:rounded-lg file:border-0 file:text-xs sm:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     :disabled="isSubmitting"
                   />
-                  <div v-if="previewImage" class="w-16 h-16 rounded-lg overflow-hidden border-2 border-slate-200">
+                  <div v-if="previewImage" class="w-10 sm:w-12 md:w-14 lg:w-16 h-10 sm:h-12 md:h-14 lg:h-16 rounded-lg overflow-hidden border-2 border-slate-200">
                     <img :src="previewImage" class="w-full h-full object-cover" @error="handleImageError" />
                   </div>
                 </div>
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex gap-4 pt-4">
+              <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
                 <button 
                   type="submit" 
-                  class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl font-medium"
+                  class="inline-flex items-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl font-medium text-xs sm:text-sm md:text-base"
                   :disabled="isSubmitting"
                 >
-                  <Save class="w-4 h-4" />
+                  <Save class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                   <span v-if="isSubmitting">Saving...</span>
                   <span v-else>Save Changes</span>
                 </button>
                 <button 
                   type="button" 
                   @click="editMode = false" 
-                  class="inline-flex items-center gap-2 px-6 py-3 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors duration-200 font-medium"
+                  class="inline-flex items-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors duration-200 font-medium text-xs sm:text-sm md:text-base"
                   :disabled="isSubmitting"
                 >
-                  <X class="w-4 h-4" />
+                  <X class="w-3 sm:w-4 md:w-5 h-3 sm:h-4 md:h-5" />
                   Cancel
                 </button>
               </div>

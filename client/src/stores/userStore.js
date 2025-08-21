@@ -49,18 +49,18 @@ export const useUserStore = defineStore('user', {
         username: user.name || user.username || '',
         profile_image: user.profile_image
           ? (user.profile_image.startsWith('http')
-              ? user.profile_image
-              : `${apiBase}/uploads/profile/${user.profile_image}`)
+            ? user.profile_image
+            : `${apiBase}/uploads/profile/${user.profile_image}`)
           : null,
         barcode_image: user.barcode_image
           ? (user.barcode_image.startsWith('http')
-              ? user.barcode_image
-              : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
+            ? user.barcode_image
+            : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
         qr_code_image: user.qr_code_image // Add QR code image normalization
           ? (user.qr_code_image.startsWith('http')
-              ? user.qr_code_image
-              : `${apiBase}/uploads/qrcodes/${user.qr_code_image}`)
+            ? user.qr_code_image
+            : `${apiBase}/uploads/qrcodes/${user.qr_code_image}`)
           : null,
       };
     },
@@ -94,84 +94,84 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('profile_image');
     },
 
-async register(form) {
-  this.loading = true;
-  this.error = '';
-  try {
-    // Prepare payload
-    const { username, email, phone, password, roleId, profileImage } = form;
+    async register(form) {
+      this.loading = true;
+      this.error = '';
+      try {
+        // Prepare payload
+        const { username, email, phone, password, roleId, profileImage } = form;
 
-    let payload;
+        let payload;
 
-    if (profileImage) {
-      // Case 1: User uploaded an image → use FormData
-      payload = new FormData();
-      payload.append('username', username);
-      payload.append('email', email);
-      payload.append('phone', phone);
-      payload.append('password', password);
-      payload.append('roleId', roleId);
-      payload.append('profile_image', profileImage); // field name matches backend multer
-    } else {
-      // Case 2: No image → normal JSON, backend will generate fallback
-      payload = { username, email, phone, password, roleId };
-    }
+        if (profileImage) {
+          // Case 1: User uploaded an image → use FormData
+          payload = new FormData();
+          payload.append('username', username);
+          payload.append('email', email);
+          payload.append('phone', phone);
+          payload.append('password', password);
+          payload.append('roleId', roleId);
+          payload.append('profile_image', profileImage); // field name matches backend multer
+        } else {
+          // Case 2: No image → normal JSON, backend will generate fallback
+          payload = { username, email, phone, password, roleId };
+        }
 
-    // Call API
-    const response = await registerUser(payload);
+        // Call API
+        const response = await registerUser(payload);
 
-    // Extract user & token safely
-    const user = response.data?.user || response.user;
-    const token = response.data?.token || user?.accessToken;
+        // Extract user & token safely
+        const user = response.data?.user || response.user;
+        const token = response.data?.token || user?.accessToken;
 
-    // Save in state/store
-    if (user) {
-      this.setUser(user);
-    }
-    if (token) {
-      localStorage.setItem('token', token);
-    }
+        // Save in state/store
+        if (user) {
+          this.setUser(user);
+        }
+        if (token) {
+          localStorage.setItem('token', token);
+        }
 
-    return { success: true, user };
-  } catch (error) {
-    this.error = error.response?.data?.message || 'Registration failed';
-    return { success: false, error: this.error };
-  } finally {
-    this.loading = false;
-  }
-},
+        return { success: true, user };
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Registration failed';
+        return { success: false, error: this.error };
+      } finally {
+        this.loading = false;
+      }
+    },
 
 
 
-   async login(email, password) {
-  this.loading = true;
-  this.error = '';
-  try {
-    const response = await loginUser(email, password);
-    const token = response.accessToken || response.token;
-    const user = response.user || response;
+    async login(email, password) {
+      this.loading = true;
+      this.error = '';
+      try {
+        const response = await loginUser(email, password);
+        const token = response.accessToken || response.token;
+        const user = response.user || response;
 
-    // Validate response
-    if (!token || !user || !user.id) {
-      throw new Error('Invalid response from server: Missing token or user data');
-    }
+        // Validate response
+        if (!token || !user || !user.id) {
+          throw new Error('Invalid response from server: Missing token or user data');
+        }
 
-    // Store token and user
-    this.setToken(token);
-    localStorage.setItem('token', token); // Persist token
-    this.setUser(user);
+        // Store token and user
+        this.setToken(token);
+        localStorage.setItem('token', token); // Persist token
+        this.setUser(user);
 
-    console.log('Login successful:', user, 'Token:', token);
-    return { success: true, user };
-  } catch (error) {
-    console.error('Login error:', error.response?.data || error.stack || error.message);
-    this.error = error.response?.data?.message || 'Login failed due to server error';
-    this.resetAuth();
-    return { success: false, error: this.error };
-  } finally {
-    this.loading = false;
-  }
-},
+        console.log('Login successful:', user, 'Token:', token);
+        return { success: true, user };
+      } catch (error) {
+        console.error('Login error:', error.response?.data || error.stack || error.message);
+        this.error = error.response?.data?.message || 'Login failed due to server error';
+        this.resetAuth();
+        return { success: false, error: this.error };
+      } finally {
+        this.loading = false;
+      }
+    },
 
     async fetchUserProfile() {
       if (!this.token) {
@@ -199,7 +199,36 @@ async register(form) {
         this.loading = false;
       }
     },
-
+    async updateUser(id, formData) {
+      this.loading = true;
+      this.error = '';
+      try {
+        const res = await updateUser(id, formData); // Assumed API call
+        console.log('updateUser API response:', res.data, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        const updatedUser = this.normalizeUser(res.data.user);
+        // Update users array
+        const index = this.users.findIndex(u => u.id === id);
+        if (index !== -1) {
+          this.users[index] = updatedUser;
+        }
+        // Update userProfile if it’s the current user
+        if (this.userProfile?.user?.id === id) {
+          this.userProfile = {
+            ...this.userProfile,
+            user: updatedUser,
+            profile_image: res.data.user.profile_image || this.userProfile.profile_image,
+          };
+          console.log('Updated userProfile:', this.userProfile, 'Profile image:', this.userProfile.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        }
+        return { success: true, profile_image: res.data.user.profile_image };
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to update user';
+        console.error('updateUser failed:', this.error, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        return { success: false, error: this.error };
+      } finally {
+        this.loading = false;
+      }
+    },
     async fetchRoles() {
       this.loading = true;
       this.error = '';
@@ -267,22 +296,8 @@ async register(form) {
       }
     },
 
-    async updateUser(id, formData) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const res = await updateUser(id, formData);
-        const updatedUser = this.normalizeUser(res.data.user);
-        const index = this.users.findIndex(u => u.id === id);
-        if (index !== -1) this.users[index] = updatedUser;
-        return { success: true };
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to update user';
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+    // In userStore.js
+
 
     async deleteUser(id) {
       this.loading = true;

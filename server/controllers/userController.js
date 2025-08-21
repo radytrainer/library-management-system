@@ -165,7 +165,12 @@ const createUser = async (req, res) => {
       console.log('Email already exists:', email);
       return res.status(400).json({ message: 'Email already exists' });
     }
-
+     // Validate phone number (if provided, must start with '0')
+    console.log('Validating phone number:', phone);
+    if (phone && !phone.startsWith('0')) {
+      console.log('Invalid phone number: does not start with 0:', phone);
+      return res.status(400).json({ message: 'Phone number must start with 0' });
+    }
     // Hash password
     console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 8);
