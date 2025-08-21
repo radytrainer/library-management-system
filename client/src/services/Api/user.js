@@ -34,8 +34,6 @@ export const loginUser = async (email, password) => {
   }
 }
 
-
-
 export function createUser(formData) {
   return api.post('/user/create', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -68,7 +66,6 @@ export function getProfile() {
   return api.get('/user/profile/me');
 }
 
-
 export function getUserBarcodeImage(id) {
   return api.get(`/user/${id}/barcode`, {
     responseType: 'blob'
@@ -80,3 +77,38 @@ export function getUserQRCode(id) {
     responseType: 'blob',
   });
 }
+export const getBorrows = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/borrow', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Raw API response for borrows:', response.data); // Log raw data for debugging
+    if (!response.data || !Array.isArray(response.data)) {
+      console.warn('Invalid borrow data received:', response.data);
+      return [];
+    }
+    // Map API response to expected structure based on database schema
+    return response.data.map(borrow => {
+      const dueDate = new Date(borrow.return_date);
+      if (isNaN(dueDate.getTime())) {
+        console.warn(`Invalid date for borrow ${borrow.id}: ${borrow.return_date}, using current date as fallback`);
+        dueDate = new Date(); // Fallback to current date
+      }
+      return {
+        id: borrow.id,
+        bookTitle: {
+          title: borrow.book?.title || borrow.title || borrow.isbn || 'Unknown Book',
+        },
+        userBorrow: borrow.borrower_name || borrow.username || borrow.user?.name || 'Unknown User',
+        dueDate: dueDate,
+        status: borrow.status || 'borrowed',
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching borrows:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Failed to fetch borrows');
+  }
+};
