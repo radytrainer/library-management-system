@@ -18,28 +18,28 @@
             class="min-w-[140px] sm:min-w-[160px] px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
           >
             <option value="">All Categories</option>
-            <option v-for="category in categories" :key="category.id" :value="category.name">{{ category.name }}</option>
+            <option v-for="category in categories" :key="category.name" :value="category.name">{{ category.name }}</option>
           </select>
           <select
             :value="limit"
-            @change="$emit('update:limit', Number($event.target.value))"
+            @change="$emit('update:limit', $event.target.value)"
             class="min-w-[100px] sm:min-w-[120px] px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
           >
-            <option v-for="n in [10, 20, 50]" :key="n" :value="n">Show {{ n }}</option>
+            <option v-for="option in limitOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </div>
         <div class="flex items-center gap-3">
           <div class="relative inline-block text-left">
-<button
-      @click="$emit('exportBorrowDataToExcel')"
-      class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-400 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
-    >
-      <FileSpreadsheet class="w-4 h-4 text-green-600" />
-      <span>Export Excel</span>
-    </button>
+            <button
+              @click="$emit('exportBorrowDataToExcel')"
+              class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-400 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
+            >
+              <FileSpreadsheet class="w-4 h-4 text-green-600" />
+              <span>Export Excel</span>
+            </button>
           </div>
           <button
-            @click="() => { console.log('clicked'); $emit('add-borrow') }"
+            @click="$emit('add-borrow')"
             class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,7 +73,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="(item, index) in nonReturnedBorrowData" :key="item.id" class="hover:bg-gray-50 transition-all">
             <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-900">
-              {{ index + 1 + (currentPage - 1) * limit }}
+              {{ index + 1 + (limit === 'all' ? 0 : (currentPage - 1) * parseInt(limit)) }}
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center gap-3">
@@ -93,7 +93,7 @@
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
-                {{ item.book.category }}
+                {{ item.book.category?.name || item.book.category }}
               </span>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base font-medium text-gray-900">
@@ -213,13 +213,13 @@
     <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
       <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div class="text-sm sm:text-base text-gray-700">
-          Showing <span class="font-medium">{{ (currentPage - 1) * limit + 1 }}</span> to
-          <span class="font-medium">{{ Math.min(currentPage * limit, totalNonReturnedItems) }}</span> of
+          Showing <span class="font-medium">{{ limit === 'all' ? 1 : (currentPage - 1) * parseInt(limit) + 1 }}</span> to
+          <span class="font-medium">{{ limit === 'all' ? totalNonReturnedItems : Math.min(currentPage * parseInt(limit), totalNonReturnedItems) }}</span> of
           <span class="font-medium">{{ totalNonReturnedItems }}</span> results
         </div>
         <div class="flex items-center gap-2">
           <button
-            :disabled="currentPage === 1"
+            :disabled="currentPage === 1 || limit === 'all'"
             @click="$emit('update:currentPage', currentPage - 1)"
             class="px-3 py-2 border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-all"
           >
@@ -229,6 +229,7 @@
           </button>
           <template v-for="page in Math.min(totalPages, 5)" :key="page">
             <button
+              v-if="limit !== 'all'"
               @click="$emit('update:currentPage', page)"
               :class="[
                 'px-3 py-2 border rounded-lg transition-all text-sm sm:text-base',
@@ -239,7 +240,7 @@
             </button>
           </template>
           <button
-            :disabled="currentPage === totalPages"
+            :disabled="currentPage === totalPages || limit === 'all'"
             @click="$emit('update:currentPage', currentPage + 1)"
             class="px-3 py-2 border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-all"
           >
@@ -254,15 +255,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import Swal from 'sweetalert2'
 import { FileSpreadsheet } from "lucide-vue-next";
-
-const dropdownOpen = ref(false)
-
-function toggleDropdown() {
-  dropdownOpen.value = !dropdownOpen.value
-}
 
 const emit = defineEmits([
   "update:currentPage",
@@ -309,7 +304,8 @@ const props = defineProps({
   filteredBorrowData: Array,
   categories: Array,
   currentPage: Number,
-  limit: Number,
+  limit: String,
+  limitOptions: Array,
   selectedStatus: String,
   selectedCategory: String,
   totalFilteredItems: Number,
