@@ -23,14 +23,7 @@ import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
   // Redirect root to login or role-based page
-  { path: '/', redirect: () => {
-      const authStore = useUserStore()
-      const role = authStore.user?.role || null
-      if (role === 'admin') return '/dashboard'
-      if (role === 'librarian' || role === 'user') return '/books'
-      return '/login'
-    }
-  },
+  { path: '/', redirect: '/login' },
 
   // Public Auth Routes
   { path: '/login', name: 'login', component: Login, meta: { requiresAuth: false } },

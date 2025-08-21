@@ -1,3 +1,4 @@
+```vue
 <style scoped>
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -117,6 +118,11 @@ const profileImageUrl = computed(() => {
     : finalImage;
 });
 
+const hasValidProfileImage = computed(() => {
+  const image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
+  return image && (image.startsWith('http') || image.startsWith('data:image'))
+})
+
 const pageTitle = computed(() => {
   const map = {
     dashboard: { en: "Library Dashboard", kh: "ផ្ទាំងគ្រប់គ្រងបណ្ចាល័យ" },
@@ -188,6 +194,11 @@ function logout() {
   showProfileDropdown.value = false;
 }
 
+function handleImageError() {
+  userStore.user.profile_image = null
+  localStorage.removeItem('profile_image')
+}
+
 // Close dropdowns when clicking outside
 function handleClickOutside(event) {
   const dropdowns = [
@@ -245,22 +256,14 @@ onMounted(() => {
 <template>
   <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
     <!-- Sidebar -->
-    <aside
-      :class="[
-        'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg',
-        isSidebarOpen ? 'w-64' : 'w-20',
-      ]"
-    >
-      <div
-        v-if="isSidebarOpen"
-        class="p-6 flex flex-col items-center border-b border-indigo-600"
-      >
+    <aside :class="[
+      'bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-r-lg text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg',
+      isSidebarOpen ? 'w-64' : 'w-20',
+    ]">
+      <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
         <img src="/logo.png" alt="Library Logo" class="h-20 w-30" />
-        <h2
-          class="text-2xl font-bold tracking-tight"
-          :class="{ 'font-khmer': language === 'kh' }"
-        >
-          {{ language === "en" ? "PNC LIBRARY" : "ប្រព័ន្ធបណ្ចាល័យ" }}
+        <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
+          {{ language === 'en' ? 'PNC LIBRARY' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
       </div>
       <nav class="flex-1 overflow-y-auto no-scrollbar">
@@ -538,17 +541,25 @@ onMounted(() => {
           <!-- Profile -->
           <div class="relative">
             <div
-              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
+              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400 flex items-center justify-center"
               @click="toggleProfileDropdown"
               role="button"
               aria-label="Toggle profile dropdown"
             >
               <img
+                v-if="hasValidProfileImage"
                 :src="profileImageUrl"
                 alt="Profile"
                 class="h-full w-full rounded-full object-cover"
                 @error="handleImageError"
               />
+              <span
+                v-else
+                class="text-lg font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
+                :class="{ 'font-khmer': language === 'kh' }"
+              >
+                {{ profileInitial }}
+              </span>
             </div>
             <div
               v-if="showProfileDropdown"

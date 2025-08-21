@@ -100,51 +100,84 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('profile_image');
     },
 
-    async register(form) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const response = await registerUser(form);
-        const user = response.user;
-        this.setUser(user);
-        if (user.accessToken) {
-          localStorage.setItem('token', user.accessToken);
-        }
-        return { success: true, user };
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Registration failed';
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+async register(form) {
+  this.loading = true;
+  this.error = '';
+  try {
+    // Prepare payload
+    const { username, email, phone, password, roleId, profileImage } = form;
 
-    async login(email, password) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const response = await loginUser(email, password);
-        const token = response.accessToken || response.token;
-        const user = response.user || response;
+    let payload;
 
-        if (!token || !user || !user.id) {
-          throw new Error('Invalid response from server: Missing token or user data');
-        }
+    if (profileImage) {
+      // Case 1: User uploaded an image → use FormData
+      payload = new FormData();
+      payload.append('username', username);
+      payload.append('email', email);
+      payload.append('phone', phone);
+      payload.append('password', password);
+      payload.append('roleId', roleId);
+      payload.append('profile_image', profileImage); // field name matches backend multer
+    } else {
+      // Case 2: No image → normal JSON, backend will generate fallback
+      payload = { username, email, phone, password, roleId };
+    }
 
-        this.setToken(token);
-        localStorage.setItem('token', token);
-        this.setUser(user);
-        console.log('Login successful:', user, 'Token:', token);
-        return { success: true, user };
-      } catch (error) {
-        console.error('Login error:', error.response?.data || error.stack || error.message);
-        this.error = error.response?.data?.message || 'Login failed due to server error';
-        this.resetAuth();
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+    // Call API
+    const response = await registerUser(payload);
+
+    // Extract user & token safely
+    const user = response.data?.user || response.user;
+    const token = response.data?.token || user?.accessToken;
+
+    // Save in state/store
+    if (user) {
+      this.setUser(user);
+    }
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+
+    return { success: true, user };
+  } catch (error) {
+    this.error = error.response?.data?.message || 'Registration failed';
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
+
+
+
+   async login(email, password) {
+  this.loading = true;
+  this.error = '';
+  try {
+    const response = await loginUser(email, password);
+    const token = response.accessToken || response.token;
+    const user = response.user || response;
+
+    // Validate response
+    if (!token || !user || !user.id) {
+      throw new Error('Invalid response from server: Missing token or user data');
+    }
+
+    // Store token and user
+    this.setToken(token);
+    localStorage.setItem('token', token); // Persist token
+    this.setUser(user);
+
+    console.log('Login successful:', user, 'Token:', token);
+    return { success: true, user };
+  } catch (error) {
+    console.error('Login error:', error.response?.data || error.stack || error.message);
+    this.error = error.response?.data?.message || 'Login failed due to server error';
+    this.resetAuth();
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
 
     async fetchUserProfile() {
       if (!this.token) {

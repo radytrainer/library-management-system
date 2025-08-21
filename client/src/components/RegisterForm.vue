@@ -109,8 +109,18 @@ const handleSubmit = async () => {
   try {
     const result = await authStore.register(form.value)
     if (result.success) {
-      console.log('Registration successful, redirecting to login...')
-      router.push('/login')
+      console.log('Registration successful')
+
+      // Get the role from the registered user returned by server
+      const userRole = result.user?.roleId
+
+      // Redirect based on role
+      if (userRole === 2) {
+        router.push('/dashboard') // Admin page
+      } else {
+        router.push('/book') // User page
+      }
+
     } else {
       throw new Error(result.error || 'Registration failed')
     }
@@ -121,4 +131,5 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
 </script>

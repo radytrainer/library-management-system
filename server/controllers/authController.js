@@ -158,12 +158,53 @@ const signup = async (req, res) => {
     // 🔢 Generate unique numeric barcode (12 digits)
     let barcode, isUnique = false;
     while (!isUnique) {
-      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString(); // 12 digits
+      barcode = Math.floor(100000000000 + Math.random() * 900000000000).toString();
       const exist = await User.findOne({ where: { barcode } });
       if (!exist) isUnique = true;
     }
 
-    // Step 1: Create user (without images yet)
+    // ---------- Handle Profile Image Upload ----------
+    let profileImageUrl = null;
+    const profileDir = path.join(process.cwd(), "Uploads", "profiles");
+    if (!fs.existsSync(profileDir)) fs.mkdirSync(profileDir, { recursive: true });
+
+    if (req.file) {
+      // uploaded file
+      profileImageUrl = `${req.protocol}://${req.get("host")}/Uploads/profiles/${req.file.filename}`;
+    } else {
+      // generate from first letter of email
+      const letter = email.charAt(0).toUpperCase();
+      const canvas = createCanvas(200, 200);
+      const ctx = canvas.getContext("2d");
+
+      // background color (random soft color)
+      const colors = ["#FFB6C1", "#FFD700", "#87CEEB", "#90EE90", "#FFA07A", "#9370DB"];
+      const bgColor = colors[Math.floor(Math.random() * colors.length)];
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // text
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 100px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(letter, canvas.width / 2, canvas.height / 2);
+
+      // save file
+      const profileFilename = `profile_${Date.now()}.png`;
+      const profilePath = path.join(profileDir, profileFilename);
+      profileImageUrl = `${req.protocol}://${req.get("host")}/Uploads/profiles/${profileFilename}`;
+
+      const out = fs.createWriteStream(profilePath);
+      const stream = canvas.createPNGStream();
+      stream.pipe(out);
+      await new Promise((resolve, reject) => {
+        out.on("finish", resolve);
+        out.on("error", reject);
+      });
+    }
+
+    // Step 1: Create user (with profile image)
     const user = await User.create({
       username,
       email,
@@ -172,51 +213,52 @@ const signup = async (req, res) => {
       date_of_birth,
       isActive: true,
       lastActive: new Date(),
-      barcode
+      barcode,
+      profile_image: profileImageUrl,
     });
 
     // ---------- Generate Barcode Image ----------
-    const barcodeDir = path.join(process.cwd(), 'Uploads', 'barcodes');
+    const barcodeDir = path.join(process.cwd(), "Uploads", "barcodes");
     if (!fs.existsSync(barcodeDir)) fs.mkdirSync(barcodeDir, { recursive: true });
 
     const barcodeCanvas = createCanvas(400, 150);
     JsBarcode(barcodeCanvas, barcode, {
-      format: "CODE128",   // Works for any numbers
-      displayValue: true,  // Show number under barcode
+      format: "CODE128",
+      displayValue: true,
       fontSize: 20,
       margin: 10,
       lineColor: "#000000",
-      background: "#ffffff"
+      background: "#ffffff",
     });
 
     const barcodeFilename = `barcode_${user.id}.png`;
     const barcodePath = path.join(barcodeDir, barcodeFilename);
-    const barcodeImageUrl = `/Uploads/barcodes/${barcodeFilename}`;
+    const barcodeImageUrl = `${req.protocol}://${req.get("host")}/Uploads/barcodes/${barcodeFilename}`;
 
     const barcodeOut = fs.createWriteStream(barcodePath);
     barcodeCanvas.createPNGStream().pipe(barcodeOut);
     await new Promise((resolve, reject) => {
-      barcodeOut.on('finish', resolve);
-      barcodeOut.on('error', reject);
+      barcodeOut.on("finish", resolve);
+      barcodeOut.on("error", reject);
     });
 
     // ---------- Generate QR Code ----------
-    const qrDir = path.join(process.cwd(), 'Uploads', 'qrcodes');
+    const qrDir = path.join(process.cwd(), "Uploads", "qrcodes");
     if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
     const qrFilename = `qrcode_${user.id}.png`;
     const qrPath = path.join(qrDir, qrFilename);
-    const qrImageUrl = `/Uploads/qrcodes/${qrFilename}`;
-    const userDetailsUrl = `${req.protocol}://${req.get('host')}/user/${user.id}`;
+    const qrImageUrl = `${req.protocol}://${req.get("host")}/Uploads/qrcodes/${qrFilename}`;
+    const userDetailsUrl = `${req.protocol}://${req.get("host")}/user/${user.id}`;
 
     await QRCode.toFile(qrPath, userDetailsUrl, {
-      type: 'png',
+      type: "png",
       width: 300,
       margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
+      color: { dark: "#000000", light: "#ffffff" },
     });
 
-    // Step 2: Update user with image paths
+    // Step 2: Update user with generated images
     await user.update({
       barcode_image: barcodeImageUrl,
       qr_code_image: qrImageUrl,
@@ -246,19 +288,17 @@ const signup = async (req, res) => {
         role: defaultRole?.name || "user",
         isActive: user.isActive,
         barcode: user.barcode,
-        barcode_image: `${req.protocol}://${req.get('host')}${barcodeImageUrl}`,
-        qr_code_image: `${req.protocol}://${req.get('host')}${qrImageUrl}`,
+        profile_image: profileImageUrl,
+        barcode_image: barcodeImageUrl,
+        qr_code_image: qrImageUrl,
         accessToken: token,
       },
     });
-
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ message: "Server error during signup", error: error.message });
   }
 };
-
-
 
 const getActiveUsers = async (req, res) => {
   try {
