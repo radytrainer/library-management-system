@@ -1,3 +1,4 @@
+```vue
 <style scoped>
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -66,6 +67,11 @@ const profileImageUrl = computed(() => {
   const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image'))
   const finalImage = isValidUrl ? image : '/default-profile.png'
   return finalImage.startsWith('http') ? `${finalImage}?t=${new Date().getTime()}` : finalImage
+})
+
+const hasValidProfileImage = computed(() => {
+  const image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
+  return image && (image.startsWith('http') || image.startsWith('data:image'))
 })
 
 const pageTitle = computed(() => {
@@ -137,6 +143,11 @@ function logout() {
   showProfileDropdown.value = false
 }
 
+function handleImageError() {
+  userStore.user.profile_image = null
+  localStorage.removeItem('profile_image')
+}
+
 // Close dropdowns when clicking outside
 function handleClickOutside(event) {
   const dropdowns = [
@@ -170,8 +181,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
       isSidebarOpen ? 'w-64' : 'w-20',
     ]">
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
-        <img src="/logo.png
-      " alt="Library Logo" class="h-20 w-30" />
+        <img src="/logo.png" alt="Library Logo" class="h-20 w-30" />
         <h2 class="text-2xl font-bold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
           {{ language === 'en' ? 'PNC LIBRARY' : 'ប្រព័ន្ធបណ្ចាល័យ' }}
         </h2>
@@ -286,14 +296,31 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <!-- Profile -->
           <div class="relative">
             <div
-              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400"
-              @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
-              <img :src="profileImageUrl" alt="Profile" class="h-full w-full rounded-full object-cover"
-                @error="handleImageError" />
+              class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400 flex items-center justify-center"
+              @click="toggleProfileDropdown"
+              role="button"
+              aria-label="Toggle profile dropdown"
+            >
+              <img
+                v-if="hasValidProfileImage"
+                :src="profileImageUrl"
+                alt="Profile"
+                class="h-full w-full rounded-full object-cover"
+                @error="handleImageError"
+              />
+              <span
+                v-else
+                class="text-lg font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
+                :class="{ 'font-khmer': language === 'kh' }"
+              >
+                {{ profileInitial }}
+              </span>
             </div>
-            <div v-if="showProfileDropdown"
+            <div
+              v-if="showProfileDropdown"
               class="profile-menu absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
-              role="menu">
+              role="menu"
+            >
               <div class="border-b border-gray-200 pb-2 mb-2">
                 <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
                   {{ userStore.user?.username || 'Unknown' }}
@@ -302,14 +329,20 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   {{ userStore.user?.email || 'No email' }}
                 </p>
               </div>
-              <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                role="menuitem" @click="showProfileDropdown = false">
+              <router-link
+                to="/profile"
+                class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                role="menuitem"
+                @click="showProfileDropdown = false"
+              >
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === 'en' ? 'View Profile' : 'មើលប្រវត្តិរូប' }}
               </router-link>
-              <button @click="logout"
+              <button
+                @click="logout"
                 class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                role="menuitem">
+                role="menuitem"
+              >
                 <span class="material-symbols-outlined mr-2">logout</span>
                 {{ language === 'en' ? 'Logout' : 'ចាកចេញ' }}
               </button>
@@ -330,3 +363,4 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     </div>
   </div>
 </template>
+```

@@ -1,5 +1,6 @@
+
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Edit3, Save, X, Upload, User, Mail, Phone, Calendar, Shield, Camera } from 'lucide-vue-next'
@@ -21,6 +22,15 @@ const imageFile = ref(null)
 const editMode = ref(false)
 const isSubmitting = ref(false)
 const isLoading = ref(true)
+
+// Computed property for the first letter of the email
+const profileInitial = computed(() => userStore.userProfile?.user?.email?.charAt(0)?.toUpperCase() || '?')
+
+// Computed property to check if a valid profile image exists
+const hasValidProfileImage = computed(() => {
+  const image = userStore.userProfile?.profile_image || previewImage.value || ''
+  return image && (image.startsWith('http') || image.startsWith('data:image') || image.startsWith('blob:'))
+})
 
 // Watch for changes in userProfile to update previewImage
 watch(() => userStore.userProfile?.profile_image, (newImage) => {
@@ -115,13 +125,12 @@ const updateProfile = async () => {
     formData.append('profile_image', imageFile.value)
   }
 
- const userId = userStore.userProfile?.user?.id
-if (!userId) {
-  Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
-  isSubmitting.value = false
-  return
-}
-
+  const userId = userStore.userProfile?.user?.id
+  if (!userId) {
+    Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
+    isSubmitting.value = false
+    return
+  }
 
   const result = await userStore.updateUser(userId, formData)
   if (result.success) {
@@ -142,16 +151,14 @@ if (!userId) {
   isSubmitting.value = false
 }
 
-
-
 const goBack = () => {
   router.back()
   console.log('Navigated back at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 
-const handleImageError = (event) => {
-  // event.target.src = '/placeholder.png'
-  console.log('Image load failed, switched to placeholder at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
+const handleImageError = () => {
+  previewImage.value = null
+  console.log('Image load failed, cleared preview at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 </script>
 
@@ -183,11 +190,21 @@ const handleImageError = (event) => {
           <!-- Profile Image -->
           <div class="relative -mt-16 mb-6">
             <div class="relative inline-block">
-              <img
-                :src="previewImage || userStore.profileImage || 'https://placehold.co/128x128'"
-                class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-slate-100"
-                @error="handleImageError"
-              />
+              <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-slate-100">
+                <img
+                  v-if="hasValidProfileImage"
+                  :src="previewImage || userStore.userProfile?.profile_image || 'https://placehold.co/128x128'"
+                  alt="Profile"
+                  class="w-full h-full rounded-full object-cover"
+                  @error="handleImageError"
+                />
+                <span
+                  v-else
+                  class="text-3xl font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
+                >
+                  {{ profileInitial }}
+                </span>
+              </div>
               <!-- Online Status -->
               <div 
                 class="absolute bottom-2 right-2 w-6 h-6 rounded-full border-4 border-white shadow-sm"
