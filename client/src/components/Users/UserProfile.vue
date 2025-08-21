@@ -150,7 +150,7 @@ const goBack = () => {
 }
 
 const handleImageError = (event) => {
-  event.target.src = '/placeholder.png'
+  // event.target.src = '/placeholder.png'
   console.log('Image load failed, switched to placeholder at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 </script>
@@ -184,7 +184,7 @@ const handleImageError = (event) => {
           <div class="relative -mt-16 mb-6">
             <div class="relative inline-block">
               <img
-                :src="previewImage || userStore.userProfile?.profile_image || 'https://placehold.co/128x128'"
+                :src="previewImage || userStore.profileImage || 'https://placehold.co/128x128'"
                 class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-slate-100"
                 @error="handleImageError"
               />

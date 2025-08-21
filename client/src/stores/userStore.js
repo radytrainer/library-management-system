@@ -94,22 +94,42 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('profile_image');
     },
 
-   async register(form) {
+async register(form) {
   this.loading = true;
   this.error = '';
   try {
+    // Prepare payload
+    const { username, email, phone, password, roleId, profileImage } = form;
+
+    let payload;
+
+    if (profileImage) {
+      // Case 1: User uploaded an image → use FormData
+      payload = new FormData();
+      payload.append('username', username);
+      payload.append('email', email);
+      payload.append('phone', phone);
+      payload.append('password', password);
+      payload.append('roleId', roleId);
+      payload.append('profile_image', profileImage); // field name matches backend multer
+    } else {
+      // Case 2: No image → normal JSON, backend will generate fallback
+      payload = { username, email, phone, password, roleId };
+    }
+
     // Call API
-    const response = await registerUser(form);
+    const response = await registerUser(payload);
 
-    // Extract user from API response
-    const user = response.user;
+    // Extract user & token safely
+    const user = response.data?.user || response.user;
+    const token = response.data?.token || user?.accessToken;
 
-    // Save user in state/store
-    this.setUser(user);
-
-    // Store token for auto-login
-    if (user.accessToken) {
-      localStorage.setItem('token', user.accessToken);
+    // Save in state/store
+    if (user) {
+      this.setUser(user);
+    }
+    if (token) {
+      localStorage.setItem('token', token);
     }
 
     return { success: true, user };
@@ -120,6 +140,8 @@ export const useUserStore = defineStore('user', {
     this.loading = false;
   }
 },
+
+
 
    async login(email, password) {
   this.loading = true;
