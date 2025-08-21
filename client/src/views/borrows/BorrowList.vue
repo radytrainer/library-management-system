@@ -3,26 +3,65 @@
     <div class="p-8">
       <HeaderSection v-model:search="search" />
       <StatsCards :borrow-data="borrowData" :get-item-status="getItemStatus" />
-      <BorrowTable :filtered-borrow-data="filteredBorrowData" :categories="categories" :current-page="currentPage"
-        :limit="limit" :selected-status="selectedStatus" :selected-category="selectedCategory"
-        :total-filtered-items="totalFilteredItems" :total-pages="totalPages" :open-dropdown="openDropdown"
-        :get-item-status="getItemStatus" :format-date="formatDate" @update:current-page="currentPage = $event"
-        @update:limit="limit = $event" @update:selected-status="updateSelectedStatus($event)"
-        @update:selected-category="selectedCategory = $event" @toggle-dropdown="toggleDropdown" @show-book="handleShow"
-        @confirm-return="confirmReturn" @update-record="openUpdateModal" @delete-record="handleDelete"
-        @add-borrow="showModal = true" @exportBorrowDataToExcel="exportBorrowDataToExcel" @exportBorrowDataToPDF="exportBorrowDataToPDF" />
-
-      <BookDetailModal v-if="showBookDetail" :book="selectedBook" :get-item-status="getItemStatus"
-        :get-days-left="getDaysLeft" :format-date="formatDate" @close="showBookDetail = false" />
-
-      <AddBorrowModal v-if="showModal" v-model="addForm" @submit="submitAddBorrow" @close="showModal = false" />
-
-      <UpdateBorrowModal v-if="showUpdateModal" :form="updateForm" :statusOptions="statusOptions" :formError="formError"
-        @submit="submitUpdate" @close="closeUpdateModal" />
-
-      <ConfirmModal v-if="showConfirmModal" @confirm="handleConfirmReturn" @close="showConfirmModal = false" />
-
-      <ToastNotification v-if="message" :message="message" :message-type="messageType" @close="message = ''" />
+      <BorrowTable
+        :filtered-borrow-data="filteredBorrowData"
+        :categories="categories"
+        :current-page="currentPage"
+        :limit="limit"
+        :limit-options="limitOptions"
+        :selected-status="selectedStatus"
+        :selected-category="selectedCategory"
+        :total-filtered-items="totalFilteredItems"
+        :total-pages="totalPages"
+        :open-dropdown="openDropdown"
+        :get-item-status="getItemStatus"
+        :format-date="formatDate"
+        @update:current-page="currentPage = $event"
+        @update:limit="limit = $event"
+        @update:selected-status="updateSelectedStatus($event)"
+        @update:selected-category="selectedCategory = $event"
+        @toggle-dropdown="toggleDropdown"
+        @show-book="handleShow"
+        @confirm-return="confirmReturn"
+        @update-record="openUpdateModal"
+        @delete-record="handleDelete"
+        @add-borrow="showModal = true"
+        @exportBorrowDataToExcel="exportBorrowDataToExcel"
+        @exportBorrowDataToPDF="exportBorrowDataToPDF"
+      />
+      <BookDetailModal
+        v-if="showBookDetail"
+        :book="selectedBook"
+        :get-item-status="getItemStatus"
+        :get-days-left="getDaysLeft"
+        :format-date="formatDate"
+        @close="showBookDetail = false"
+      />
+      <AddBorrowModal
+        v-if="showModal"
+        v-model="addForm"
+        @submit="submitAddBorrow"
+        @close="showModal = false"
+      />
+      <UpdateBorrowModal
+        v-if="showUpdateModal"
+        :form="updateForm"
+        :statusOptions="statusOptions"
+        :formError="formError"
+        @submit="submitUpdate"
+        @close="closeUpdateModal"
+      />
+      <ConfirmModal
+        v-if="showConfirmModal"
+        @confirm="handleConfirmReturn"
+        @close="showConfirmModal = false"
+      />
+      <ToastNotification
+        v-if="message"
+        :message="message"
+        :message-type="messageType"
+        @close="message = ''"
+      />
     </div>
   </div>
 </template>
@@ -38,8 +77,6 @@ import AddBorrowModal from "./AddBorrowModal.vue";
 import UpdateBorrowModal from "./UpdateBorrowModal.vue";
 import ConfirmModal from "./ConfirmModal.vue";
 import ToastNotification from "./ToastNotification.vue";
-import { exportToExcel } from "@/utils/exportToExcel";
-import { exportToPDF } from "@/utils/exportToPDF";
 import { useBorrowManagement } from "@/composables/useBorrowManagement";
 
 const route = useRoute();
@@ -50,6 +87,7 @@ const {
   booksData,
   search,
   limit,
+  limitOptions,
   currentPage,
   selectedStatus,
   selectedCategory,
@@ -65,7 +103,6 @@ const {
   formError,
   message,
   messageType,
-  returnId,
   categories,
   filteredBorrowData,
   totalFilteredItems,
@@ -84,53 +121,64 @@ const {
   handleDelete,
   confirmReturn,
   handleConfirmReturn,
+  exportBorrowDataToExcel,
+  exportBorrowDataToPDF,
 } = useBorrowManagement();
 
 // Function to update selectedStatus and sync with query parameter
 const updateSelectedStatus = (value) => {
-  console.log('Updating selectedStatus:', value); // Debug log
+  console.log('Updating selectedStatus:', value);
   selectedStatus.value = value;
   router.replace({
     name: 'borrows',
-    query: { ...route.query, status: value || undefined },
+    query: { ...route.query, status: value || undefined, limit: limit.value },
   });
 };
 
-// Read query parameter on mount
+// Function to update selectedCategory and sync with query parameter
+const updateSelectedCategory = (value) => {
+  console.log('Updating selectedCategory:', value);
+  selectedCategory.value = value;
+  router.replace({
+    name: 'borrows',
+    query: { ...route.query, category: value || undefined, limit: limit.value },
+  });
+};
+
+// Read query parameters on mount
 onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
-  console.log("Initial booksData:", booksData.value); // Debug log
-  const status = route.query.status;
-  console.log('Query status on mount:', status); // Debug log
+  console.log("Initial booksData:", booksData.value);
+  const { status, limit: queryLimit } = route.query;
+  console.log('Query params on mount:', { status, limit: queryLimit });
   if (status && ['borrowed', 'overdue', 'returned'].includes(status)) {
     selectedStatus.value = status;
   }
+  if (queryLimit && ['10', '30', '50', 'all'].includes(queryLimit)) {
+    limit.value = queryLimit;
+  }
 });
 
-watch(booksData, (newBooksData) => {
-  console.log("booksData updated:", newBooksData); // Debug log
-});
-
+// Reset currentPage when filters change
 watch([selectedCategory, selectedStatus, search, limit], () => {
-  console.log('Filters changed, resetting currentPage to 1'); // Debug log
+  console.log('Filters changed:', { selectedCategory: selectedCategory.value, selectedStatus: selectedStatus.value, search: search.value, limit: limit.value });
   currentPage.value = 1;
   router.replace({
     name: 'borrows',
-    query: { ...route.query, status: selectedStatus.value || undefined, category: selectedCategory.value || undefined },
+    query: {
+      status: selectedStatus.value || undefined,
+      category: selectedCategory.value || undefined,
+      limit: limit.value,
+    },
   });
 });
 
+// Adjust currentPage if it exceeds totalPages
 watch(totalPages, (newTotal) => {
-  if (currentPage.value > newTotal) currentPage.value = newTotal;
+  if (currentPage.value > newTotal && newTotal > 0) {
+    currentPage.value = newTotal;
+  }
 });
-
-const exportBorrowDataToExcel = () => {
-  exportToExcel(filteredBorrowData.value || filteredBorrowData);
-};
-
-const exportBorrowDataToPDF = () => {
-  exportToPDF(filteredBorrowData.value || filteredBorrowData);
-};
 </script>
 
 <style scoped>

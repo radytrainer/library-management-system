@@ -1,4 +1,3 @@
-// src/composables/useBorrowManagement.js
 import { ref, computed, provide } from "vue";
 import {
   getBorrows,
@@ -18,7 +17,7 @@ export function useBorrowManagement() {
   const loading = ref(false);
   const error = ref(null);
   const search = ref("");
-  const limit = ref(10);
+  const limit = ref("all"); 
   const currentPage = ref(1);
   const selectedStatus = ref("");
   const selectedCategory = ref("");
@@ -61,6 +60,13 @@ export function useBorrowManagement() {
     { value: "returned", label: "Returned" },
   ]);
 
+  const limitOptions = ref([
+    { value: "10", label: "Show 10" },
+    { value: "30", label: "Show 30" },
+    { value: "50", label: "Show 50" },
+    { value: "all", label: "Show All" },
+  ]);
+
   provide("borrowManagement", {
     getBook,
     getUser,
@@ -71,7 +77,6 @@ export function useBorrowManagement() {
     usersData,
   });
 
-  // Simplified categories: array of category names
   const categories = computed(() => {
     const set = new Set(booksData.value.map((item) => item.category).filter(Boolean));
     return Array.from(set);
@@ -98,7 +103,6 @@ export function useBorrowManagement() {
 
     let filtered = borrowData.value;
 
-    // Apply search filter
     if (search.value) {
       const searchTerm = search.value.toLowerCase();
       filtered = filtered.filter(
@@ -108,19 +112,20 @@ export function useBorrowManagement() {
       );
     }
 
-    // Apply category filter (using category name)
     if (selectedCategory.value) {
       filtered = filtered.filter((item) => item.book?.category === selectedCategory.value);
     }
 
-    // Apply status filter
     if (selectedStatus.value) {
       filtered = filtered.filter((item) => getItemStatus(item) === selectedStatus.value);
     }
 
-    // Apply pagination
-    const start = (currentPage.value - 1) * limit.value;
-    const end = start + limit.value;
+    if (limit.value === "all") {
+      console.log("Showing all filtered data:", filtered);
+      return filtered;
+    }
+    const start = (currentPage.value - 1) * parseInt(limit.value);
+    const end = start + parseInt(limit.value);
     const paginatedData = filtered.slice(start, end);
 
     console.log("Filtered and paginated data:", paginatedData);
@@ -130,7 +135,6 @@ export function useBorrowManagement() {
   const totalFilteredItems = computed(() => {
     let filtered = borrowData.value;
 
-    // Apply search filter
     if (search.value) {
       const searchTerm = search.value.toLowerCase();
       filtered = filtered.filter(
@@ -140,12 +144,10 @@ export function useBorrowManagement() {
       );
     }
 
-    // Apply category filter (using category name)
     if (selectedCategory.value) {
       filtered = filtered.filter((item) => item.book?.category === selectedCategory.value);
     }
 
-    // Apply status filter
     if (selectedStatus.value) {
       filtered = filtered.filter((item) => getItemStatus(item) === selectedStatus.value);
     }
@@ -155,7 +157,11 @@ export function useBorrowManagement() {
   });
 
   const totalPages = computed(() => {
-    const pages = Math.max(1, Math.ceil(totalFilteredItems.value / limit.value));
+    if (limit.value === "all") {
+      console.log("Total pages (show all): 1");
+      return 1;
+    }
+    const pages = Math.max(1, Math.ceil(totalFilteredItems.value / parseInt(limit.value)));
     console.log("Total pages:", pages);
     return pages;
   });
@@ -575,6 +581,7 @@ export function useBorrowManagement() {
     usersData,
     search,
     limit,
+    limitOptions,
     currentPage,
     selectedStatus,
     selectedCategory,
