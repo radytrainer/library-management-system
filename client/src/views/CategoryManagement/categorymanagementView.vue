@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-9 space-y-5">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-9 space-y-5">
       <!-- Header -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">

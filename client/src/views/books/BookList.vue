@@ -2,7 +2,7 @@
   <div class="bg-gray-100">
     <Notification :notification="notification" />
 
-    <div class="max-w-7xl mx-auto px-8 sm:px-6 lg:px-1 py-8 space-y-2 flex flex-col gap-4">
+    <div class="max-w-8xl mx-auto px-8 sm:px-6 lg:px-1 py-8 space-y-2 flex flex-col gap-4">
       <!-- Header -->
       <div class="bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-2xl mx-6 overflow-hidden relative shadow-lg">
         <BookManagerHeader @add-by-form="handleAddByForm" @add-by-import="handleAddByImport" />
