@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-100 sticky min-h-screen">
+  <div class="bg-gray-100">
     <Notification :notification="notification" />
 
     <div class="max-w-7xl mx-auto px-8 sm:px-6 lg:px-1 py-8 space-y-2 flex flex-col gap-4">
@@ -267,8 +267,8 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import Swal from 'sweetalert2';
 import BookForm from '@/components/books/Form/BookForm.vue';
 import ImportBook from '@/components/books/Form/ImportBook.vue';
-import BookManagerHeader from '@/components/books/Headers/BookManagerHeader.vue';
-import BookStatsCards from '@/components/books/Stats/BookStatsCards.vue';
+import BookManagerHeader from '@/components/books/headers/BookManagerHeader.vue';
+import BookStatsCards from '@/components/books/stats/BookStatsCards.vue';
 import Collection from '@/components/books/MainContent/Collection.vue';
 import BookDetail from '@/components/books/BookDetail/collection.vue';
 import Notification from '@/components/books/Notification/Notification.vue';
