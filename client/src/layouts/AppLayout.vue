@@ -390,11 +390,16 @@ onMounted(() => {
               aria-label="Notification count">
               {{ notifications }}
             </span>
-            <div v-if="showNotifications"
-              class="notifications-menu absolute right-0 mt-3 w-80 bg-white shadow-2xl rounded-xl p-3 z-50 border border-gray-100 transform transition-all duration-300 ease-in-out max-h-72 overflow-y-auto no-scrollbar"
-              role="region" aria-live="polite">
-              <p class="text-sm font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2.5"
-                :class="{ 'font-khmer': language === 'kh' }">
+            <div
+              v-if="showNotifications"
+              class="notifications-menu absolute right-0 mt-3 w-80 bg-white shadow-xl rounded-xl p-3 z-50 border border-gray-100 transform transition-all duration-300 ease-in-out max-h-72 overflow-y-auto no-scrollbar"
+              role="region"
+              aria-live="polite"
+            >
+              <p
+                class="text-sm font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2.5"
+                :class="{ 'font-khmer': language === 'kh' }"
+              >
                 {{ language === "en" ? "You have" : "អ្នកមាន" }} {{ notifications }}
                 {{
                   notifications === 1
@@ -411,13 +416,19 @@ onMounted(() => {
                   {{ language === "en" ? "Loading..." : "កំពុងផ្ទុក..." }}
                 </span>
               </div>
-              <div v-else-if="notifications > 0" class="mt-2 space-y-3">
-                <div v-for="borrow in userStore.overdueBorrows" :key="borrow.id" :class="[
-                  'notification-item rounded-xl p-4 transition-all duration-300 ease-in-out cursor-pointer flex items-center',
-                  new Date(borrow.dueDate) <= new Date()
-                    ? 'bg-red-50 border-l-4 border-red-600 hover:bg-red-100'
-                    : 'bg-gray-50 hover:bg-gray-200',
-                ]" @click="goToBorrowDetails(borrow.id)" role="button" tabindex="0"
+              <div v-else-if="notifications > 0" class="mt-1 space-y-3">
+                <div
+                  v-for="borrow in userStore.overdueBorrows"
+                  :key="borrow.id"
+                  :class="[
+                    'notification-item rounded-xl p-4 transition-all duration-300 ease-in-out cursor-pointer flex items-center',
+                    new Date(borrow.dueDate) <= new Date()
+                      ? 'bg-red-50 border-l-4 border-red-600 hover:bg-red-100'
+                      : 'bg-gray-50 hover:bg-gray-200',
+                  ]"
+                  @click="goToBorrowDetails(borrow.id)"
+                  role="button"
+                  tabindex="0"
                   @keydown.enter="goToBorrowDetails(borrow.id)"
                   :aria-label="`View details for overdue book ${borrow.bookTitle.title}`">
                   <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -436,14 +447,18 @@ onMounted(() => {
                       }}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-1.5">
-                      <span class="text-xs text-gray-700">{{
+                      <span class="text-xs text-gray-700">Borrower : {{
                         borrow.userBorrow || "Unknown User"
                       }}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-1">
-                      <span class="text-xs text-red-600 font-medium">Due: {{ new
-                        Date(borrow.dueDate).toLocaleDateString() }}</span>
-                      <span v-if="new Date(borrow.dueDate) <= new Date()" class="text-xs text-red-600 font-semibold">
+                      <span class="text-xs/3 text-red-600"
+                        >Due: {{ new Date(borrow.dueDate).toLocaleDateString() }}</span
+                      >
+                      <span
+                        v-if="new Date(borrow.dueDate) <= new Date()"
+                        class="text-xs/3 text-red-600"
+                      >
                         (Overdue)
                       </span>
                     </div>

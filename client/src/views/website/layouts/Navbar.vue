@@ -3,12 +3,16 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16 lg:h-20">
         <!-- Logo/Brand -->
-        <div class="flex-shrink-0">
-          <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            PNC
-          </div>
-        </div>
+<!-- Logo/Brand -->
+<div class="flex items-center space-x-2 flex-shrink-0">
+  <!-- Logo image -->
+  <img src="/logo.png" alt="PNC Logo" class="h-14 w-14 object-contain">
 
+  <!-- Brand name -->
+  <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+   PNC Library 
+  </div>
+</div>
         <!-- Desktop Navigation Links -->
         <div class="hidden md:flex space-x-1 lg:space-x-2">
           <router-link to="/website" class="nav-link font-semibold">
