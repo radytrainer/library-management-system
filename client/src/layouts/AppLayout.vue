@@ -16,6 +16,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { debounce } from "lodash";
 import { defineEmits } from "vue";
+import Swal from "sweetalert2";
 
 // Stores and router
 const userStore = useUserStore();
@@ -193,6 +194,25 @@ function logout() {
   userStore.logout();
   showProfileDropdown.value = false;
 }
+function confirmLogout() {
+  Swal.fire({
+    title: language.value === "en" ? "Are you sure?" : "តើអ្នកប្រាកដទេ?",
+    text: language.value === "en"
+      ? "Do you really want to logout?"
+      : "តើអ្នកពិតជាចង់ចាកចេញមែនទេ?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText:
+      language.value === "en" ? "Yes, Logout" : "បាទ/ចាស ចាកចេញ",
+    cancelButtonText: language.value === "en" ? "Cancel" : "បោះបង់",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      logout();
+    }
+  });
+}
 
 function handleImageError() {
   userStore.user.profile_image = null
@@ -238,7 +258,7 @@ function manualCheck() {
 // Function to navigate to borrow details
 function goToBorrowDetails() {
   router.push(`/borrows`);
-  showNotifications.value = false; 
+  showNotifications.value = false;
 }
 
 onMounted(() => {
@@ -249,7 +269,7 @@ onMounted(() => {
   fetchUserProfile();
   checkOverdueBorrows();
   const interval = setInterval(checkOverdueBorrows, 300000);
-  onUnmounted(() => clearInterval(interval)); 
+  onUnmounted(() => clearInterval(interval));
 });
 </script>
 
@@ -269,16 +289,13 @@ onMounted(() => {
       <nav class="flex-1 overflow-y-auto no-scrollbar">
         <ul class="space-y-1 p-4" :class="{ 'font-khmer': language === 'kh' }">
           <li v-for="item in filteredNav" :key="item.path">
-            <RouterLink
-              :to="item.path"
-              :class="[
-                'flex items-center p-3 rounded-lg transition-colors duration-200',
-                isSidebarOpen
-                  ? 'hover:bg-custom-hover-page'
-                  : 'justify-center hover:bg-custom-hover-page',
-                $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
-              ]"
-            >
+            <RouterLink :to="item.path" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen
+                ? 'hover:bg-custom-hover-page'
+                : 'justify-center hover:bg-custom-hover-page',
+              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
+            ]">
               <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">{{
                 item.icon
               }}</span>
@@ -286,19 +303,14 @@ onMounted(() => {
             </RouterLink>
           </li>
           <li>
-            <RouterLink
-              to="/website"
-              :class="[
-                'flex items-center p-3 rounded-lg transition-colors duration-200',
-                isSidebarOpen
-                  ? 'hover:bg-custom-hover-page'
-                  : 'justify-center hover:bg-custom-hover-page',
-                $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
-              ]"
-            >
-              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }"
-                >public</span
-              >
+            <RouterLink to="/website" :class="[
+              'flex items-center p-3 rounded-lg transition-colors duration-200',
+              isSidebarOpen
+                ? 'hover:bg-custom-hover-page'
+                : 'justify-center hover:bg-custom-hover-page',
+              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
+            ]">
+              <span class="material-icons text-xl" :class="{ 'mr-3': isSidebarOpen }">public</span>
               <span v-if="isSidebarOpen">{{
                 language === "en" ? "Website" : "គេហទំព័រ"
               }}</span>
@@ -309,28 +321,19 @@ onMounted(() => {
     </aside>
 
     <!-- Main Content -->
-    <div
-      class="flex-1 flex flex-col transition-all duration-300"
-      :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }"
-    >
+    <div class="flex-1 flex flex-col transition-all duration-300"
+      :class="{ 'ml-64': isSidebarOpen, 'ml-16': !isSidebarOpen }">
       <!-- Header -->
-      <header
-        class="sticky top-0 z-40 bg-white shadow-sm p-4 flex justify-between items-center"
-      >
+      <header class="sticky top-0 z-40 bg-white shadow-sm p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
-          <button
-            @click="toggleSidebar"
+          <button @click="toggleSidebar"
             class="text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100"
-            aria-label="Toggle sidebar"
-          >
+            aria-label="Toggle sidebar">
             <span class="material-icons text-2xl">{{
               isSidebarOpen ? "menu_open" : "menu"
             }}</span>
           </button>
-          <h1
-            class="text-2xl font-semibold tracking-tight"
-            :class="{ 'font-khmer': language === 'kh' }"
-          >
+          <h1 class="text-2xl font-semibold tracking-tight" :class="{ 'font-khmer': language === 'kh' }">
             {{ pageTitle }}
           </h1>
         </div>
@@ -338,95 +341,53 @@ onMounted(() => {
         <div class="flex items-center space-x-3">
           <!-- Search -->
           <div class="relative">
-            <input
-              type="text"
-              v-model="searchQuery"
+            <input type="text" v-model="searchQuery"
               :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
               class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }"
-              aria-label="Search books"
-            />
-            <span
-              class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"
-            >
+              :class="{ 'font-khmer': language === 'kh' }" aria-label="Search books" />
+            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
               search
             </span>
           </div>
 
           <!-- Language Switch -->
           <div class="relative">
-            <button
-              @click="isOpen = !isOpen"
+            <button @click="isOpen = !isOpen"
               class="language-button border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
-              :class="{ 'font-khmer': language === 'kh' }"
-              aria-haspopup="true"
-              :aria-expanded="isOpen.toString()"
-              aria-label="Select language"
-            >
-              <img
-                :src="
-                  language === 'en'
-                    ? 'https://flagcdn.com/w40/us.png'
-                    : 'https://flagcdn.com/w40/kh.png'
-                "
-                class="w-5 h-4 mr-2"
-                :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'"
-              />
+              :class="{ 'font-khmer': language === 'kh' }" aria-haspopup="true" :aria-expanded="isOpen.toString()"
+              aria-label="Select language">
+              <img :src="language === 'en'
+                  ? 'https://flagcdn.com/w40/us.png'
+                  : 'https://flagcdn.com/w40/kh.png'
+                " class="w-5 h-4 mr-2" :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'" />
               {{ language === "en" ? "English" : "ភាសាខ្មែរ" }}
               <span class="ml-2 material-icons">arrow_drop_down</span>
             </button>
-            <div
-              v-if="isOpen"
+            <div v-if="isOpen"
               class="language-menu absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-opacity duration-200"
-              role="menu"
-              aria-orientation="vertical"
-              tabindex="-1"
-            >
-              <a
-                href="#"
-                @click.prevent="selectLanguage('en')"
-                class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem"
-                tabindex="0"
-              >
-                <img
-                  src="https://flagcdn.com/w40/us.png"
-                  class="w-5 h-4 mr-2"
-                  alt="US Flag"
-                />
+              role="menu" aria-orientation="vertical" tabindex="-1">
+              <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
+                role="menuitem" tabindex="0">
+                <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
                 English
               </a>
-              <a
-                href="#"
-                @click.prevent="selectLanguage('kh')"
-                class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem"
-                tabindex="0"
-              >
-                <img
-                  src="https://flagcdn.com/w40/kh.png"
-                  class="w-5 h-4 mr-2"
-                  alt="Cambodia Flag"
-                />
+              <a href="#" @click.prevent="selectLanguage('kh')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
+                role="menuitem" tabindex="0">
+                <img src="https://flagcdn.com/w40/kh.png" class="w-5 h-4 mr-2" alt="Cambodia Flag" />
                 ភាសាខ្មែរ
               </a>
             </div>
           </div>
           <!-- Notifications -->
           <div class="relative">
-            <button
-              @click="toggleNotifications"
+            <button @click="toggleNotifications"
               class="notifications-button material-icons text-gray-700 cursor-pointer hover:text-indigo-700 p-2.5 rounded-lg hover:bg-indigo-50 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              aria-label="Toggle notifications"
-              :aria-expanded="showNotifications.toString()"
-            >
+              aria-label="Toggle notifications" :aria-expanded="showNotifications.toString()">
               notifications
             </button>
-            <span
-              v-if="notifications > 0"
+            <span v-if="notifications > 0"
               class="absolute -top-0 -right-0 bg-red-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-semibold shadow-sm"
-              aria-label="Notification count"
-            >
+              aria-label="Notification count">
               {{ notifications }}
             </span>
             <div
@@ -446,15 +407,12 @@ onMounted(() => {
                       ? "new notification"
                       : "ការជូនដំណឹងថ្មី"
                     : language === "en"
-                    ? "new notifications"
-                    : "ការជូនដំណឹងថ្មី"
+                      ? "new notifications"
+                      : "ការជូនដំណឹងថ្មី"
                 }}
               </p>
               <div v-if="userStore.loading" class="flex justify-center items-center py-4">
-                <span
-                  class="text-gray-600 text-sm"
-                  :class="{ 'font-khmer': language === 'kh' }"
-                >
+                <span class="text-gray-600 text-sm" :class="{ 'font-khmer': language === 'kh' }">
                   {{ language === "en" ? "Loading..." : "កំពុងផ្ទុក..." }}
                 </span>
               </div>
@@ -472,11 +430,8 @@ onMounted(() => {
                   role="button"
                   tabindex="0"
                   @keydown.enter="goToBorrowDetails(borrow.id)"
-                  :aria-label="`View details for overdue book ${borrow.bookTitle.title}`"
-                >
-                  <div
-                    class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center"
-                  >
+                  :aria-label="`View details for overdue book ${borrow.bookTitle.title}`">
+                  <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                     <span class="material-icons text-indigo-700 text-lg">book</span>
                   </div>
                   <div class="ml-4 flex-1">
@@ -510,30 +465,21 @@ onMounted(() => {
                   </div>
                 </div>
               </div>
-              <div
-                v-else-if="userStore.error"
-                class="mt-2 text-sm text-red-600 text-center"
-                :class="{ 'font-khmer': language === 'kh' }"
-              >
+              <div v-else-if="userStore.error" class="mt-2 text-sm text-red-600 text-center"
+                :class="{ 'font-khmer': language === 'kh' }">
                 {{
                   language === "en"
                     ? "Error loading notifications"
                     : "កំហុសក្នុងការផ្ទុកការជូនដំណឹង"
                 }}
               </div>
-              <button
-                v-if="notifications > 0"
+              <button v-if="notifications > 0"
                 class="mt-4 w-full text-sm font-semibold text-indigo-700 hover:text-indigo-900 text-center underline underline-offset-4 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                @click="clearNotifications"
-                aria-label="Clear all notifications"
-              >
+                @click="clearNotifications" aria-label="Clear all notifications">
                 {{ language === "en" ? "Clear All" : "លុបទាំងអស់" }}
               </button>
-              <p
-                v-else-if="!userStore.loading && !userStore.error"
-                class="mt-4 text-sm text-gray-600 text-center font-medium"
-                :class="{ 'font-khmer': language === 'kh' }"
-              >
+              <p v-else-if="!userStore.loading && !userStore.error"
+                class="mt-4 text-sm text-gray-600 text-center font-medium" :class="{ 'font-khmer': language === 'kh' }">
                 {{ language === "en" ? "No new notifications" : "គ្មានការជូនដំណឹងថ្មី" }}
               </p>
             </div>
@@ -542,61 +488,38 @@ onMounted(() => {
           <div class="relative">
             <div
               class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400 flex items-center justify-center"
-              @click="toggleProfileDropdown"
-              role="button"
-              aria-label="Toggle profile dropdown"
-            >
-              <img
-                v-if="hasValidProfileImage"
-                :src="profileImageUrl"
-                alt="Profile"
-                class="h-full w-full rounded-full object-cover"
-                @error="handleImageError"
-              />
-              <span
-                v-else
+              @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
+              <img v-if="hasValidProfileImage" :src="profileImageUrl" alt="Profile"
+                class="h-full w-full rounded-full object-cover" @error="handleImageError" />
+              <span v-else
                 class="text-lg font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
-                :class="{ 'font-khmer': language === 'kh' }"
-              >
+                :class="{ 'font-khmer': language === 'kh' }">
                 {{ profileInitial }}
               </span>
             </div>
-            <div
-              v-if="showProfileDropdown"
+            <div v-if="showProfileDropdown"
               class="profile-menu absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
-              role="menu"
-            >
+              role="menu">
               <div class="border-b border-gray-200 pb-2 mb-2">
-                <p
-                  class="text-sm font-medium"
-                  :class="{ 'font-khmer': language === 'kh' }"
-                >
+                <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
                   {{ userStore.user?.username || "Unknown" }}
                 </p>
-                <p
-                  class="text-xs text-gray-500"
-                  :class="{ 'font-khmer': language === 'kh' }"
-                >
+                <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }">
                   {{ userStore.user?.email || "No email" }}
                 </p>
               </div>
-              <router-link
-                to="/profile"
-                class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                role="menuitem"
-                @click="showProfileDropdown = false"
-              >
+              <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                role="menuitem" @click="showProfileDropdown = false">
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === "en" ? "View Profile" : "មើលប្រវត្តិរូប" }}
               </router-link>
-              <button
-                @click="logout"
+              <button @click="confirmLogout"
                 class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                role="menuitem"
-              >
+                role="menuitem">
                 <span class="material-symbols-outlined mr-2">logout</span>
                 {{ language === "en" ? "Logout" : "ចាកចេញ" }}
               </button>
+
             </div>
           </div>
         </div>
