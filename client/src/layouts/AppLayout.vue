@@ -431,7 +431,7 @@ onMounted(() => {
             </span>
             <div
               v-if="showNotifications"
-              class="notifications-menu absolute right-0 mt-3 w-80 bg-white shadow-2xl rounded-xl p-3 z-50 border border-gray-100 transform transition-all duration-300 ease-in-out max-h-72 overflow-y-auto no-scrollbar"
+              class="notifications-menu absolute right-0 mt-3 w-80 bg-white shadow-xl rounded-xl p-3 z-50 border border-gray-100 transform transition-all duration-300 ease-in-out max-h-72 overflow-y-auto no-scrollbar"
               role="region"
               aria-live="polite"
             >
@@ -458,7 +458,7 @@ onMounted(() => {
                   {{ language === "en" ? "Loading..." : "កំពុងផ្ទុក..." }}
                 </span>
               </div>
-              <div v-else-if="notifications > 0" class="mt-2 space-y-3">
+              <div v-else-if="notifications > 0" class="mt-1 space-y-3">
                 <div
                   v-for="borrow in userStore.overdueBorrows"
                   :key="borrow.id"
@@ -492,17 +492,17 @@ onMounted(() => {
                       }}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-1.5">
-                      <span class="text-xs text-gray-700">{{
+                      <span class="text-xs text-gray-700">Borrower : {{
                         borrow.userBorrow || "Unknown User"
                       }}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-1">
-                      <span class="text-xs text-red-600 font-medium"
+                      <span class="text-xs/3 text-red-600"
                         >Due: {{ new Date(borrow.dueDate).toLocaleDateString() }}</span
                       >
                       <span
                         v-if="new Date(borrow.dueDate) <= new Date()"
-                        class="text-xs text-red-600 font-semibold"
+                        class="text-xs/3 text-red-600"
                       >
                         (Overdue)
                       </span>
