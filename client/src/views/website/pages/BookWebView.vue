@@ -1,325 +1,414 @@
 <template>
-    <!-- Hero Section: Showcase main book and call-to-action -->
-    <section class="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-200 py-20 md:py-28 shadow-xl">
-        <div class="container mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center gap-12 md:gap-20">
-            <div class="md:w-1/3 flex justify-center">
-                <img :src="books[0]?.coverUrl || 'https://i.pinimg.com/736x/5a/f4/0e/5af40ef711e4f422c9e1bfc0a7f4cbe5.jpg'"
-                    alt="Book Cover"
-                    class="rounded-2xl shadow-2xl max-w-[250px] md:max-w-[320px] h-auto border border-gray-200 transition-transform duration-300" />
-            </div>
-            <div class="md:w-2/3 text-center md:text-left space-y-6 max-w-2xl">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight tracking-tight">
-                    Discover Your Next Read
-                </h1>
-                <p class="text-xl text-gray-700 font-medium">
-                    Explore our vast collection of books, available for borrowing.
-                </p>
-                <p class="text-base text-gray-600 leading-relaxed">
-                    Dive into captivating stories, expand your knowledge, and find new adventures. Whether you're
-                    looking for fiction, non-fiction, or academic resources—our catalog has something for everyone.
-                </p>
-                <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4 pt-6">
-                    <button
-                        class="border-2 border-gray-300 text-gray-900 px-8 py-3 rounded-full shadow-sm hover:bg-gray-100 hover:border-gray-400 text-base font-semibold transition-all duration-300 transform hover:scale-105">
-                        How to Borrow
-                    </button>
-                </div>
-            </div>
+  <!-- Hero Section: Updated to white theme -->
+  <!-- Converting from dark theme to clean white background with dark text -->
+ <section class="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-12 md:py-32 relative overflow-hidden">
+    <!-- Updated animated background elements for light theme -->
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-indigo-50/30"></div>
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+    
+    <div class="container mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center gap-16 md:gap-24 relative z-10">
+      <div class="md:w-1/3 flex justify-center">
+        <div class="relative group">
+          <div class="absolute -inset-4 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+          <img :src="books[0]?.coverUrl || 'https://i.pinimg.com/736x/5a/f4/0e/5af40ef711e4f422c9e1bfc0a7f4cbe5.jpg'"
+              alt="Featured Book Cover"
+              class="relative rounded-3xl shadow-2xl max-w-[280px] md:max-w-[340px] h-auto border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl" />
         </div>
-    </section>
-
-    <!-- Book Details Section: Highlight author details -->
-    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
-        <div class="relative px-6 py-12 lg:px-12">
-            <div class="mx-auto max-w-7xl">
-                <div class="grid gap-8 lg:grid-cols-2 lg:gap-16">
-                    <!-- Author Image -->
-                    <div class="flex justify-center lg:justify-start">
-                        <div class="relative">
-                            <img :src="selectedAuthorDetails?.profile_image_url || 'https://i.pinimg.com/736x/6e/48/83/6e488361d07c19e8ae2b885afce6ba4f.jpg'"
-                                :alt="selectedAuthor || 'Author'"
-                                class="w-80 h-[24rem] rounded-2xl shadow-2xl object-cover transform hover:scale-105 transition-transform duration-300" />
-                        </div>
-                    </div>
-
-                    <!-- Author Content -->
-                    <div class="flex flex-col justify-center space-y-6 text-white">
-                        <div>
-                            <div class="mt-4 flex items-center space-x-4">
-                                <div class="flex items-center space-x-2">
-                                    <img :src="selectedAuthorDetails?.profile_image_url || 'https://i.pinimg.com/736x/6e/48/83/6e488361d07c19e8ae2b885afce6ba4f.jpg'"
-                                        :alt="selectedAuthor || 'Author'"
-                                        class="w-20 h-20 rounded-full object-cover border-2 border-gray-200" />
-                                    <div>
-                                        <p class="font-semibold text-lg">{{ selectedAuthor || 'Book Writer' }}</p>
-                                        <p class="text-sm text-gray-300">
-                                            {{ filteredAuthorBooks.length }} Books | {{ selectedAuthorDetails?.readers
-                                                || 0 }} Readers
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-4 flex items-center space-x-2">
-                                <div class="flex items-center">
-                                    <Star v-for="star in 5" :key="star"
-                                        class="h-6 w-6 fill-yellow-400 text-yellow-400" />
-                                </div>
-                                <span class="text-lg font-semibold">{{ selectedBook?.reviews || 0 }} reviews</span>
-                            </div>
-                        </div>
-                        <div class="text-gray-300 leading-relaxed">
-                            <p>
-                                {{ selectedAuthorDetails?.biography || 'This author has not provided a biography yet.'
-                                }}
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap gap-4">
-                            <button
-                                class="border-2 border-white text-white hover:bg-white hover:text-gray-800 px-6 py-3 rounded-full shadow-sm transition-all duration-300 transform hover:scale-105"
-                                :disabled="!selectedBook">
-                                Read Now
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      </div>
+      <div class="md:w-2/3 text-center md:text-left space-y-8 max-w-2xl">
+        <div class="space-y-4">
+          <!-- Updated text colors to dark for white background -->
+          <h1 class="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 leading-tight tracking-tight">
+            Discover Your
+            <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Next Read</span>
+          </h1>
+          <p class="text-xl text-slate-700 font-medium leading-relaxed">
+            Explore our curated collection of books, carefully selected for every reader's journey.
+          </p>
         </div>
-
-        <!-- Content Section: About the author and books by selected author -->
-        <div class="bg-white px-6 py-12 lg:px-12">
-            <div class="mx-auto max-w-7xl">
-                <div class="grid gap-12 lg:grid-cols-2">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-6 tracking-tight">About the Author</h2>
-                        <div class="space-y-4 text-gray-700 leading-relaxed">
-                            <p>
-                                {{ selectedAuthorDetails?.biography }}
-                            </p>
-                            <p>
-                                Learn more about their journey, the inspiration behind their books, and the impact
-                                they've made on readers around the world.
-                            </p>
-                            <p>
-                                Discover how their stories continue to inspire, educate, and bring joy to people of all
-                                ages.
-                            </p>
-                        </div>
-                        <div class="mt-6 flex flex-wrap gap-2">
-                            <span
-                                v-for="category in selectedAuthorDetails?.categories || ['Fiction', 'Adventure', 'Inspiration']"
-                                :key="category"
-                                class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm hover:bg-blue-200 transition-colors duration-200">
-                                {{ category }}
-                            </span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between mb-8">
-                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">More by Author</h2>
-                            <div class="flex items-center gap-4">
-                                <select v-model="selectedAuthor" @change="filterBooksByAuthor"
-                                    class="border-2 border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
-                                    <option value="">All Authors</option>
-                                    <option v-for="author in authors" :key="author.id" :value="author.name">
-                                        {{ author.name }}
-                                    </option>
-                                </select>
-                                <button @click="showAll = true"
-                                    class="text-sm text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200">
-                                    View All
-                                </button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <div v-for="book in filteredAuthorBooks.slice(0, 4)" :key="book.id"
-                                class="cursor-pointer border rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-white"
-                                @click="openBookModal(book)">
-                                <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
-                                    :alt="`Cover of ${book.title}`" class="w-full h-38 object-cover" />
-                                <div class="p-4 text-center">
-                                    <h3 class="text-sm font-semibold text-gray-900 truncate">{{ book.title }}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="showAll"
-                            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300">
-                            <div
-                                class="bg-white rounded-2xl p-16 w-[90%] md:w-[70%] h-[90%] overflow-y-auto relative shadow-2xl animate-slide-in">
-                                <button
-                                    class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold transition-colors duration-200"
-                                    @click="showAll = false">
-                                    &times;
-                                </button>
-                                <h3 class="text-2xl font-bold mb-6 text-center text-gray-900">All Books by {{
-                                    selectedAuthor || 'Our Author' }}</h3>
-                                <div v-if="filteredAuthorBooks.length > 0"
-                                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-10">
-                                    <div v-for="book in filteredAuthorBooks" :key="book.id"
-                                        class="cursor-pointer border rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-white"
-                                        @click="openBookModal(book)">
-                                        <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
-                                            :alt="`Cover of ${book.title}`" class="w-full h-auto object-cover" />
-                                        <div class="p-4 text-center">
-                                            <h2 class="text-sm font-semibold text-gray-900 truncate">{{ book.title }}
-                                            </h2>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-else class="text-center text-gray-500 text-lg">
-                                    No books found for this author.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <p class="text-lg text-slate-600 leading-relaxed max-w-xl">
+          Dive into captivating stories, expand your knowledge, and find new adventures. Whether you're seeking fiction, non-fiction, or academic resources—our catalog offers something extraordinary for everyone.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4 pt-8">
+          <!-- Updated buttons for white theme -->
+          <button class="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-blue-500 hover:to-indigo-500">
+            <span class="flex items-center gap-2">
+              Start Exploring
+              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+              </svg>
+            </span>
+          </button>
+          <button class="border-2 border-slate-300 text-slate-700 px-8 py-4 rounded-2xl font-semibold text-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 transform hover:scale-105">
+            How to Borrow
+          </button>
         </div>
+      </div>
     </div>
+  </section>
 
-    <!-- Featured Books Section: Display up to 4 popular books with category filter -->
-    <section class="bg-stone-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Type of Books</h2>
-                <div class="flex items-center gap-4">
-                    <select v-model="selectedCategory" @change="filterBooksByCategory"
-                        class="border-2 border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
-                        <option value="">All Categories</option>
-                        <option v-for="category in categories" :key="category.id" :value="category.name">
-                            {{ category.name }}
-                        </option>
+  <!-- Author Section: Updated to white theme -->
+  <!-- Converting to white background with dark text -->
+  <section class="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-12 md:py-24 relative">
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-blue-50/20"></div>
+    
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+      <div class="grid gap-20 lg:grid-cols-2 items-start">
+        <!-- Author Info -->
+        <div class="space-y-10">
+          <div class="space-y-8">
+            <div class="relative">
+              <!-- Updated text colors to dark for white background -->
+              <h2 class="text-5xl font-bold text-slate-900 tracking-tight leading-tight pb-4">
+                About the 
+                <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Author
+                </span>
+              </h2>
+              <div class="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+            </div>
+            
+            <div class="space-y-6 text-slate-700 leading-relaxed text-lg">
+                <p class="first-letter:text-6xl first-letter:font-bold first-letter:text-blue-600 first-letter:float-left first-letter:mr-4 first-letter:mt-2 first-letter:leading-none">
+                Discover the creative mind behind these captivating stories. Each author brings their unique perspective and storytelling mastery to create unforgettable reading experiences that resonate with readers across generations.
+                </p>
+
+                <p class="text-slate-600">
+                Learn more about their journey, the inspiration behind their books, and the profound impact they've made on readers around the world through their compelling narratives.
+                </p>
+            </div>
+          </div>
+          
+          <!-- Enhanced Category Tags -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Genres & Categories</h3>
+            <div class="flex flex-wrap gap-2">
+                <!-- Static category tags for white theme -->
+                <span class="animate-fade-in-up bg-white/80 backdrop-blur-sm border border-slate-200 text-blue-700 px-4 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-lg hover:border-blue-300 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300 group">
+                <span class="group-hover:scale-110 transition-transform duration-200 inline-block">
+                    Fiction
+                </span>
+                </span>
+
+                <span class="animate-fade-in-up bg-white/80 backdrop-blur-sm border border-slate-200 text-blue-700 px-4 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-lg hover:border-blue-300 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300 group">
+                <span class="group-hover:scale-110 transition-transform duration-200 inline-block">
+                    Adventure
+                </span>
+                </span>
+
+                <span class="animate-fade-in-up bg-white/80 backdrop-blur-sm border border-slate-200 text-blue-700 px-4 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-lg hover:border-blue-300 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300 group">
+                <span class="group-hover:scale-110 transition-transform duration-200 inline-block">
+                    Inspiration
+                </span>
+                </span>
+
+                <span class="animate-fade-in-up bg-white/80 backdrop-blur-sm border border-slate-200 text-blue-700 px-4 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-lg hover:border-blue-300 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300 group">
+                <span class="group-hover:scale-110 transition-transform duration-200 inline-block">
+                    Drama
+                </span>
+                </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enhanced Books Section -->
+        <div class="space-y-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <!-- Title + subtitle -->
+            <div class="space-y-2">
+                <!-- Desktop text -->
+                <h2 class="hidden md:block text-4xl font-bold text-slate-900 tracking-tight">
+                More by 
+                </h2>
+                <p class="hidden md:block text-slate-600">
+                Explore their complete collection
+                </p>
+
+                <!-- Mobile text -->
+                <h2 class="md:hidden text-2xl font-bold text-slate-900 tracking-tight">
+                Featured Collection
+                </h2>
+                <p class="md:hidden text-slate-600">
+                Handpicked books across all genres
+                </p>
+            </div>
+
+                <!-- Filter + View All -->
+                <div class="flex flex-row sm:flex-row items-stretch sm:items-center gap-3">
+                <!-- Filter -->
+                <div class="relative flex-1">
+                    <select v-model="selectedAuthor" @change="filterBooksByAuthor"
+                    class="appearance-none border border-slate-300 rounded-xl px-6 py-3 pr-12 text-sm bg-white text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400 transition-all duration-200 cursor-pointer w-full">
+                    <option value="" class="bg-white text-slate-700">All Authors</option>
+                    <option v-for="author in authors" :key="author.id" :value="author.name" class="bg-white text-slate-700">
+                        {{ author.name }}
+                    </option>
                     </select>
-                    <button @click="showFeaturedAll = true"
-                        class="text-sm text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200">
-                        View All
-                    </button>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <div v-for="book in filteredBooks.slice(0, 4)" :key="book.id"
-                    class="cursor-pointer rounded-xl bg-white border border-gray-100 p-4 flex flex-col items-center text-center shadow-md hover:shadow-lg transition-shadow duration-300"
-                    @click="openBookModal(book)">
-                    <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
-                        :alt="`Cover of ${book.title}`" loading="lazy"
-                        class="rounded-md shadow-sm w-full h-auto object-cover mb-3 transform hover:scale-105 transition-transform duration-300" />
-                    <h3 class="text-2xl font-semibold text-gray-900 mb-1 line-clamp-2">{{ book.title }}</h3>
-                    <p class="text-gray-500 text-lg italic line-clamp-1">
-                        {{ book.author?.name || book.authorName || 'Unknown' }}
-                    </p>
-                </div>
-            </div>
-            <!-- Modal for All Featured Books -->
-            <div v-if="showFeaturedAll"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300">
-                <div
-                    class="bg-white rounded-2xl p-16 w-[90%] md:w-[70%] h-[90%] overflow-y-auto relative shadow-2xl animate-slide-in">
-                    <button
-                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold transition-colors duration-200"
-                        @click="showFeaturedAll = false">
-                        &times;
-                    </button>
-                    <h3 class="text-2xl font-bold mb-6 text-center text-gray-900">Category Books</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-10">
-                        <div v-for="book in filteredBooks" :key="book.id"
-                            class="cursor-pointer border rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-white"
-                            @click="openBookModal(book)">
-                            <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
-                                :alt="`Cover of ${book.title}`" class="w-full h-auto object-cover" />
-                            <div class="p-4 text-center">
-                                <h4 class="text-sm font-semibold text-gray-900 truncate">{{ book.title }}</h4>
-                            </div>
-                        </div>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 9l-7 7-7-7"></path>
+                    </svg>
                     </div>
                 </div>
+
+                <!-- View All -->
+                <button @click="showAll = true"
+                    class="group flex items-center justify-center gap-2 text-sm text-blue-600 font-semibold hover:text-blue-700 px-6 py-3 rounded-xl hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-200 w-auto">
+                    View All
+                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </button>
+                </div>
             </div>
+
+          <!-- Enhanced Book Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div v-for="(book, index) in filteredAuthorBooks.slice(0, 8)" 
+                 :key="book.id"
+                 :style="{ animationDelay: `${index * 150}ms` }"
+                 class="animate-fade-in-up group cursor-pointer bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-slate-200 hover:border-blue-300"
+                 @click="openBookModal(book)">
+              <div class="relative aspect-[3/4] overflow-hidden">
+                <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
+                     :alt="`Cover of ${book.title}`" 
+                     class="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                  <div class="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg border border-slate-200">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    </section>
-
-    <!-- Book Details Modal -->
-    <div v-if="showBookModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm transition-opacity duration-300">
-        <div
-            class="bg-white rounded-3xl p-6 md:p-10 w-[95%] sm:w-[85%] md:w-[75%] lg:w-[65%] max-w-5xl max-h-[90vh] overflow-y-auto relative shadow-2xl animate-slide-in">
-            <!-- Close Button -->
-            <button
-                class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 text-3xl font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-full w-10 h-10 flex items-center justify-center"
-                @click="showBookModal = false">
-                &times;
-            </button>
-
-            <div class="flex flex-col md:flex-row gap-6">
-                <!-- Book Cover Section -->
-                <div class="md:w-1/2 p-4 md:p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl">
-                    <div class="relative group">
-                        <img :src="selectedBookForModal?.cover_image_url || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-yCpJAvOCWSplM9qtANjM0PW1I0Qe1v.png'"
-                            :alt="`${selectedBookForModal?.title || 'Book'} Cover`"
-                            class="w-full max-w-[300px] mx-auto rounded-xl shadow-lg transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-300 object-cover" />
-                    </div>
-                </div>
-
-                <!-- Product Details Section -->
-                <div class="md:w-1/2 p-4 md:p-6 space-y-5">
-                    <!-- ISBN -->
-                    <div class="text-sm text-gray-600 font-medium">
-                        <span class="font-semibold text-gray-800">ISBN:</span> {{ selectedBookForModal?.isbn ||
-                            'Unknown' }}
-                    </div>
-
-                    <!-- Title -->
-                    <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-                        {{ selectedBookForModal?.title || 'Book Title' }}
-                    </h1>
-
-                    <!-- Donor -->
-                    <p class="text-lg text-orange-600 font-semibold">
-                        Donated by: {{ selectedBookForModal?.donated_by || 'Unknown' }}
-                    </p>
-
-                    <!-- Author -->
-                    <p class="text-lg text-orange-600 font-semibold">
-                        Written by: {{ selectedBookForModal?.author?.name || selectedBookForModal?.authorName ||
-                            'Unknown' }}
-                    </p>
-
-                    <!-- Quantity -->
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm font-semibold text-gray-700">Quantity:</span>
-                        <span class="px-4 py-1 bg-gray-100 rounded-md text-gray-800 font-medium">
-                            {{ selectedBookForModal?.quantity || 'N/A' }}
-                        </span>
-                    </div>
-
-                    <!-- Publish Year -->
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm font-semibold text-gray-700">Published:</span>
-                        <span class="px-4 py-1 bg-gray-100 rounded-md text-gray-800 font-medium">
-                            {{ selectedBookForModal?.public_year || 'Unknown' }}
-                        </span>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-6">
-                        <button
-                            class="flex-1 bg-orange-500 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2 hover:bg-orange-600 focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 transition-colors duration-200">
-                            <span>{{ selectedBookForModal?.language?.name || 'Language' }}</span>
-                        </button>
-                        <button
-                            class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors duration-200">
-                            <span>{{ selectedBookForModal?.category?.name || 'Category' }}</span>
-                        </button>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="pt-6 border-t border-gray-200">
-                        <p
-                            class="text-gray-700 text-base leading-relaxed max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                            {{ selectedBookForModal?.description || 'No description available for this book.' }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+  </section>
+
+    <!-- All Books by Author Modal -->
+  <Teleport to="body">
+    <div v-if="showAll" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @click.self="showAll = false">
+      <!-- Updated modal for white theme -->
+      <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-8 w-[95%] md:w-[60%] max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl animate-slide-in border border-slate-200">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-3xl font-bold text-slate-900">
+            All Books by {{ selectedAuthor || 'Our Authors' }}
+          </h3>
+          <button @click="showAll = false"
+                  class="text-slate-600 hover:text-slate-900 text-2xl font-bold w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all duration-200">
+            ×
+          </button>
+        </div>
+        <div class="no-scrollbar overflow-y-auto max-h-[70vh] pr-4">
+          <div v-if="filteredAuthorBooks.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-10">
+            <div v-for="book in filteredAuthorBooks" :key="book.id"
+                 class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-slate-200 hover:border-blue-300"
+                 @click="openBookModal(book)">
+              <div class="aspect-[3/4] overflow-hidden">
+                <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
+                     :alt="`Cover of ${book.title}`" 
+                     class="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center py-16">
+            <div class="text-slate-400 text-6xl mb-4">📚</div>
+            <p class="text-slate-600 text-lg">No books found for this author.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Featured Books Section: Updated to white theme -->
+  <!-- Converting to white background -->
+  <section class="bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 sm:py-20 relative">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-indigo-50/20"></div>
+    
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4">
+    <!-- Heading -->
+    <div class="space-y-1">
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Featured Collection</h2>
+        <p class="text-base sm:text-lg text-slate-600">Handpicked books across all genres</p>
+    </div>
+
+    <!-- Filter + View All -->
+    <div class="flex flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+        <!-- Category Select -->
+        <div class="relative flex-1">
+        <select v-model="selectedCategory" @change="filterBooksByCategory"
+                class="appearance-none border border-slate-300 rounded-xl px-4 py-3 pr-10 text-sm bg-white text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400 transition-all duration-200 w-full">
+            <option value="" class="bg-white text-slate-700">All Categories</option>
+            <option v-for="category in categories" :key="category.id" :value="category.name" class="bg-white text-slate-700">
+            {{ category.name }}
+            </option>
+        </select>
+        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </div>
+        </div>
+
+        <!-- View All Button -->
+        <button @click="showFeaturedAll = true"
+                class="text-sm text-blue-600 font-semibold hover:text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 w-auto">
+        View All →
+        </button>
+    </div>
+    </div>
+      
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-8">
+        <div v-for="book in filteredBooks.slice(0, 4)" :key="book.id"
+             class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-slate-200 hover:border-blue-300"
+             @click="openBookModal(book)">
+          <div class="space-y-4">
+            <div class="aspect-[3/4] overflow-hidden rounded-xl">
+              <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
+                   :alt="`Cover of ${book.title}`" 
+                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- All Featured Books Modal -->
+  <Teleport to="body">
+    <div v-if="showFeaturedAll" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @click.self="showFeaturedAll = false">
+      <!-- Updated modal for white theme -->
+      <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-8 w-[95%] md:w-[60%] max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl animate-slide-in border border-slate-200">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-3xl font-bold text-slate-900">Featured Collection</h3>
+          <button @click="showFeaturedAll = false"
+                  class="text-slate-600 hover:text-slate-900 text-2xl font-bold w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all duration-200">
+            ×
+          </button>
+        </div>
+        <div class="overflow-y-auto max-h-[70vh] pr-4 no-scrollbar">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-10">
+            <div v-for="book in filteredBooks" :key="book.id"
+                 class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-slate-200 hover:border-blue-300"
+                 @click="openBookModal(book)">
+              <div class="aspect-[3/4] overflow-hidden">
+                <img :src="book.cover_image_url || '/placeholder.svg?height=400&width=300'"
+                     :alt="`Cover of ${book.title}`" 
+                     class="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Enhanced Book Details Modal -->
+  <Teleport to="body">
+    <div v-if="showBookModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         @click.self="showBookModal = false">
+      <!-- Updated modal for white theme -->
+      <div class="bg-white/95 backdrop-blur-xl rounded-3xl w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] max-w-5xl max-h-[95vh] overflow-hidden shadow-2xl animate-slide-in border border-slate-200">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-slate-200">
+          <h2 class="text-2xl font-bold text-slate-900">Book Details</h2>
+          <button @click="showBookModal = false"
+                  class="text-slate-600 hover:text-slate-900 text-2xl font-bold w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all duration-200">
+            ×
+          </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="overflow-y-auto max-h-[calc(95vh-80px)]">
+          <div class="flex flex-col lg:flex-row">
+            <!-- Book Cover Section -->
+            <div class="lg:w-2/5 p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+              <div class="sticky top-8">
+                <div class="relative group max-w-sm mx-auto">
+                  <div class="absolute -inset-4 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+                  <img :src="selectedBookForModal?.cover_image_url || '/placeholder.svg?height=600&width=400'"
+                       :alt="`${selectedBookForModal?.title || 'Book'} Cover`"
+                       class="relative w-full rounded-2xl shadow-2xl border-2 border-slate-200 group-hover:scale-105 transition-transform duration-500" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Book Details Section -->
+            <div class="lg:w-3/5 p-8 space-y-8">
+              <!-- Title and Author -->
+              <div class="space-y-4">
+                <div class="text-sm text-slate-600 font-medium uppercase tracking-wider">
+                  ISBN: {{ selectedBookForModal?.isbn || 'Not Available' }}
+                </div>
+                <h1 class="text-4xl lg:text-5xl font-black text-slate-900 leading-tight">
+                  {{ selectedBookForModal?.title || 'Book Title' }}
+                </h1>
+                <div class="flex flex-wrap gap-4 text-lg">
+                  <p class="text-blue-600 font-semibold">
+                    By {{ selectedBookForModal?.author?.name || selectedBookForModal?.authorName || 'Unknown Author' }}
+                  </p>
+                  <p class="text-slate-600">
+                    Donated by {{ selectedBookForModal?.donated_by || 'Anonymous' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Book Info Grid -->
+              <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <span class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Quantity</span>
+                  <div class="bg-slate-50 rounded-xl px-4 py-3 font-bold text-slate-900 border border-slate-200">
+                    {{ selectedBookForModal?.quantity || 'N/A' }}
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <span class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Published</span>
+                  <div class="bg-slate-50 rounded-xl px-4 py-3 font-bold text-slate-900 border border-slate-200">
+                    {{ selectedBookForModal?.public_year || 'Unknown' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex flex-col sm:flex-row gap-4">
+                <button class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                  {{ selectedBookForModal?.language?.name || 'Language' }}
+                </button>
+                <button class="flex-1 bg-slate-100 text-slate-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-200 transition-all duration-300 transform hover:scale-105 border border-slate-200">
+                  {{ selectedBookForModal?.category?.name || 'Category' }}
+                </button>
+              </div>
+
+              <!-- Description -->
+              <div class="space-y-4 pt-6 border-t border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900">Description</h3>
+                <div class="prose prose-slate max-w-none">
+                  <p class="text-slate-700 leading-relaxed text-lg">
+                    {{ selectedBookForModal?.description || 'No description available for this book. Discover what makes this title special by exploring its pages and joining the community of readers who have experienced its story.' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -367,16 +456,13 @@ const filteredBooks = computed(() => {
 // Computed property for filtered books by author
 const filteredAuthorBooks = computed(() => {
     if (!selectedAuthor.value) {
-        console.log('No author selected, returning all books');
         return books.value;
     }
     const normalizedSelectedAuthor = normalizeAuthorName(selectedAuthor.value);
     const filtered = books.value.filter(book => {
         const authorName = normalizeAuthorName(book.author?.name || book.authorName || '');
-        console.log(`Checking book: ${book.title}, Author: ${authorName}, Selected: ${normalizedSelectedAuthor}`);
         return authorName === normalizedSelectedAuthor;
     });
-    console.log('Filtered books:', filtered);
     return filtered;
 });
 
@@ -386,11 +472,6 @@ const selectedAuthorDetails = computed(() => {
     const normalizedSelectedAuthor = normalizeAuthorName(selectedAuthor.value);
     const author = authors.value.find(a => normalizeAuthorName(a.name) === normalizedSelectedAuthor);
     return author || { name: selectedAuthor.value, profile_image_url: '', readers: 0, biography: '', categories: [] };
-});
-
-// Computed property for rating (simulated)
-const rating = computed(() => {
-    return Math.min(Math.floor(Math.random() * 5) + 1, 5); // Replace with selectedBookForModal.rating if available
 });
 
 // Fetch all necessary data from the API
@@ -415,6 +496,7 @@ const fetchBooks = async () => {
             price: book.price || 14.99,
             tags: book.tags || ['Unknown'],
         }));
+        
         authors.value = (authorsRes.data || []).map(author => ({
             ...author,
             name: normalizeAuthorName(author.name),
@@ -423,6 +505,7 @@ const fetchBooks = async () => {
             biography: author.biography || 'This author has not provided a biography yet.',
             categories: author.categories || ['Fiction', 'Adventure', 'Inspiration'],
         }));
+        
         categories.value = categoriesRes.data || [];
         languages.value = languagesRes.data || [];
 
@@ -438,7 +521,7 @@ const fetchBooks = async () => {
             ) || null;
         }
 
-        featuredBooks.value = books.value.slice(0, 10).map(book => ({
+        featuredBooks.value = books.value.slice(0, 15).map(book => ({
             ...book,
             category: categories.value.find(cat => cat.id === book.CategoryId) || { name: 'Unknown' },
         }));
@@ -453,8 +536,6 @@ const fetchBooks = async () => {
             coverUrl: book.cover_image_url,
         }));
 
-        console.log('Fetched books:', books.value);
-        console.log('Fetched authors:', authors.value);
     } catch (err) {
         console.error('Failed to fetch data:', err);
         const cachedBooks = localStorage.getItem('books');
@@ -487,27 +568,7 @@ const fetchBooks = async () => {
 const openBookModal = (book) => {
     selectedBookForModal.value = book;
     showBookModal.value = true;
-    quantity.value = 1; // Reset quantity
-};
-
-// Quantity controls
-const increaseQuantity = () => {
-    quantity.value++;
-};
-
-const decreaseQuantity = () => {
-    if (quantity.value > 1) {
-        quantity.value--;
-    }
-};
-
-// Action buttons
-const addToCart = () => {
-    alert(`Added ${quantity.value} item(s) of "${selectedBookForModal.value?.title || 'Book'}" to cart!`);
-};
-
-const addToWishlist = () => {
-    alert(`Added "${selectedBookForModal.value?.title || 'Book'}" to wishlist!`);
+    quantity.value = 1;
 };
 
 // Filter books by selected category
@@ -534,35 +595,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Fade transition for modals */
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s ease;
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
-/* Slide-in animation for modals */
+/* Enhanced animations and transitions */
 .animate-slide-in {
-    animation: slideIn 0.3s ease-out;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideIn {
     from {
-        transform: translateY(20px);
+        transform: translateY(30px) scale(0.95);
         opacity: 0;
     }
-
     to {
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
         opacity: 1;
     }
 }
 
-/* Line clamp for text truncation */
+/* Line clamp utilities */
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -570,84 +629,98 @@ onMounted(() => {
     overflow: hidden;
 }
 
-/* Custom scrollbar for modals */
+/* Custom scrollbar styling */
 .overflow-y-auto::-webkit-scrollbar {
     width: 8px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+    background: #f8fafc;
+    border-radius: 8px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
+    background: #cbd5e1;
+    border-radius: 8px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: #94a3b8;
 }
 
-/* Disabled button styles */
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
+/* Enhanced typography */
+.first-letter\:text-5xl::first-letter {
+    font-size: 3rem;
 }
 
-/* Enhanced typography and spacing */
-h1,
-h2,
-h3,
-h4 {
-    font-family: 'Inter', sans-serif;
+.first-letter\:font-bold::first-letter {
+    font-weight: 700;
 }
 
-/* Responsive image sizing */
+.first-letter\:text-blue-600::first-letter {
+    color: #2563eb;
+}
+
+.first-letter\:float-left::first-letter {
+    float: left;
+}
+
+.first-letter\:mr-3::first-letter {
+    margin-right: 0.75rem;
+}
+
+.first-letter\:mt-1::first-letter {
+    margin-top: 0.25rem;
+}
+
+/* Prose styling for description */
+.prose {
+    max-width: none;
+}
+
+.prose p {
+    margin-bottom: 1rem;
+}
+
+/* Enhanced shadow utilities */
+.shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .w-80 {
-        width: 100%;
-        max-width: 260px;
+    .text-7xl {
+        font-size: 3.5rem;
     }
-
-    .h-\[24rem\] {
-        height: 320px;
+    
+    .text-6xl {
+        font-size: 3rem;
     }
-
-    .max-w-sm {
-        max-width: 100%;
-    }
-}
-
-@keyframes slide-in {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
+    
+    .text-5xl {
+        font-size: 2.5rem;
     }
 }
 
-.animate-slide-in {
-    animation: slide-in 0.3s ease-out;
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Custom Scrollbar Styling */
-.scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-    border-radius: 9999px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-    background-color: #f3f4f6;
-    border-radius: 9999px;
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

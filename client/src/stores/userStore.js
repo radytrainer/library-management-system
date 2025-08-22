@@ -10,7 +10,8 @@ import {
   deleteUser,
   getProfile,
   getUserBarcodeImage,
-  getUserQRCode, // Add this import for QR code fetching
+  getUserQRCode,
+  getBorrows,
 } from '@/services/Api/user';
 import router from '@/router';
 import Swal from 'sweetalert2';
@@ -27,7 +28,9 @@ export const useUserStore = defineStore('user', {
     viewedUser: null,
     userProfile: null,
     userBarcodeImageUrl: null,
-    userQRCodeImageUrl: null, // Add state for QR code image URL
+    userQRCodeImageUrl: null,
+    borrows: [],
+    overdueBorrows: [],
     error: '',
     loading: false,
   }),
@@ -40,6 +43,8 @@ export const useUserStore = defineStore('user', {
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       return state.users.filter((u) => new Date(u.createdAt) >= oneWeekAgo).length;
     },
+    getBorrows: (state) => state.borrows,
+    getOverdueBorrows: (state) => state.overdueBorrows,
   },
 
   actions: {
@@ -57,7 +62,7 @@ export const useUserStore = defineStore('user', {
             ? user.barcode_image
             : `${apiBase}/uploads/barcodes/${user.barcode_image}`)
           : null,
-        qr_code_image: user.qr_code_image // Add QR code image normalization
+        qr_code_image: user.qr_code_image
           ? (user.qr_code_image.startsWith('http')
             ? user.qr_code_image
             : `${apiBase}/uploads/qrcodes/${user.qr_code_image}`)
@@ -69,7 +74,6 @@ export const useUserStore = defineStore('user', {
       const normalizedUser = this.normalizeUser(user);
       this.user = normalizedUser;
       localStorage.setItem('user', JSON.stringify(normalizedUser));
-
       if (normalizedUser.profile_image) {
         localStorage.setItem('profile_image', normalizedUser.profile_image);
         this.profileImage = normalizedUser.profile_image;
@@ -88,7 +92,9 @@ export const useUserStore = defineStore('user', {
       this.user = null;
       this.token = null;
       this.userBarcodeImageUrl = null;
-      this.userQRCodeImageUrl = null; // Reset QR code image URL
+      this.userQRCodeImageUrl = null;
+      this.borrows = [];
+      this.overdueBorrows = [];
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('profile_image');
@@ -264,19 +270,16 @@ export const useUserStore = defineStore('user', {
     async createUser(formData) {
       this.loading = true;
       this.error = '';
-
       if (!formData.get('username') || !formData.get('email') || !formData.get('password') || !formData.get('roleId')) {
         this.error = 'Username, email, password, and role are required';
         Swal.fire({ icon: 'error', title: 'Error', text: this.error });
         this.loading = false;
         return { success: false, error: this.error };
       }
-
       try {
         const res = await createUser(formData);
         const newUser = this.normalizeUser(res.data.user);
         this.users.push(newUser);
-
         Swal.fire({
           icon: 'success',
           title: 'User created!',
@@ -284,7 +287,6 @@ export const useUserStore = defineStore('user', {
           timer: 2000,
           showConfirmButton: false,
         });
-
         return { success: true, data: newUser };
       } catch (error) {
         console.error('Create user error:', error.response?.data || error.message);
@@ -347,6 +349,46 @@ export const useUserStore = defineStore('user', {
         this.loading = false;
       }
     },
+
+async fetchBorrows() {
+  if (!this.token) {
+    await router.push('/login');
+    return { success: false };
+  }
+
+  this.loading = true;
+  try {
+    const res = await getBorrows();
+    if (!res || !Array.isArray(res)) {
+      this.borrows = [];
+      this.overdueBorrows = [];
+      return { success: false };
+    }
+
+    this.borrows = res.map(borrow => {
+      return {
+        id: borrow.id,
+        bookTitle: borrow.bookTitle,
+        userBorrow: borrow.userBorrow,
+        dueDate: borrow.dueDate,
+        returned: borrow.status.toLowerCase() === 'returned', // Case-insensitive check
+      };
+    });
+    const today = new Date(); // Use current date for real-time checks
+    this.overdueBorrows = this.borrows.filter(borrow => {
+      const isOverdue = borrow.dueDate < today && !borrow.returned;
+      return isOverdue;
+    });
+    return { success: true, data: this.borrows };
+  } catch (error) {
+    this.borrows = [];
+    this.overdueBorrows = [];
+    this.error = 'Failed to fetch borrows due to a server error';
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+},
 
     logout() {
       this.resetAuth();
