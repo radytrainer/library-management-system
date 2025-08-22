@@ -96,36 +96,19 @@
             </section>
 
             <!-- Divider -->
-
-            <div class="border-t border-gray-200 my-16"></div>
-
-            <!-- Services Section -->
-            <section id="services" class="mb-16">
-                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Our Services</h2>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="service in services" :key="service.title"
-                        class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
-                        <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" />
-                        <h3 class="text-xl font-semibold mb-2">{{ service.title }}</h3>
-                        <p class="text-gray-600">{{ service.description }}</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Divider -->
             <div class="border-t border-gray-200 my-16"></div>
 
             <!-- Staff Section -->
             <section class="mb-16">
-                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Meet Our Team</h2>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Meet Our Development Team</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
                     <div v-for="member in staff" :key="member.name"
                         class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
                         <img :src="member.image" :alt="member.name"
                             class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-sky-100" />
                         <h3 class="text-xl font-semibold mb-1">{{ member.name }}</h3>
                         <p class="text-sky-600 font-medium mb-3">{{ member.role }}</p>
-                        <p class="text-sm text-gray-600">{{ member.bio }}</p>
+                        <p class="text-sm text-gray-600">{{ member.tel }}</p>
                     </div>
                 </div>
             </section>
@@ -169,8 +152,6 @@
                                     <p class="text-gray-600">library@passerellesnumeriques.org</p>
                                 </div>
                             </div>
-
-
                         </div>
                     </div>
                     <!-- Hours -->
@@ -217,62 +198,46 @@ import {
     Heart as HeartIcon,
 } from 'lucide-vue-next'
 
-
-
-const services = ref([
-    {
-        icon: BookOpenIcon,
-        title: "Book Collection",
-        description: "Over 5000 books across all genres and subjects",
-    },
-    {
-        icon: ComputerIcon,
-        title: "Digital Resources",
-        description: "Access and read all our e-books online anytime through our digital library.",
-    },
-    {
-        icon: WifiIcon,
-        title: "Free WiFi",
-        description: "High-speed internet access throughout the library",
-    },
-    {
-        icon: GraduationCapIcon,
-        title: "Study Spaces",
-        description: "Quiet study areas and group collaboration rooms",
-    },
-    {
-        icon: CalendarIcon,
-        title: "Study Time",
-        description: "Spend time with your friends and study together",
-    },
-])
+import sophean from '@/views/website/images/sophean.jpg';
+import linna from '@/views/website/images/linna.jpg';
+import bopha from '@/views/website/images/bopha.jpg';
+import sor from '@/views/website/images/sor.jpg';
+import horth from '@/views/website/images/horth.jpg';
 
 const staff = ref([
     {
         name: "Sor Chhin",
-        role: "Head Librarian",
-        bio: "Sor has been with the library for over 15 years and holds a Master's in Library Science.",
-        image: "https://i.pinimg.com/736x/ce/48/c4/ce48c4929e4dc5fa635673a154ad365f.jpg",
+        role: "UX/UI Designer",
+        tel: "+855 11 968 240 / +855 86 266 156",
+        image: sor,
     },
     {
         name: "Bopha Khat",
-        role: "Digital Resources Manager",
-        bio: "Bopha specializes in digital collections and helps patrons navigate online resources.",
-        image: "https://i.pinimg.com/1200x/4f/b8/41/4fb841055ded6e714bdeeb03557170c5.jpg",
+        role: "Code Quality",
+        tel: "+855 71 965 1462",
+        image: bopha,
     },
     {
         name: "Horth Heng",
-        role: "Children's Librarian",
-        bio: "Horth creates engaging programs for young readers and manages our children's collection.",
-        image: "https://i.pinimg.com/736x/15/91/d0/1591d0197e06d97a43a66c172171c2d7.jpg",
+        role: "Scrum Master",
+        tel: "+855 12 345 678", // placeholder or real number
+        image: horth,
     },
     {
         name: "Sophean Pouk",
-        role: "Reference Librarian",
-        bio: "Sophean assists with research questions and provides reference services to our community.",
-        image: "https://i.pinimg.com/736x/4e/e3/5e/4ee35e12d182b4f68e0fa5a4f5343af9.jpg",
+        role: "DevOps Manager",
+        tel: "+855 96 483 280 / +855 86 266 156",
+        image: sophean,
     },
-])
+    {
+        name: "Linna Rin",
+        role: "QA Manager",
+        tel: "+855 98 765 432", // placeholder or real number
+        image: linna,
+    },
+]);
+
+
 
 const hours = ref([
     { day: "Monday - Thursday", hours: "7:00 AM - 5:00 PM" },
