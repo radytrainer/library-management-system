@@ -1,183 +1,181 @@
 <template>
   <div class="bg-gray-100">
-    <!-- Error message -->
-    <transition name="fade">
-      <div v-if="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-        <p>{{ error }}</p>
-      </div>
-    </transition>
+    <div class="p-8">
+      <!-- Error message -->
+      <transition name="fade">
+        <div v-if="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+          <p>{{ error }}</p>
+        </div>
+      </transition>
 
-    <!-- Notification -->
-    <div v-if="notification.visible" :class="[
-      'fixed bottom-4 right-4 z-50 max-w-xs rounded-xl shadow-lg border-l-4 p-3',
-      notification.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700'
-    ]">
-      <div class="flex items-center gap-2">
-        <svg v-if="notification.type === 'success'" class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <svg v-else class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        <p class="font-medium text-sm">{{ notification.message }}</p>
-      </div>
-    </div>
-
-    <!-- Loading state -->
-    <div v-if="loading.books || loading.languages"
-      class="fixed inset-0 bg-white/70 z-50 flex items-center justify-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      <span class="ml-4 text-gray-600">Loading books and languages...</span>
-    </div>
-
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 transition-all duration-300">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div class="transform hover:scale-[1.01] transition-transform duration-300">
-            <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              Library Collection
-            </h1>
-            <p class="text-gray-500 mt-1 text-base">Discover books by language</p>
-          </div>
-          <button @click="openLanguageModal()"
-            class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95">
-            <span class="inline-block transition-transform duration-200 group-hover:rotate-90">+</span>
-            Add Language
-          </button>
+      <!-- Notification -->
+      <div v-if="notification.visible" :class="[
+        'fixed bottom-4 right-4 z-50 max-w-xs rounded-xl shadow-lg border-l-4 p-3',
+        notification.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700'
+      ]">
+        <div class="flex items-center gap-2">
+          <svg v-if="notification.type === 'success'" class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg v-else class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <p class="font-medium text-sm">{{ notification.message }}</p>
         </div>
       </div>
-    </header>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        <!-- Books Grid -->
-        <div class="lg:col-span-3">
-          <div class="mb-8 flex items-center justify-between">
-            <div>
-              <h2 class="text-2xl font-bold text-gray-900">{{ selectedLanguage ? `Books in ${selectedLanguage}` : 'All Books' }}</h2>
-              <p class="text-gray-500 mt-1 transition-opacity duration-300">{{ filteredBooks.length }} {{
-                filteredBooks.length === 1 ? 'book' : 'books' }}</p>
+
+      <!-- Header -->
+      <header class="bg-white shadow-sm rounded-xl mb-8 border-b border-gray-200 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="transform hover:scale-[1.01] transition-transform duration-300">
+              <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                Library Collection
+              </h1>
+              <p class="text-gray-500 mt-1 text-base">Discover books by language</p>
             </div>
-            <div class="flex-grow relative max-w-md">
-              <!-- Search Bar -->
-              <input v-model="searchQuery" type="text" placeholder="Search"
-                class="w-full border border-gray-300 rounded-lg py-2.5 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-900 transition-all duration-300" />
-              <svg xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 6.65a7.5 7.5 0 016.5 6.5z" />
-              </svg>
-            </div>
+            <button @click="openLanguageModal()"
+              class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95">
+              <span class="inline-block transition-transform duration-200 group-hover:rotate-90">+</span>
+              Add Language
+            </button>
           </div>
+        </div>
+      </header>
 
-          <!-- Books Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-            <template v-if="Array.isArray(filteredBooks) && filteredBooks.length > 0">
-              <div v-for="book in filteredBooks" :key="book.id"
-                class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all duration-500 hover:-translate-y-1">
-                <div class="aspect-[3/4] bg-gray-100 relative overflow-hidden">
-                  <img :src="book.cover_image_url || placeholderImage" :alt="book.title || 'Book cover'"
-                    class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
-                    @error="handleImageError" />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  </div>
+      <!-- Main Content -->
+      <div class="bg-white shadow-sm border-b rounded-xl border-gray-200 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <!-- Books Grid -->
+            <div class="lg:col-span-3">
+              <div class="mb-8 flex items-center justify-between">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-900">{{ selectedLanguage ? `Books in ${selectedLanguage}` : 'All Books' }}</h2>
+                  <p class="text-gray-500 mt-1 transition-opacity duration-300">{{ filteredBooks.length }} {{
+                    filteredBooks.length === 1 ? 'book' : 'books' }}</p>
+                </div>
+                <div class="flex-grow relative max-w-md">
+                  <!-- Search Bar -->
+                  <input v-model="searchQuery" type="text" placeholder="Search"
+                    class="w-full border border-gray-300 rounded-lg py-2.5 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-900 transition-all duration-300" />
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 6.65a7.5 7.5 0 016.5 6.5z" />
+                  </svg>
                 </div>
               </div>
-            </template>
-          </div>
 
-          <!-- Empty state -->
-          <transition name="fade" mode="out-in">
-            <div v-if="!loading.books && (!Array.isArray(filteredBooks) || filteredBooks.length === 0)"
-              class="text-center py-20">
-              <div class="mx-auto w-24 h-24 mb-6 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  class="w-full h-full">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 class="text-xl font-medium text-gray-700 mb-2">No books found</h3>
-              <p class="text-gray-500 max-w-md mx-auto">
-                {{ loading.books ? 'Loading books...' : 'Try adjusting your search or language filter.' }}
-              </p>
-            </div>
-          </transition>
-        </div>
-
-        <!-- Language Sidebar -->
-        <div class="lg:col-span-1">
-          <div
-            class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-10 transition-all duration-300 hover:shadow-md">
-            <h3 class="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
-              <span>🌐</span>
-              Languages
-            </h3>
-            <p class="text-sm text-gray-600 mb-4">
-              Total Languages: {{ Array.isArray(languages) ? languages.length : 0 }}
-            </p>
-            <div class="max-h-[500px] overflow-y-auto no-scrollbar space-y-2">
-              <div class="flex justify-between items-center">
-                <button @click="selectedLanguage = null" :class="[
-                  'w-full text-left p-3 rounded-lg transition-all duration-300 flex justify-between items-center',
-                  !selectedLanguage
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200 font-semibold'
-                    : 'hover:bg-gray-50 text-gray-700 hover:border-gray-300 border border-transparent'
-                ]">
-                  <span>🌍 All Languages</span>
-                </button>
-                <button v-if="selectedLanguage" @click="selectedLanguage = null"
-                  class="ml-2 text-blue-600 hover:text-blue-800 text-sm transition-colors duration-300 p-1">
-                  Clear
-                </button>
-              </div>
-
-              <div v-if="Array.isArray(filteredLanguages)">
-                <div v-for="language in filteredLanguages" :key="language.id" class="transition-all duration-300">
-                  <div class="flex justify-between items-center">
-                    <button @click="selectedLanguage = language.name" :class="[
-                      'w-full text-left p-3 rounded-lg transition-all duration-300 border flex-grow flex items-center gap-2',
-                      selectedLanguage === language.name
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold'
-                        : 'hover:bg-gray-50 text-gray-700 hover:border-gray-300 border-transparent'
-                    ]">
-                      <svg v-if="selectedLanguage === language.name" class="h-4 w-4 text-blue-600" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <div>
-                        <div class="transition-colors duration-300">{{ language.name || 'Unknown Language' }}</div>
+              <!-- Books Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                <template v-if="Array.isArray(filteredBooks) && filteredBooks.length > 0">
+                  <div v-for="book in filteredBooks" :key="book.id"
+                    class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all duration-500 hover:-translate-y-1">
+                    <div class="aspect-[3/4] bg-gray-100 relative overflow-hidden">
+                      <img :src="book.cover_image_url || placeholderImage" :alt="book.title || 'Book cover'"
+                        class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                        @error="handleImageError" />
+                      <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                       </div>
-                      <span :class="[
-                        'text-xs px-2 py-1 rounded-full transition-all duration-300',
-                        selectedLanguage === language.name
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      ]">
-                        {{ language.count || 0 }}
-                      </span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Empty state -->
+              <transition name="fade" mode="out-in">
+                <div v-if="!loading.books && (!Array.isArray(filteredBooks) || filteredBooks.length === 0)"
+                  class="text-center py-20">
+                  <div class="mx-auto w-24 h-24 mb-6 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      class="w-full h-full">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-medium text-gray-700 mb-2">No books found</h3>
+                  <p class="text-gray-500 max-w-md mx-auto">
+                    {{ loading.books ? 'Loading books...' : 'Try adjusting your search or language filter.' }}
+                  </p>
+                </div>
+              </transition>
+            </div>
+
+            <!-- Language Sidebar -->
+            <div class="lg:col-span-1">
+              <div
+                class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-10 transition-all duration-300 hover:shadow-md">
+                <h3 class="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+                  <span>🌐</span>
+                  Languages
+                </h3>
+                <p class="text-sm text-gray-600 mb-4">
+                  Total Languages: {{ Array.isArray(languages) ? languages.length : 0 }}
+                </p>
+                <div class="max-h-[500px] overflow-y-auto no-scrollbar space-y-2">
+                  <div class="flex justify-between items-center">
+                    <button @click="selectedLanguage = null" :class="[
+                      'w-full text-left p-3 rounded-lg transition-all duration-300 flex justify-between items-center',
+                      !selectedLanguage
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200 font-semibold'
+                        : 'hover:bg-gray-50 text-gray-700 hover:border-gray-300 border border-transparent'
+                    ]">
+                      <span>🌍 All Languages</span>
                     </button>
-                    <div class="flex gap-1 ml-2">
-                      <button @click.stop="openLanguageModal(language)"
-                        class="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-300 p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button @click.stop="openDeleteConfirm(language.id)"
-                        class="text-red-600 hover:text-red-800 text-sm transition-colors duration-300 p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                    <button v-if="selectedLanguage" @click="selectedLanguage = null"
+                      class="ml-2 text-blue-600 hover:text-blue-800 text-sm transition-colors duration-300 p-1">
+                      Clear
+                    </button>
+                  </div>
+
+                  <div v-if="Array.isArray(filteredLanguages)">
+                    <div v-for="language in filteredLanguages" :key="language.id" class="transition-all duration-300">
+                      <div class="flex justify-between items-center">
+                        <button @click="selectedLanguage = language.name" :class="[
+                          'w-full text-left p-3 rounded-lg transition-all duration-300 border flex-grow flex items-center gap-2',
+                          selectedLanguage === language.name
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold'
+                            : 'hover:bg-gray-50 text-gray-700 hover:border-gray-300 border-transparent'
+                        ]">
+                          <svg v-if="selectedLanguage === language.name" class="h-4 w-4 text-blue-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <div>
+                            <div class="transition-colors duration-300">{{ language.name || 'Unknown Language' }}</div>
+                          </div>
+                          <span :class="[
+                            'text-xs px-2 py-1 rounded-full transition-all duration-300',
+                            selectedLanguage === language.name
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          ]">
+                            {{ language.count || 0 }}
+                          </span>
+                        </button>
+                        <div class="flex gap-1 ml-2">
+                          <button @click.stop="openLanguageModal(language)"
+                            class="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-300 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button @click.stop="openDeleteConfirm(language.id)"
+                            class="text-red-600 hover:text-red-800 text-sm transition-colors duration-300 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -186,75 +184,76 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Add/Edit Language Modal -->
-    <transition name="modal">
-      <div v-if="showLanguageModal"
-        class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 transition-opacity duration-300"
-        @click.self="showLanguageModal = false">
-        <div class="bg-white rounded-xl p-6 w-96 max-w-[90vw] mx-4 transition-all duration-300"
-          :class="showLanguageModal ? 'opacity-100 scale-100' : 'opacity-0 scale-95'">
-          <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-            {{ editingLanguage ? 'Edit Language' : 'Add Language' }}
-          </h2>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Language Name *</label>
-              <input v-model="languageForm.name" placeholder="e.g. English, French..."
-                class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
-                @keyup.enter="saveLanguage" required />
+      <!-- Add/Edit Language Modal -->
+      <transition name="modal">
+        <div v-if="showLanguageModal"
+          class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 transition-opacity duration-300"
+          @click.self="showLanguageModal = false">
+          <div class="bg-white rounded-xl p-6 w-96 max-w-[90vw] mx-4 transition-all duration-300"
+            :class="showLanguageModal ? 'opacity-100 scale-100' : 'opacity-0 scale-95'">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+              {{ editingLanguage ? 'Edit Language' : 'Add Language' }}
+            </h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Language Name *</label>
+                <input v-model="languageForm.name" placeholder="e.g. English, French..."
+                  class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+                  @keyup.enter="saveLanguage" required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Country (Optional)</label>
+                <input v-model="languageForm.country" placeholder="e.g. United States, France..."
+                  class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+                  @keyup.enter="saveLanguage" />
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Country (Optional)</label>
-              <input v-model="languageForm.country" placeholder="e.g. United States, France..."
-                class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
-                @keyup.enter="saveLanguage" />
+            <div class="flex justify-end gap-2 mt-6">
+              <button @click="showLanguageModal = false"
+                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95">
+                Cancel
+              </button>
+              <button @click="saveLanguage" :disabled="!languageForm.name" :class="[
+                'px-4 py-2 text-white rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95',
+                languageForm.name ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-400 cursor-not-allowed'
+              ]">
+                {{ editingLanguage ? 'Update' : 'Create' }}
+              </button>
             </div>
           </div>
-          <div class="flex justify-end gap-2 mt-6">
-            <button @click="showLanguageModal = false"
-              class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95">
-              Cancel
-            </button>
-            <button @click="saveLanguage" :disabled="!languageForm.name" :class="[
-              'px-4 py-2 text-white rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95',
-              languageForm.name ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-400 cursor-not-allowed'
-            ]">
-              {{ editingLanguage ? 'Update' : 'Create' }}
-            </button>
+        </div>
+      </transition>
+
+      <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteConfirm"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-4">
+          <div class="text-center">
+            <div
+              class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Language</h3>
+            <p class="text-gray-600 text-sm mb-4">Are you sure you want to delete this language? This action cannot be undone.</p>
+
+            <div class="flex justify-center gap-4">
+              <button @click="cancelDelete"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium">
+                Cancel
+              </button>
+              <button @click="confirmDelete"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium">
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </transition>
 
-    <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteConfirm"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-4">
-        <div class="text-center">
-          <div
-            class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Language</h3>
-          <p class="text-gray-600 text-sm mb-4">Are you sure you want to delete this language? This action cannot be undone.</p>
-
-          <div class="flex justify-center gap-4">
-            <button @click="cancelDelete"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium">
-              Cancel
-            </button>
-            <button @click="confirmDelete"
-              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium">
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
