@@ -324,188 +324,188 @@ async function submitForm() {
 </script>
 
 <template>
-  <div class="p-8 bg-[#F8F8F8] rounded-md shadow">
-    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
-      <div>
-        <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>
-        <p class="text-gray-600 mt-1 max-w-md leading-relaxed">
-          Overview of all users including total count, active users, and new users added this month.
-        </p>
-      </div>
-      <div class="flex items-center space-x-4 flex-wrap gap-4">
-        <!-- Search Input -->
-        <div class="relative">
-          <input
-            type="text"
-            v-model="searchQuery"
-            placeholder="Search Name, Email, or ID"
-            class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-            aria-label="Search"
-          />
-          <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-            search
-          </span>
+    <div class="rounded-md p-4">
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-gray-900">Manage Users</h2>
+          <p class="text-gray-600 mt-1 max-w-md leading-relaxed">
+            Overview of all users including total count, active users, and new users added this month.
+          </p>
         </div>
-        <!-- Role Filter -->
+        <div class="flex items-center space-x-4 flex-wrap gap-4">
+          <!-- Search Input -->
+          <div class="relative">
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search Name, Email, or ID"
+              class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
+              aria-label="Search"
+            />
+            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+              search
+            </span>
+          </div>
+          <!-- Role Filter -->
+          <select
+            v-model="roleFilter"
+            class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
+            aria-label="Filter by role"
+          >
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="librarian">Librarian</option>
+            <option value="user">User</option>
+          </select>
+          <!-- Status Filter -->
+          <select
+            v-model="activeStatusFilter"
+            class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
+            aria-label="Filter by status"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <!-- Add User Button -->
+          <button
+            @click="openAddUser"
+            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg shadow-sm"
+          >
+            + Add User
+          </button>
+        </div>
+      </div>
+  
+      <div class="max-w-7xl mx-auto py-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            class="bg-blue-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-blue-100 cursor-pointer"
+          >
+            <div class="flex items-center space-x-5">
+              <div
+                class="p-4 bg-blue-200 rounded-full text-blue-700 flex items-center justify-center"
+                style="width: 56px; height: 56px;"
+              >
+                <span class="material-icons text-3xl">group</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">Total Users</p>
+                <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.users.length }}</p>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-green-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-green-100 cursor-pointer"
+          >
+            <div class="flex items-center space-x-5">
+              <div
+                class="p-4 bg-green-200 rounded-full text-green-700 flex items-center justify-center"
+                style="width: 56px; height: 56px;"
+              >
+                <span class="material-icons text-3xl">verified_user</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-green-700 uppercase tracking-wide">Active Users</p>
+                <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.activeUsersCount }}</p>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-purple-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-purple-100 cursor-pointer"
+          >
+            <div class="flex items-center space-x-5">
+              <div
+                class="p-4 bg-purple-200 rounded-full text-purple-700 flex items-center justify-center"
+                style="width: 56px; height: 56px;"
+              >
+                <span class="material-icons text-3xl">person_add</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-purple-700 uppercase tracking-wide">New This Month</p>
+                <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.newUsersCount }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Empty State -->
+      <div v-if="filteredUsers.length === 0" class="text-center py-4 text-gray-600">
+        No matching users found.
+      </div>
+  
+      <UserTable
+        :users="paginatedUsers"
+        :roles="userStore.roles"
+        @edit-user="openEditUser"
+        @view-user="openViewUser"
+        @delete-user="confirmDeleteUser"
+        @print-user="handlePrintUser"
+      />
+  
+      <!-- Pagination Controls -->
+      <div class="flex items-center justify-between mt-4">
         <select
-          v-model="roleFilter"
-          class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-          aria-label="Filter by role"
+          v-model="itemsPerPage"
+          class="px-3 py-1 border rounded"
+          aria-label="Select number of users per page"
         >
-          <option value="all">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="librarian">Librarian</option>
-          <option value="user">User</option>
+          <option value="5">5</option>
+          <option value="15">15</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
         </select>
-        <!-- Status Filter -->
-        <select
-          v-model="activeStatusFilter"
-          class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-          aria-label="Filter by status"
-        >
-          <option value="all">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <!-- Add User Button -->
-        <button
-          @click="openAddUser"
-          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg shadow-sm"
-        >
-          + Add User
-        </button>
+        <nav class="flex space-x-1">
+          <button
+            @click="currentPage = Math.max(currentPage - 1, 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            v-for="page in pageButtons"
+            :key="page"
+            @click="currentPage = page"
+            :class="[
+              'px-3 py-1 rounded border',
+              currentPage === page ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'
+            ]"
+          >
+            {{ page }}
+          </button>
+          <button
+            @click="currentPage = Math.min(currentPage + 1, totalPages)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Next
+          </button>
+        </nav>
       </div>
+  
+      <UserForm
+        :show="showFormModal"
+        :isEditing="isEditing"
+        :formData="formUserData"
+        :userId="selectedUserId"
+        @close="showFormModal = false"
+        @submit-success="handleFormSubmitSuccess"
+      />
+      <UserViewModal
+        :show="showViewModal"
+        :user="selectedUser"
+        @close="showViewModal = false"
+      />
+      <UserCard
+        v-if="selectedUserForPrint"
+        ref="printCardRef"
+        :user="selectedUserForPrint"
+        systemName="Library Digital"
+        logoUrl="/path/to/your/logo.png"
+      />
     </div>
-
-    <div class="max-w-7xl mx-auto py-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div
-          class="bg-blue-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-blue-100 cursor-pointer"
-        >
-          <div class="flex items-center space-x-5">
-            <div
-              class="p-4 bg-blue-200 rounded-full text-blue-700 flex items-center justify-center"
-              style="width: 56px; height: 56px;"
-            >
-              <span class="material-icons text-3xl">group</span>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">Total Users</p>
-              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.users.length }}</p>
-            </div>
-          </div>
-        </div>
-        <div
-          class="bg-green-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-green-100 cursor-pointer"
-        >
-          <div class="flex items-center space-x-5">
-            <div
-              class="p-4 bg-green-200 rounded-full text-green-700 flex items-center justify-center"
-              style="width: 56px; height: 56px;"
-            >
-              <span class="material-icons text-3xl">verified_user</span>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-green-700 uppercase tracking-wide">Active Users</p>
-              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.activeUsersCount }}</p>
-            </div>
-          </div>
-        </div>
-        <div
-          class="bg-purple-50 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 p-6 border border-purple-100 cursor-pointer"
-        >
-          <div class="flex items-center space-x-5">
-            <div
-              class="p-4 bg-purple-200 rounded-full text-purple-700 flex items-center justify-center"
-              style="width: 56px; height: 56px;"
-            >
-              <span class="material-icons text-3xl">person_add</span>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-purple-700 uppercase tracking-wide">New This Month</p>
-              <p class="mt-1 text-3xl font-bold text-gray-900">{{ userStore.newUsersCount }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-if="filteredUsers.length === 0" class="text-center py-4 text-gray-600">
-      No matching users found.
-    </div>
-
-    <UserTable
-      :users="paginatedUsers"
-      :roles="userStore.roles"
-      @edit-user="openEditUser"
-      @view-user="openViewUser"
-      @delete-user="confirmDeleteUser"
-      @print-user="handlePrintUser"
-    />
-
-    <!-- Pagination Controls -->
-    <div class="flex items-center justify-between mt-4">
-      <select
-        v-model="itemsPerPage"
-        class="px-3 py-1 border rounded"
-        aria-label="Select number of users per page"
-      >
-        <option value="5">5</option>
-        <option value="15">15</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-      </select>
-      <nav class="flex space-x-1">
-        <button
-          @click="currentPage = Math.max(currentPage - 1, 1)"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded border disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          v-for="page in pageButtons"
-          :key="page"
-          @click="currentPage = page"
-          :class="[
-            'px-3 py-1 rounded border',
-            currentPage === page ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'
-          ]"
-        >
-          {{ page }}
-        </button>
-        <button
-          @click="currentPage = Math.min(currentPage + 1, totalPages)"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded border disabled:opacity-50"
-        >
-          Next
-        </button>
-      </nav>
-    </div>
-
-    <UserForm
-      :show="showFormModal"
-      :isEditing="isEditing"
-      :formData="formUserData"
-      :userId="selectedUserId"
-      @close="showFormModal = false"
-      @submit-success="handleFormSubmitSuccess"
-    />
-    <UserViewModal
-      :show="showViewModal"
-      :user="selectedUser"
-      @close="showViewModal = false"
-    />
-    <UserCard
-      v-if="selectedUserForPrint"
-      ref="printCardRef"
-      :user="selectedUserForPrint"
-      systemName="Library Digital"
-      logoUrl="/path/to/your/logo.png"
-    />
-  </div>
 </template>
 
 <style>

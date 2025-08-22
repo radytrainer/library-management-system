@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-100">
-    <div class="p-8">
+    <div class="p-4">
       <!-- Error message -->
       <transition name="fade">
         <div v-if="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">

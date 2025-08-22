@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white p-4 sm:p-8 flex flex-col gap-6">
+  <div class="min-h-screen bg-gray-100 p-4 flex flex-col gap-6">
     <!-- Header Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-10 py-4">
+      <div class="max-w7xl mx-auto px-4 sm:px-10 py-4">
         <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
           <div>
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Authors</h1>

@@ -1,230 +1,228 @@
 <template>
-  <div class="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
-    <div class="max-w-8xl mx-auto">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
-          Borrowing History
-        </h1>
-        <p class="text-base text-gray-600 mt-2">
-          Browse and manage your library's borrowing records
-        </p>
-      </div>
+  <div class="max-w-8xl mx-auto p-4">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+        Borrowing History
+      </h1>
+      <p class="text-base text-gray-600 mt-2">
+        Browse and manage your library's borrowing records
+      </p>
+    </div>
 
-      <!-- Search and Filter Bar -->
-      <div class="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        <div class="relative flex-1">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by title or author..."
-            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 bg-white shadow-sm"
-          />
+    <!-- Search and Filter Bar -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+      <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-        <div class="flex gap-4">
-          <select
-            v-model="categoryFilter"
-            class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-          >
-            <option value="">All Categories</option>
-            <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
-          </select>
-          <select
-            v-model="userFilter"
-            class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-          >
-            <option value="">All Borrowers</option>
-            <option v-for="borrower in borrowers" :key="borrower" :value="borrower">{{ borrower }}</option>
-          </select>
-            <select
-    v-model="itemsPerPage"
-    class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-  ><option :value="0">All</option>
-    <option :value="10">10</option>
-    <option :value="30">30</option>
-    <option :value="50">50</option>
-    <option :value="100">100</option>
-  </select>
-        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by title or author..."
+          class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 bg-white shadow-sm"
+        />
       </div>
-      <!-- Error Message -->
-      <div v-if="error" class="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm shadow-sm">
-        {{ error }}
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="text-center text-gray-600 py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-        <p class="mt-2">Loading books...</p>
-      </div>
-      <!-- Book List -->
-      <div v-if="!isLoading && filteredBooks.length" class="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-          <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
-            <div class="col-span-1"></div>
-            <div class="col-span-3">Book</div>
-            <div class="col-span-2">Borrower</div>
-            <div class="col-span-2">Category</div>
-            <div class="col-span-2">Return Date</div>
-          </div>
-        </div>
-        <div>
-          <div
-            v-for="(book, index) in filteredBooks"
-            :key="book.id"
-            :class="[
-              'transition-all duration-200 cursor-pointer hover:bg-gray-50',
-              index !== filteredBooks.length - 1 ? 'border-b border-gray-100' : ''
-            ]"
-            @click="openBookDetails(book)"
-          >
-            <div class="px-6 py-4">
-              <div class="grid grid-cols-12 gap-4 items-center">
-                <div class="col-span-1">
-                  <div class="w-12 h-16 rounded-lg border overflow-hidden shadow-sm">
-                    <img
-                      :src="book.cover_image"
-                      :alt="book.title"
-                      class="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div class="col-span-3">
-                  <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ book.title }}</h3>
-                  <p class="text-sm text-gray-600">by {{ book.author }}</p>
-                </div>
-                <div class="col-span-2">
-                  <p class="text-sm text-gray-700">{{ book.borrower || '—' }}</p>
-                </div>
-                <div class="col-span-2">
-                  <span 
-                    :class="[
-                      'inline-block px-3 py-1 rounded-full text-xs font-medium',
-                      getCategoryStyle(book.category)
-                    ]"
-                  >
-                    {{ book.category }}
-                  </span>
-                </div>
-                <div class="col-span-2">
-                  <p class="text-sm text-gray-700">{{ formatDate(book.return_date) }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Empty State -->
-      <div v-else-if="!isLoading && !filteredBooks.length" class="text-center py-8 bg-white rounded-xl border shadow-sm">
-        <p class="text-base text-gray-500">No books found matching your filters</p>
-      </div>
-
-      <!-- Book Details Modal -->
-      <div
-        v-if="selectedBook"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300"
-        @click="closeBookDetails"
-      >
-        <div
-          class="bg-white rounded-xl shadow-2xl max-w-2xl w-full transform transition-all duration-300"
-          @click.stop
+      <div class="flex gap-4">
+        <select
+          v-model="categoryFilter"
+          class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
         >
-          <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">Book Details</h2>
-            <button
-              @click="closeBookDetails"
-              class="text-gray-500 hover:text-gray-700 transition-colors duration-200"
-            >
-              <X class="w-6 h-6" />
-            </button>
-          </div>
-          <div class="p-6">
-            <div class="flex flex-col md:flex-row gap-6">
-              <div class="flex-shrink-0">
-                <img
-                  :src="selectedBook.cover_image"
-                  :alt="selectedBook.title"
-                  class="w-40 h-56 object-cover rounded-lg border shadow-sm mx-auto md:mx-0"
-                />
-                <div class="mt-4 text-center md:text-left">
-                  <span
-                    :class="[
-                      'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
-                      selectedBook.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    <span 
-                      :class="[
-                        'w-2 h-2 rounded-full mr-1.5',
-                        selectedBook.isAvailable ? 'bg-green-500' : 'bg-red-500'
-                      ]"
-                    ></span>
-                    {{ selectedBook.isAvailable ? 'Available' : 'Currently Borrowed' }}
-                  </span>
+          <option value="">All Categories</option>
+          <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+        </select>
+        <select
+          v-model="userFilter"
+          class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+        >
+          <option value="">All Borrowers</option>
+          <option v-for="borrower in borrowers" :key="borrower" :value="borrower">{{ borrower }}</option>
+        </select>
+          <select
+  v-model="itemsPerPage"
+  class="px-4 py-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+><option :value="0">All</option>
+  <option :value="10">10</option>
+  <option :value="30">30</option>
+  <option :value="50">50</option>
+  <option :value="100">100</option>
+</select>
+      </div>
+    </div>
+    <!-- Error Message -->
+    <div v-if="error" class="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm shadow-sm">
+      {{ error }}
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoading" class="text-center text-gray-600 py-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+      <p class="mt-2">Loading books...</p>
+    </div>
+    <!-- Book List -->
+    <div v-if="!isLoading && filteredBooks.length" class="bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+        <div class="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+          <div class="col-span-1"></div>
+          <div class="col-span-3">Book</div>
+          <div class="col-span-2">Borrower</div>
+          <div class="col-span-2">Category</div>
+          <div class="col-span-2">Return Date</div>
+        </div>
+      </div>
+      <div>
+        <div
+          v-for="(book, index) in filteredBooks"
+          :key="book.id"
+          :class="[
+            'transition-all duration-200 cursor-pointer hover:bg-gray-50',
+            index !== filteredBooks.length - 1 ? 'border-b border-gray-100' : ''
+          ]"
+          @click="openBookDetails(book)"
+        >
+          <div class="px-6 py-4">
+            <div class="grid grid-cols-12 gap-4 items-center">
+              <div class="col-span-1">
+                <div class="w-12 h-16 rounded-lg border overflow-hidden shadow-sm">
+                  <img
+                    :src="book.cover_image"
+                    :alt="book.title"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
               </div>
-              <div class="flex-1">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ selectedBook.title }}</h1>
-                <p class="text-base text-gray-600 mb-3">by {{ selectedBook.author }}</p>
-                <div class="mb-4">
-                  <span 
-                    :class="[
-                      'inline-block px-3 py-1 rounded-full text-sm font-medium',
-                      getCategoryStyle(selectedBook.category)
-                    ]"
-                  >
-                    {{ selectedBook.category }}
-                  </span>
-                </div>
-                <div class="mb-6">
-                  <h3 class="text-base font-semibold text-gray-900 mb-2">Description</h3>
-                  <p class="text-sm text-gray-700 leading-relaxed">{{ selectedBook.description || 'No description available' }}</p>
-                </div>
+              <div class="col-span-3">
+                <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ book.title }}</h3>
+                <p class="text-sm text-gray-600">by {{ book.author }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-sm text-gray-700">{{ book.borrower || '—' }}</p>
+              </div>
+              <div class="col-span-2">
+                <span 
+                  :class="[
+                    'inline-block px-3 py-1 rounded-full text-xs font-medium',
+                    getCategoryStyle(book.category)
+                  ]"
+                >
+                  {{ book.category }}
+                </span>
+              </div>
+              <div class="col-span-2">
+                <p class="text-sm text-gray-700">{{ formatDate(book.return_date) }}</p>
               </div>
             </div>
-            <div class="mt-6">
-              <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
-                <History class="w-5 h-5 mr-2 text-gray-500" />
-                Borrowing History
-              </h3>
-              <div v-if="selectedBook.borrowHistory.filter(record => record.status === 'returned').length > 0" class="border rounded-lg overflow-hidden shadow-sm">
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Borrower</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Borrowed</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Returned</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Librarian</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200">
-                    <tr
-                      v-for="(record, index) in selectedBook.borrowHistory.filter(record => record.status === 'returned')"
-                      :key="index"
-                      class="hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <td class="px-4 py-3 text-sm">{{ record.user.name }}</td>
-                      <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(record.borrow_date) }}</td>
-                      <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(record.return_date) }}</td>
-                      <td class="px-4 py-3 text-sm">{{ record.librarian.name }}</td>
-                      <td class="px-4 py-3">
-                        <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Returned
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Empty State -->
+    <div v-else-if="!isLoading && !filteredBooks.length" class="text-center py-8 bg-white rounded-xl border shadow-sm">
+      <p class="text-base text-gray-500">No books found matching your filters</p>
+    </div>
+
+    <!-- Book Details Modal -->
+    <div
+      v-if="selectedBook"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300"
+      @click="closeBookDetails"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full transform transition-all duration-300"
+        @click.stop
+      >
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">Book Details</h2>
+          <button
+            @click="closeBookDetails"
+            class="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <X class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="p-6">
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="flex-shrink-0">
+              <img
+                :src="selectedBook.cover_image"
+                :alt="selectedBook.title"
+                class="w-40 h-56 object-cover rounded-lg border shadow-sm mx-auto md:mx-0"
+              />
+              <div class="mt-4 text-center md:text-left">
+                <span
+                  :class="[
+                    'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
+                    selectedBook.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  ]"
+                >
+                  <span 
+                    :class="[
+                      'w-2 h-2 rounded-full mr-1.5',
+                      selectedBook.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                    ]"
+                  ></span>
+                  {{ selectedBook.isAvailable ? 'Available' : 'Currently Borrowed' }}
+                </span>
               </div>
-              <div v-else class="text-center py-6 bg-gray-50 rounded-lg border">
-                <p class="text-sm text-gray-500">No returned borrowing history available</p>
+            </div>
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ selectedBook.title }}</h1>
+              <p class="text-base text-gray-600 mb-3">by {{ selectedBook.author }}</p>
+              <div class="mb-4">
+                <span 
+                  :class="[
+                    'inline-block px-3 py-1 rounded-full text-sm font-medium',
+                    getCategoryStyle(selectedBook.category)
+                  ]"
+                >
+                  {{ selectedBook.category }}
+                </span>
               </div>
+              <div class="mb-6">
+                <h3 class="text-base font-semibold text-gray-900 mb-2">Description</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">{{ selectedBook.description || 'No description available' }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+              <History class="w-5 h-5 mr-2 text-gray-500" />
+              Borrowing History
+            </h3>
+            <div v-if="selectedBook.borrowHistory.filter(record => record.status === 'returned').length > 0" class="border rounded-lg overflow-hidden shadow-sm">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Borrower</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Borrowed</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Returned</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Librarian</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr
+                    v-for="(record, index) in selectedBook.borrowHistory.filter(record => record.status === 'returned')"
+                    :key="index"
+                    class="hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <td class="px-4 py-3 text-sm">{{ record.user.name }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(record.borrow_date) }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(record.return_date) }}</td>
+                    <td class="px-4 py-3 text-sm">{{ record.librarian.name }}</td>
+                    <td class="px-4 py-3">
+                      <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Returned
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-center py-6 bg-gray-50 rounded-lg border">
+              <p class="text-sm text-gray-500">No returned borrowing history available</p>
             </div>
           </div>
         </div>

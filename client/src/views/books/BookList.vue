@@ -1,15 +1,15 @@
 <template>
-  <div class="bg-gray-100">
+  <div>
     <Notification :notification="notification" />
 
-    <div class="max-w-8xl mx-auto px-8 sm:px-6 lg:px-1 py-8 space-y-2 flex flex-col gap-4">
+    <div class="max-w-8xl mx-auto px-8 sm:px-6 lg:px-1 py-4 space-y-2 flex flex-col gap-4">
       <!-- Header -->
-      <div class="bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-2xl mx-6 overflow-hidden relative shadow-lg">
+      <div class="bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-2xl mx-4 overflow-hidden relative shadow-lg">
         <BookManagerHeader @add-by-form="handleAddByForm" @add-by-import="handleAddByImport" />
       </div>
 
       <!-- Book Overview Stats -->
-      <div class="px-6 mt-6 mb-8">
+      <div class="px-4 mt-6 mb-8">
         <BookStatsCards :total-books="totalBooks" :available-books="availableBooks"
           :unavailable-books="unavailableBooks" :categories="categories" />
       </div>
@@ -112,7 +112,7 @@
       </div>
 
       <!-- Main Content -->
-      <div v-else class="px-6 mb-6">
+      <div v-else class="px-4 mb-6">
         <Collection :categories="categories" :languages="languages" :trashed-books="trashedBooks"
           :show-trash="showTrash" @view-trash="viewTrash" @add-by-form="handleAddByForm"
           @add-by-import="handleAddByImport" @back-to-books="showTrash = false" @restore-book="restoreBook"
@@ -122,7 +122,7 @@
       </div>
 
       <!-- Book Cards -->
-      <div v-if="!showTrash" class="px-6 pb-10">
+      <div v-if="!showTrash" class="px-4 pb-10">
         <div class="grid gap-4">
           <div v-for="book in filteredBooks" :key="book.id"
             class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer"
