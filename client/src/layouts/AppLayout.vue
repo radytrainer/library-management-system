@@ -1,10 +1,10 @@
 <template>
   <div class="flex min-h-screen bg-custom-gray text-gray-900 font-inter">
-    <!-- Sidebar for Desktop and Tablet -->
+    <!-- Sidebar for Desktop Only -->
     <aside :class="[
       'rounded-tr-2xl rounded-br-2xl bg-gradient-to-b from-[#065084] to-[#3D74B6] text-gray-100 flex flex-col h-screen fixed left-0 transition-all duration-300 shadow-lg z-40',
       isSidebarOpen ? 'w-64' : 'w-20',
-      'hidden md:flex'
+      'hidden lg:flex'
     ]">
       <div v-if="isSidebarOpen" class="p-6 flex flex-col items-center border-b border-indigo-600">
         <img src="/logo.png" alt="Library Logo" class="h-20 w-30" />
@@ -74,37 +74,35 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col transition-all duration-300 min-w-0" :class="{
-      'md:ml-64': isSidebarOpen,
-      'md:ml-20': !isSidebarOpen
+      'lg:ml-64': isSidebarOpen,
+      'lg:ml-20': !isSidebarOpen
     }">
       <!-- Header -->
       <header class="sticky top-0 z-40 bg-white shadow-sm p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+        <div class="flex items-center justify-between w-full">
           <!-- Left Side: Menu Button and Title -->
-          <div class="flex items-center justify-between sm:justify-start flex-1 min-w-0">
-            <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-              <button @click="toggleMobileNavDropdown"
-                class="md:hidden text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100 mobile-menu-button"
-                aria-label="Toggle mobile navigation">
-                <span class="material-icons text-2xl">menu</span>
-              </button>
-              <button @click="toggleSidebar"
-                class="hidden md:block text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100"
-                aria-label="Toggle sidebar">
-                <span class="material-icons text-2xl">{{
-                  isSidebarOpen ? "menu_open" : "menu"
-                }}</span>
-              </button>
-              <h1 class="text-xl sm:text-2xl font-semibold tracking-tight ml-2 hidden sm:block"
-                :class="{ 'font-khmer': language === 'kh' }">
-                {{ pageTitle }}
-              </h1>
-            </div>
+          <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+            <button @click="toggleMobileNavDropdown"
+              class="md:hidden text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100 mobile-menu-button"
+              aria-label="Toggle mobile navigation">
+              <span class="material-icons text-2xl">menu</span>
+            </button>
+            <button @click="toggleSidebar"
+              class="hidden lg:block text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100"
+              aria-label="Toggle sidebar">
+              <span class="material-icons text-2xl">{{
+                isSidebarOpen ? "menu_open" : "menu"
+              }}</span>
+            </button>
+            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight ml-2 hidden sm:block"
+              :class="{ 'font-khmer': language === 'kh' }">
+              {{ pageTitle }}
+            </h1>
           </div>
 
-          <!-- Right Side: Search (Desktop/Tablet), Notifications, Profile -->
-          <div class="flex items-center space-x-3 sm:ml-auto justify-end w-full sm:w-auto">
-            <!-- Search (Desktop and Tablet) -->
+          <!-- Right Side: Desktop Search, Mobile Controls, Notifications, Profile -->
+          <div class="flex items-center space-x-3">
+            <!-- Search (Desktop and Tablet Only) -->
             <div class="hidden sm:block relative">
               <input type="text" v-model="searchQuery" @input="performSearch"
                 :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
@@ -115,8 +113,8 @@
               </span>
             </div>
             
-            <!-- Language Switch (Desktop and Tablet) -->
-            <div class="hidden sm:block relative">
+            <!-- Language Switch -->
+            <div class="relative">
               <button @click="isOpen = !isOpen"
                 class="language-button border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
                 :class="{ 'font-khmer': language === 'kh' }" aria-haspopup="true" :aria-expanded="isOpen.toString()"
@@ -125,7 +123,7 @@
                   ? 'https://flagcdn.com/w40/us.png'
                   : 'https://flagcdn.com/w40/kh.png'
                   " class="w-5 h-4 mr-2" :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'" />
-                <span v-if="isSidebarOpen">{{ language === "en" ? "English" : "ភាសាខ្មែរ" }}</span>
+                <span class="hidden sm:inline">{{ language === "en" ? "English" : "ភាសាខ្មែរ" }}</span>
                 <span class="ml-2 material-icons">arrow_drop_down</span>
               </button>
               <div v-if="isOpen"
@@ -144,7 +142,7 @@
               </div>
             </div>
             
-            <!-- Notifications and Profile - Always together in one row -->
+            <!-- Notifications and Profile -->
             <div class="flex items-center space-x-2">
               <!-- Notifications -->
               <div class="relative">
@@ -244,7 +242,8 @@
                   class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400 flex items-center justify-center"
                   @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
                   <img v-if="hasValidProfileImage" :src="profileImageUrl" alt="Profile"
-                    class="h-full w-full rounded-full object-cover" @error="handleImageError" />
+                    class="h-full w-full rounded-full object-cover" @error="handleImageError" 
+                    :key="profileImageKey" />
                   <span v-else
                     class="text-lg font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
                     :class="{ 'font-khmer': language === 'kh' }">
@@ -255,10 +254,10 @@
                   class="profile-menu absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg p-4 z-50 border border-gray-100 transition-opacity duration-200"
                   role="menu">
                   <div class="border-b border-gray-200 pb-2 mb-2">
-                    <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }">
+                    <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
                       {{ userStore.user?.username || "Unknown" }}
                     </p>
-                    <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }">
+                    <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
                       {{ userStore.user?.email || "No email" }}
                     </p>
                   </div>
@@ -278,52 +277,10 @@
             </div>
           </div>
         </div>
-
-        <!-- Second Row: Search and Language (Mobile Only) -->
-        <div class="flex items-center space-x-3 mt-3 sm:hidden">
-          <!-- Search -->
-          <div class="relative flex-1">
-            <input type="text" v-model="searchQuery" @input="performSearch"
-              :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
-              class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-              :class="{ 'font-khmer': language === 'kh' }" aria-label="Search books" />
-            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-              search
-            </span>
-          </div>
-          <!-- Language Switch -->
-          <div class="relative">
-            <button @click="isOpen = !isOpen"
-              class="language-button border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex items-center"
-              :class="{ 'font-khmer': language === 'kh' }" aria-haspopup="true" :aria-expanded="isOpen.toString()"
-              aria-label="Select language">
-              <img :src="language === 'en'
-                ? 'https://flagcdn.com/w40/us.png'
-                : 'https://flagcdn.com/w40/kh.png'
-                " class="w-5 h-4 mr-2" :alt="language === 'en' ? 'US Flag' : 'Cambodia Flag'" />
-              <span class="hidden sm:inline">{{ language === "en" ? "English" : "ភាសាខ្មែរ" }}</span>
-              <span class="ml-2 material-icons">arrow_drop_down</span>
-            </button>
-            <div v-if="isOpen"
-              class="language-menu absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-opacity duration-200"
-              role="menu" aria-orientation="vertical" tabindex="-1">
-              <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem" tabindex="0">
-                <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
-                English
-              </a>
-              <a href="#" @click.prevent="selectLanguage('kh')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                role="menuitem" tabindex="0">
-                <img src="https://flagcdn.com/w40/kh.png" class="w-5 h-4 mr-2" alt="Cambodia Flag" />
-                ភាសាខ្មែរ
-              </a>
-            </div>
-          </div>
-        </div>
       </header>
       
       <!-- Page Content -->
-      <main class="flex-1 overflow-auto p-4 md:p-6 bg-gray-100">
+      <main class="flex-1 overflow-auto p-4 md:p-6 bg-gray-100" :class="{ 'pb-24': isTablet }">
         <RouterView v-if="!isLoading" />
         <div v-else class="flex justify-center items-center h-full">
           <p class="text-gray-600" :class="{ 'font-khmer': language === 'kh' }">
@@ -331,12 +288,47 @@
           </p>
         </div>
       </main>
+
+      <!-- Bottom Navigation for Tablet -->
+      <div v-if="isTablet" class="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#065084] to-[#3D74B6] text-gray-100 shadow-lg z-40 md:flex lg:hidden flex justify-around">
+        <nav class="flex justify-around w-full">
+          <RouterLink 
+            v-for="item in filteredNav" 
+            :key="item.path" 
+            :to="item.path" 
+            :class="[
+              'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
+              'hover:bg-custom-hover-page',
+              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
+            ]"
+            @click="closeMobileNavDropdown"
+          >
+            <span class="material-icons text-xl mb-1">{{ item.icon }}</span>
+            <span class="text-xs text-center font-khmer" v-if="language === 'kh'">{{ item.label.kh }}</span>
+            <span class="text-xs text-center" v-else>{{ item.label.en }}</span>
+          </RouterLink>
+          
+          <RouterLink 
+            to="/website" 
+            :class="[
+              'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
+              'hover:bg-custom-hover-page',
+              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
+            ]"
+            @click="closeMobileNavDropdown"
+          >
+            <span class="material-icons text-xl mb-1">public</span>
+            <span class="text-xs text-center" v-if="language === 'kh'">គេហទំព័រ</span>
+            <span class="text-xs text-center" v-else>Website</span>
+          </RouterLink>
+        </nav>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { debounce } from "lodash";
@@ -359,7 +351,11 @@ const isMobileSidebarOpen = ref(false);
 const isOpen = ref(false);
 const showMobileNavDropdown = ref(false);
 const isLoading = ref(false);
+const isTablet = ref(false);
 const emit = defineEmits(["profileClicked"]);
+
+const profileImageKey = ref(Date.now());
+const userInfoKey = ref(Date.now());
 
 // Navigation items with role-based access
 const navItems = [
@@ -442,7 +438,7 @@ const profileImageUrl = computed(() => {
     image && (image.startsWith("http") || image.startsWith("data:image"));
   const finalImage = isValidUrl ? image : "/default-profile.png";
   return finalImage.startsWith("http")
-    ? `${finalImage}?t=${new Date().getTime()}`
+    ? `${finalImage}?t=${profileImageKey.value}`
     : finalImage;
 });
 
@@ -468,6 +464,25 @@ const pageTitle = computed(() => {
     map[key]?.[language.value] ||
     (language.value === "en" ? "Library System" : "ប្រព័ន្ធបណ្ចាល័យ")
   );
+});
+
+const updateProfileDisplay = () => {
+  profileImageKey.value = Date.now();
+  userInfoKey.value = Date.now();
+};
+
+watch(() => userStore.user, (newUser, oldUser) => {
+  if (newUser && oldUser) {
+    if (newUser.profile_image !== oldUser.profile_image || 
+        newUser.username !== oldUser.username || 
+        newUser.email !== oldUser.email) {
+      updateProfileDisplay();
+    }
+  }
+}, { deep: true });
+
+watch(() => localStorage.getItem('profile_image'), () => {
+  updateProfileDisplay();
 });
 
 // Dropdown functions
@@ -517,7 +532,11 @@ async function fetchUserProfile() {
   userStore.loading = true;
   try {
     const { success } = await userStore.fetchUserProfile();
-    if (!success) userStore.userProfile = null;
+    if (success) {
+      updateProfileDisplay();
+    } else {
+      userStore.userProfile = null;
+    }
     return success;
   } catch (error) {
     userStore.userProfile = null;
@@ -554,6 +573,7 @@ function confirmLogout() {
 function handleImageError() {
   userStore.user.profile_image = null;
   localStorage.removeItem('profile_image');
+  updateProfileDisplay();
 }
 
 function closeMobileSidebar() {
@@ -610,6 +630,17 @@ function goToBorrowDetails() {
   showMobileNavDropdown.value = false;
 }
 
+// Function to check if device is tablet
+function checkTabletDevice() {
+  const width = window.innerWidth;
+  isTablet.value = width >= 768 && width <= 1024;
+  
+  // Auto-close sidebar on tablet
+  if (isTablet.value) {
+    isSidebarOpen.value = false;
+  }
+}
+
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
   const cachedImage = localStorage.getItem("profile_image");
@@ -621,17 +652,29 @@ onMounted(() => {
   onUnmounted(() => clearInterval(interval));
 
   const handleResize = () => {
-    if (window.innerWidth < 640) {
+    checkTabletDevice();
+    
+    if (window.innerWidth < 768) {
       isSidebarOpen.value = false;
     } else if (window.innerWidth < 1024) {
-      isSidebarOpen.value = true;
+      isSidebarOpen.value = false;
     } else {
       isSidebarOpen.value = true;
     }
   };
+  
   window.addEventListener("resize", handleResize);
   handleResize();
   onUnmounted(() => window.removeEventListener("resize", handleResize));
+});
+
+const refreshProfile = async () => {
+  await fetchUserProfile();
+};
+
+defineExpose({
+  refreshProfile,
+  updateProfileDisplay
 });
 </script>
 
@@ -671,6 +714,13 @@ aside {
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0 !important;
+  }
+}
+
+/* Additional styles for tablet bottom navigation */
+@media (max-width: 1024px) and (min-width: 768px) {
+  main {
+    padding-bottom: 80px !important;
   }
 }
 </style>
