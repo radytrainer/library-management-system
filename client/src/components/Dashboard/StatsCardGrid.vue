@@ -1,40 +1,37 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div v-for="(stat, index) in modernStats" :key="index"
-      class="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer"
-      @click="navigateToDetails(stat)">
-      <div class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity"
-        :class="stat.gradient"></div>
+  <div v-for="(stat, index) in modernStats" :key="index"
+    class="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer"
+    @click="navigateToDetails(stat)">
+    <div class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity"
+      :class="stat.gradient"></div>
 
-      <div class="flex items-center justify-between mb-4">
-        <div class="p-3 rounded-2xl" :class="stat.iconBg">
-          <svg class="w-6 h-6" :class="stat.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="stat.iconPath" />
+    <div class="flex items-center justify-between mb-4">
+      <div class="p-3 rounded-2xl" :class="stat.iconBg">
+        <svg class="w-6 h-6" :class="stat.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="stat.iconPath" />
+        </svg>
+      </div>
+      <div class="text-right">
+        <div class="flex items-center space-x-1">
+          <svg class="w-4 h-4" :class="stat.trendColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="stat.trendIcon" />
           </svg>
-        </div>
-        <div class="text-right">
-          <div class="flex items-center space-x-1">
-            <svg class="w-4 h-4" :class="stat.trendColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="stat.trendIcon" />
-            </svg>
-            <span class="text-sm font-semibold" :class="stat.trendColor">{{ stat.change }}</span>
-          </div>
+          <span class="text-sm font-semibold" :class="stat.trendColor">{{ stat.change }}</span>
         </div>
       </div>
+    </div>
 
-      <div class="mb-2">
-        <h3 class="text-gray-600 font-medium text-sm">{{ stat.title }}</h3>
-        <p class="text-3xl font-bold text-gray-900 mt-1">{{ stat.value }}</p>
-      </div>
+    <div class="mb-2">
+      <h3 class="text-gray-600 font-medium text-sm">{{ stat.title }}</h3>
+      <p class="text-3xl font-bold text-gray-900 mt-1">{{ stat.value }}</p>
+    </div>
 
-      <div class="flex items-center justify-between">
-        <span class="text-xs text-gray-500">{{ stat.subtitle }}</span>
-        <button class="text-xs font-medium px-3 py-1 rounded-full cursor-pointer" :class="stat.buttonStyle"
-          @click.stop="navigateToDetails(stat)"
-          :disabled="!stat.route">
-          Click Here
-        </button>
-      </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-500">{{ stat.subtitle }}</span>
+      <button class="text-xs font-medium px-3 py-1 rounded-full cursor-pointer" :class="stat.buttonStyle"
+        @click.stop="navigateToDetails(stat)" :disabled="!stat.route">
+        Click Here
+      </button>
     </div>
   </div>
 </template>

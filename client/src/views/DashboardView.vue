@@ -43,20 +43,25 @@
       </div>
 
       <!-- Card to show total of book -->
-      <StatsCardGrid />
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatsCardGrid />
+      </div>
 
-      <!-- Popular Books -->
-      <LimitedBook />
+      <!-- Limited Books -->
+      <div
+        class="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-8 shadow-lg border border-gray-200/50 mb-8 backdrop-blur-sm">
+        <LimitedBook />
+      </div>
 
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <!-- Left Sidebar -->
-        <div class="xl:col-span-2">
+        <!-- Left Sidebar / Activity Chart -->
+        <div class="md:col-span-3 xl:col-span-2">
           <ActivityChart />
         </div>
 
-        <!-- Right Sidebar -->
-        <div class="space-y-8">
+        <!-- Right Sidebar / Top Borrowers -->
+        <div class="space-y-8 md:col-span-3 xl:col-span-1">
           <TopBorrower />
         </div>
       </div>
