@@ -105,9 +105,8 @@
                     v-model="searchQuery"
                     type="text"
                     placeholder="Search"
-                    class="w-full border border-gray-300 rounded-lg py-2 px-3 text-smsm:py-2.5 sm:px-9 sm:text-base pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-900 transition-all duration-300"
+                    class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm sm:py-2.5 sm:px-9 sm:text-base pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-900 transition-all duration-300"
                   />
-
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
@@ -138,11 +137,31 @@
                     class="aspect-[2/3] sm:aspect-[3/4] bg-gray-100 relative overflow-hidden"
                   >
                     <img
-                      :src="book.cover_image_url || placeholderImage"
+                      v-if="book.cover_image_url"
+                      :src="book.cover_image_url"
                       :alt="book.title || 'Book cover'"
                       class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
-                      @error="handleImageError"
+                      @error="handleImageError($event, book)"
                     />
+                    <div
+                      v-else
+                      class="w-full h-full flex items-center justify-center bg-gray-100"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        class="w-16 h-16 text-gray-400"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.5"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -335,7 +354,7 @@
                 >
                 <input
                   v-model="languageForm.name"
-                  placeholder="e.g. English, French..."
+                  placeholder=""
                   class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
                   @keyup.enter="saveLanguage"
                   required
@@ -347,7 +366,7 @@
                 >
                 <input
                   v-model="languageForm.country"
-                  placeholder="e.g. United States, France..."
+                  placeholder=""
                   class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
                   @keyup.enter="saveLanguage"
                 />
@@ -453,7 +472,8 @@ const languageForm = ref({ name: "", country: "" });
 const showDeleteConfirm = ref(false);
 const languageToDelete = ref(null);
 
-const placeholderImage = "https://via.placeholder.com/300x400?text=Book+Cover";
+// No placeholder image URL since we're using SVG fallback
+const placeholderImage = null;
 
 // ---------- Lifecycle ----------
 let isMounted = true;
@@ -500,7 +520,7 @@ const fetchInitialData = async (retries = 3) => {
       ? bookData.map((book) => ({
           id: book?.id,
           title: book?.title || "Untitled Book",
-          cover_image_url: book.cover_image_url || placeholderImage,
+          cover_image_url: book.cover_image_url || null, // Use null for missing images
           public_year: book?.public_year || "Unknown year",
           language: book?.Language?.name || languageMap[book?.language_id] || "Unknown",
         }))
@@ -663,9 +683,9 @@ const confirmDelete = async () => {
 };
 
 // ---------- Image Error Handler ----------
-const handleImageError = (e) => {
-  e.target.src = placeholderImage;
-  if (!e.target.classList.contains("opacity-70")) e.target.classList.add("opacity-70");
+const handleImageError = (e, book) => {
+  book.cover_image_url = null; // Set to null to trigger SVG fallback
+  e.target.classList.add("hidden"); // Hide the broken image element
 };
 </script>
 
