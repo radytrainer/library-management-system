@@ -50,9 +50,9 @@
         </div>
       </div>
     </div>
-    <div>
-      <table class="w-full table-auto">
-        <thead class="bg-gray-50 border-b border-gray-200">
+    <div class="overflow-x-auto">
+      <table class="w-full table-auto min-w-[800px]">
+        <thead class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
           <tr>
             <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">#</th>
             <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Book</th>
