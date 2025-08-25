@@ -2,13 +2,13 @@
   <div>
     <Notification :notification="notification" />
 
-    <div class="max-w-8xl mx-auto px-8 sm:px-6 lg:px-1 py-4 space-y-2 flex flex-col gap-4">
+    <div class="max-w-8xl mx-auto sm:px-4 lg:px-1 py-4 space-y-2 flex flex-col gap-4">
       <!-- Header -->
       <div class="bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-2xl mx-4 overflow-hidden relative shadow-lg">
         <BookManagerHeader @add-by-form="handleAddByForm" @add-by-import="handleAddByImport" />
       </div>
 
-      <!-- Book Overview Stats -->
+      <!-- Book Overview Stats res done -->
       <div class="px-4 mt-6 mb-8">
         <BookStatsCards :total-books="totalBooks" :available-books="availableBooks"
           :unavailable-books="unavailableBooks" :categories="categories" />
@@ -25,7 +25,7 @@
         <div v-if="trashedBooks.length === 0" class="text-center py-12">
           <EmptyState title="Trash Empty" message="No books in trash" />
         </div>
-        <div v-else class="grid grid-cols-2 grid gap-4">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div v-for="book in trashedBooks" :key="book.id"
             class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out">
 
@@ -124,6 +124,7 @@
       <!-- Book Cards -->
       <div v-if="!showTrash" class="px-4 pb-10">
         <div class="grid gap-4">
+
           <div v-for="book in filteredBooks" :key="book.id"
             class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer"
             @click="viewBook(book)">
@@ -156,7 +157,9 @@
                       <p class="text-gray-600 text-sm mb-2">
                         Author: {{ book.author?.name || 'Unknown Author' }}
                       </p>
-                      <p class="text-gray-500 text-sm mb-3 description">
+
+                      <!-- Hide description only on mobile devices (sm:hidden) -->
+                      <p class="sm:hidden md:block text-gray-500 text-sm mb-3 description">
                         {{ book.description && book.description.length > 180 ? book.description.slice(0, 70) + ' ...' :
                           book.description || 'N/A' }}
                       </p>
@@ -179,13 +182,13 @@
                               class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  d="M11 5H极 a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                               Edit
                             </button>
                             <button @click.stop="confirmDeleteBook(book.id)"
                               class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 极 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
