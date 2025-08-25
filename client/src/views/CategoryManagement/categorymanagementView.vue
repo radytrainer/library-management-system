@@ -111,163 +111,221 @@
       </div>
 
       <!-- Controls and Table -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="p-6 border-b border-gray-200">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div class="relative flex-1 max-w-md">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input v-model="searchQuery" type="text" placeholder="Search categories..."
-                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm" />
-            </div>
-            <div class="flex items-center gap-3">
-              <label class="text-gray-600 text-sm font-medium">Show:</label>
-              <select v-model="perPage"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="paginatedCategories.length > 0">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  #
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Category
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Description
-                </th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Quantity
-                </th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-for="(category, index) in paginatedCategories" :key="category.id"
-                class="hover:bg-gray-50 transition duration-200">
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-medium text-gray-900">
-                    {{ index + 1 }}
-                  </span>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-600 rounded-lg">
-                      <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ category.name }}
-                      </div>
-                      <div class="text-xs text-gray-500">Category Item</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
-                  <p v-if="category.description" class="text-sm text-gray-600 line-clamp-2">
-                    {{ category.description }}
-                  </p>
-                  <p v-else class="text-sm text-gray-400 italic">No description</p>
-                </td>
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-medium text-gray-900">{{
-                    category.qty
-                  }}</span>
-                </td>
-                <td class="px-6 py-4 text-center">
-                  <span :class="getStockStatusClass(category.qty)"
-                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
-                    <span class="w-2 h-2 rounded-full mr-1.5" :class="getStockStatusDot(category.qty)"></span>
-                    {{ getStockStatusLabel(category.qty) }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-center relative">
-                  <button @click.stop="toggleActionMenu(category.id)"
-                    class="p-2 rounded-lg hover:bg-gray-100 transition duration-200">
-                    <svg class="h-5 w-5 text-gray-500 hover:text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm0 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
-                    </svg>
-                  </button>
-                  <div v-if="activeActionMenu === category.id"
-                    class="absolute right-6 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20 divide-y divide-gray-100">
-                    <button @click="viewCategory(category)"
-                      class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
-                      <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View Details
-                    </button>
-                    <button @click="openEditDialog(category)"
-                      class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
-                      <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit Category
-                    </button>
-                    <button @click="deleteCategory(category.id)"
-                      class="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition duration-200">
-                      <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete Category
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Empty State -->
-        <div v-else class="text-center py-16">
-          <div class="p-4 bg-blue-600 rounded-lg inline-flex mb-6">
-            <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+ <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="p-6 border-b border-gray-200">
+        <!-- Search and controls (unchanged) -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div class="relative flex-1 max-w-md">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none"
+              viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            <input v-model="searchQuery" type="text" placeholder="Search categories..."
+              class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-sm" />
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-3">No Categories Found</h3>
-          <p class="text-gray-500 mb-6 max-w-sm mx-auto">
-            {{
-              searchQuery
-                ? "Try different search terms to find categories."
-                : "Create your first category to organize your inventory."
-            }}
-          </p>
-          <button v-if="!searchQuery" @click="openAddDialog"
-            class="flex items-center gap-2 mx-auto px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Create Category</span>
-          </button>
+          <div class="flex items-center gap-3">
+            <label class="text-gray-600 text-sm font-medium">Show:</label>
+            <select v-model="perPage"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
         </div>
+      </div>
+
+      <!-- Responsive Table Container -->
+      <div v-if="paginatedCategories.length > 0" class="overflow-x-auto">
+        <!-- Mobile Card View -->
+        <div class="sm:hidden divide-y divide-gray-200">
+          <div v-for="(category, index) in paginatedCategories" :key="category.id" 
+               class="p-4 hover:bg-gray-50 transition duration-200">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600 rounded-lg">
+                  <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-gray-900">
+                    {{ category.name }}
+                  </div>
+                  <div class="text-xs text-gray-500">#{{ String(index + 1).padStart(3, "0") }}</div>
+                </div>
+              </div>
+              <div>
+                <span :class="getStockStatusClass(category.qty)"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
+                  <span class="w-2 h-2 rounded-full mr-1.5" :class="getStockStatusDot(category.qty)"></span>
+                  {{ getStockStatusLabel(category.qty) }}
+                </span>
+              </div>
+            </div>
+            
+            <p v-if="category.description" class="text-sm text-gray-600 mb-3 line-clamp-2">
+              {{ category.description }}
+            </p>
+            <p v-else class="text-sm text-gray-400 italic mb-3">No description</p>
+            
+            <div class="flex justify-between items-center">
+              <div class="text-sm">
+                <span class="text-gray-600">Quantity:</span>
+                <span class="font-medium text-gray-900 ml-1">{{ category.qty }}</span>
+              </div>
+              
+              <div class="relative">
+                <button @click.stop="toggleActionMenu(category.id)"
+                  class="p-2 rounded-lg hover:bg-gray-100 transition duration-200">
+                  <svg class="h-5 w-5 text-gray-500 hover:text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm0 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                  </svg>
+                </button>
+                <div v-if="activeActionMenu === category.id"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20 divide-y divide-gray-100">
+                  <button @click="viewCategory(category)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View Details
+                  </button>
+                  <button @click="openEditDialog(category)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Category
+                  </button>
+                  <button @click="deleteCategory(category.id)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Category
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+        <!-- Desktop Table View -->
+        <table class="min-w-full divide-y divide-gray-200 hidden sm:table">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                #
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Category
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Description
+              </th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Quantity
+              </th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="(category, index) in paginatedCategories" :key="category.id"
+              class="hover:bg-gray-50 transition duration-200">
+              <td class="px-6 py-4 text-center">
+                <span class="text-sm font-medium text-gray-900">
+                  {{ index + 1 }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-blue-600 rounded-lg">
+                    <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ category.name }}
+                    </div>
+                    <div class="text-xs text-gray-500">Category Item</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <p v-if="category.description" class="text-sm text-gray-600 line-clamp-2">
+                  {{ category.description }}
+                </p>
+                <p v-else class="text-sm text-gray-400 italic">No description</p>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <span class="text-sm font-medium text-gray-900">{{
+                  category.qty
+                }}</span>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <span :class="getStockStatusClass(category.qty)"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
+                  <span class="w-2 h-2 rounded-full mr-1.5" :class="getStockStatusDot(category.qty)"></span>
+                  {{ getStockStatusLabel(category.qty) }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-center relative">
+                <button @click.stop="toggleActionMenu(category.id)"
+                  class="p-2 rounded-lg hover:bg-gray-100 transition duration-200">
+                  <svg class="h-5 w-5 text-gray-500 hover:text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm0 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                  </svg>
+                </button>
+                <div v-if="activeActionMenu === category.id"
+                  class="absolute right-6 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20 divide-y divide-gray-100">
+                  <button @click="viewCategory(category)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View Details
+                  </button>
+                  <button @click="openEditDialog(category)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Category
+                  </button>
+                  <button @click="deleteCategory(category.id)"
+                    class="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition duration-200">
+                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Category
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Add/Edit Modal -->
