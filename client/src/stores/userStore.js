@@ -196,7 +196,7 @@ export const useUserStore = defineStore('user', {
           return { success: false };
         }
 
-        this.userProfile = this.normalizeUser(res.data);
+        this.userProfile = { ...res.data, user: this.normalizeUser(res.data.user) };
         return { success: true, data: this.userProfile };
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -220,12 +220,8 @@ export const useUserStore = defineStore('user', {
         }
         // Update userProfile if it’s the current user
         if (this.userProfile?.user?.id === id) {
-          this.userProfile = {
-            ...this.userProfile,
-            user: updatedUser,
-            profile_image: res.data.user.profile_image || this.userProfile.profile_image,
-          };
-          console.log('Updated userProfile:', this.userProfile, 'Profile image:', this.userProfile.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+          this.userProfile = { ...this.userProfile, user: updatedUser };
+          console.log('Updated userProfile:', this.userProfile, 'Profile image:', this.userProfile.user.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
         }
         return { success: true, profile_image: res.data.user.profile_image };
       } catch (error) {
