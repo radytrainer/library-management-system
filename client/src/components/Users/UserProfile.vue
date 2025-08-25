@@ -21,6 +21,26 @@ const imageFile = ref(null)
 const editMode = ref(false)
 const isSubmitting = ref(false)
 const isLoading = ref(true)
+const profileImageKey = ref(Date.now())
+
+// Unified profile image handling
+const profileImageUrl = computed(() => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  let image = previewImage.value || userStore.userProfile?.profile_image || userStore.profileImage || '';
+  
+  // Handle relative paths
+  if (image && !image.startsWith('http') && !image.startsWith('data:image') && !image.startsWith('blob:')) {
+    image = `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+  }
+  
+  // Validate URL and add cache-busting parameter
+  const isValidUrl = image && (image.startsWith('http') || image.startsWith('data:image') || image.startsWith('blob:'));
+  const finalImage = isValidUrl ? image : '/default-profile.png';
+  
+  return finalImage.startsWith('http') 
+    ? `${finalImage}${finalImage.includes('?') ? '&' : '?'}t=${profileImageKey.value}`
+    : finalImage;
+});
 
 // Computed property for the first letter of the email
 const profileInitial = computed(() => userStore.userProfile?.user?.email?.charAt(0)?.toUpperCase() || '?')
@@ -31,10 +51,17 @@ const hasValidProfileImage = computed(() => {
   return image && (image.startsWith('http') || image.startsWith('data:image') || image.startsWith('blob:'))
 })
 
+// Function to refresh profile image
+const updateProfileDisplay = () => {
+  profileImageKey.value = Date.now();
+  if (previewImage.value && previewImage.value.startsWith('blob:')) {
+    URL.revokeObjectURL(previewImage.value);
+  }
+};
+
 watch(() => userStore.userProfile?.profile_image, (newImage) => {
-  const imageUrl = newImage ? `${newImage}?t=${new Date().getTime()}` : userStore.profileImage || null
-  previewImage.value = imageUrl
-  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Image:', imageUrl, 'profileImage:', userStore.profileImage)
+  updateProfileDisplay();
+  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Image:', newImage)
 })
 
 onMounted(async () => {
@@ -51,7 +78,7 @@ onMounted(async () => {
         phone: userData.phone || '',
         date_of_birth: userData.date_of_birth || '',
       })
-      previewImage.value = userStore.userProfile.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+      updateProfileDisplay();
       console.log('Edit form updated with:', editForm.value, 'Preview image:', previewImage.value)
     } else {
       console.warn('No user data available in profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
@@ -67,9 +94,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (previewImage.value && previewImage.value.startsWith('blob:')) {
-    URL.revokeObjectURL(previewImage.value)
-  }
+  updateProfileDisplay();
   previewImage.value = null
   imageFile.value = null
   console.log('Component unmounted, preview image revoked at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
@@ -86,16 +111,14 @@ const handleImageChange = (e) => {
       Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Image size should be less than 5MB' })
       return
     }
-    if (previewImage.value && previewImage.value.startsWith('blob:')) {
-      URL.revokeObjectURL(previewImage.value)
-    }
+    updateProfileDisplay();
     imageFile.value = file
     previewImage.value = URL.createObjectURL(file)
     console.log('Image changed, file:', file.name, 'size:', file.size, 'type:', file.type, 'preview URL:', previewImage.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   } else {
     console.log('No file selected at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
     imageFile.value = null
-    previewImage.value = userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+    updateProfileDisplay();
   }
 }
 
@@ -137,9 +160,6 @@ const updateProfile = async () => {
   }
   if (imageFile.value) {
     formData.append('profile_image', imageFile.value)
-    console.log('Appending image to FormData:', imageFile.value.name, 'size:', imageFile.value.size, 'type:', imageFile.value.type, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
-  } else {
-    console.log('No image file to append at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   }
 
   const userId = userStore.userProfile?.user?.id
@@ -150,9 +170,13 @@ const updateProfile = async () => {
   }
 
   try {
-    const result = await userStore.updateUser(userId, formData)
-    console.log('Update result:', result, 'Profile image from response:', result.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
-    if (result.success) {
+    // Update to handle the API response format correctly
+    const response = await userStore.updateUser(userId, formData)
+    
+    // Handle different response formats
+    const result = response.data || response
+    
+    if (result.success || result.user) {
       Swal.fire({
         icon: 'success',
         title: 'Profile Updated',
@@ -160,18 +184,23 @@ const updateProfile = async () => {
         timer: 2000,
         showConfirmButton: false,
       })
+      
       editMode.value = false
-      // Set previewImage from response or userProfile
-      previewImage.value = result.profile_image ? `${result.profile_image}?t=${new Date().getTime()}` : userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
-      console.log('Set previewImage after update:', previewImage.value, 'profileImage:', userStore.profileImage, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
       imageFile.value = null
+      
+      // Store in localStorage for quick access
+      if (result.profile_image || result.user?.profile_image) {
+        const imageUrl = result.profile_image || result.user.profile_image;
+        localStorage.setItem('profile_image', imageUrl);
+      }
+      
       // Fetch fresh profile to ensure sync
       await userStore.fetchUserProfile()
     } else {
       Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to update profile' })
     }
   } catch (err) {
-    console.error('Update failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
+    console.error('Update failed:', err)
     Swal.fire({ icon: 'error', title: 'Error', text: 'An unexpected error occurred while updating the profile' })
   } finally {
     isSubmitting.value = false
@@ -185,8 +214,9 @@ const goBack = () => {
 
 const handleImageError = () => {
   console.log('Image load failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
-  // Fallback to userStore.profileImage or null
-  previewImage.value = userStore.userProfile?.profile_image ? `${userStore.userProfile.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+  // Fallback to default image
+  previewImage.value = '/default-profile.png'
+  updateProfileDisplay();
 }
 </script>
 
@@ -221,8 +251,8 @@ const handleImageError = () => {
             <div class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-slate-100">
               <img
                 v-if="hasValidProfileImage"
-                :src="previewImage || userStore.userProfile?.profile_image || userStore.profileImage || 'https://placehold.co/128x128'"
-                alt="Profile"
+                :src="profileImageUrl"
+                :alt="editForm.username || 'Profile'"
                 class="w-full h-full rounded-full object-cover"
                 @error="handleImageError"
               />
@@ -392,7 +422,7 @@ const handleImageError = () => {
                   :disabled="isSubmitting"
                 />
                 <div v-if="previewImage" class="w-10 sm:w-12 md:w-14 lg:w-16 h-10 sm:h-12 md:h-14 lg:h-16 rounded-lg overflow-hidden border-2 border-slate-200">
-                  <img :src="previewImage" class="w-full h-full object-cover" @error="handleImageError" />
+                  <img :src="profileImageUrl" class="w-full h-full object-cover" @error="handleImageError" />
                 </div>
               </div>
             </div>

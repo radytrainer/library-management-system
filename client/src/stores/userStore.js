@@ -206,36 +206,54 @@ export const useUserStore = defineStore('user', {
         this.loading = false;
       }
     },
-    async updateUser(id, formData) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const res = await updateUser(id, formData); // Assumed API call
-        console.log('updateUser API response:', res.data, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        const updatedUser = this.normalizeUser(res.data.user);
-        // Update users array
-        const index = this.users.findIndex(u => u.id === id);
-        if (index !== -1) {
-          this.users[index] = updatedUser;
-        }
-        // Update userProfile if it’s the current user
-        if (this.userProfile?.user?.id === id) {
-          this.userProfile = {
-            ...this.userProfile,
-            user: updatedUser,
-            profile_image: res.data.user.profile_image || this.userProfile.profile_image,
-          };
-          console.log('Updated userProfile:', this.userProfile, 'Profile image:', this.userProfile.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        }
-        return { success: true, profile_image: res.data.user.profile_image };
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Failed to update user';
-        console.error('updateUser failed:', this.error, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        return { success: false, error: this.error };
-      } finally {
-        this.loading = false;
-      }
-    },
+async updateUser(id, formData) {
+  this.loading = true;
+  this.error = '';
+  try {
+    const res = await updateUser(id, formData);
+    console.log(
+      'updateUser API response:',
+      res.data,
+      'at:',
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })
+    );
+
+    const updatedUser = this.normalizeUser(res.data.user);
+
+    // 🔹 Update users list
+    const index = this.users.findIndex(u => u.id === id);
+    if (index !== -1) {
+      this.users[index] = updatedUser;
+    }
+
+    // 🔹 If this is the currently logged-in user → update store + localStorage
+    if (this.user?.id === id) {
+      this.setUser(updatedUser); 
+    }
+
+    // 🔹 Update userProfile if viewing self
+    if (this.userProfile?.user?.id === id) {
+      this.userProfile = {
+        ...this.userProfile,
+        user: updatedUser, // ✅ only this, no duplicate profile_image
+      };
+    }
+
+    return { success: true, profile_image: updatedUser.profile_image };
+  } catch (error) {
+    this.error = error.response?.data?.message || 'Failed to update user';
+    console.error(
+      'updateUser failed:',
+      this.error,
+      'at:',
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })
+    );
+    return { success: false, error: this.error };
+  } finally {
+    this.loading = false;
+  }
+}
+,
     async fetchRoles() {
       this.loading = true;
       this.error = '';

@@ -471,6 +471,12 @@ const updateProfileDisplay = () => {
   userInfoKey.value = Date.now();
 };
 
+// Add this function to handle user data updates
+const handleUserDataUpdate = (event) => {
+  // Refresh the profile display when user data is updated
+  updateProfileDisplay();
+};
+
 watch(() => userStore.user, (newUser, oldUser) => {
   if (newUser && oldUser) {
     if (newUser.profile_image !== oldUser.profile_image || 
@@ -643,6 +649,10 @@ function checkTabletDevice() {
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  
+  // Add event listener for user data updates
+  window.addEventListener('user-data-updated', handleUserDataUpdate);
+  
   const cachedImage = localStorage.getItem("profile_image");
   if (cachedImage && !userStore.user?.profile_image)
     userStore.user = { ...userStore.user, profile_image: cachedImage };
@@ -666,6 +676,11 @@ onMounted(() => {
   window.addEventListener("resize", handleResize);
   handleResize();
   onUnmounted(() => window.removeEventListener("resize", handleResize));
+});
+
+onUnmounted(() => {
+  // Remove event listener when component is destroyed
+  window.removeEventListener('user-data-updated', handleUserDataUpdate);
 });
 
 const refreshProfile = async () => {
