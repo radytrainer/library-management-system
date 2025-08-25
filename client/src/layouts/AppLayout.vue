@@ -255,10 +255,10 @@
                   role="menu">
                   <div class="border-b border-gray-200 pb-2 mb-2">
                     <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
-                      {{ userStore.user?.username || "Unknown" }}
+                      {{ userStore.userProfile?.user?.username || userStore.user?.username || "Unknown" }}
                     </p>
                     <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
-                      {{ userStore.user?.email || "No email" }}
+                      {{ userStore.userProfile?.user?.email || userStore.user?.email || "No email" }}
                     </p>
                   </div>
                   <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
@@ -332,7 +332,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { debounce } from "lodash";
-import { defineEmits } from "vue";
 import Swal from "sweetalert2";
 
 // Stores and router
@@ -352,8 +351,6 @@ const isOpen = ref(false);
 const showMobileNavDropdown = ref(false);
 const isLoading = ref(false);
 const isTablet = ref(false);
-const emit = defineEmits(["profileClicked"]);
-
 const profileImageKey = ref(Date.now());
 const userInfoKey = ref(Date.now());
 
@@ -425,17 +422,15 @@ const filteredNav = computed(() => {
 });
 
 const profileInitial = computed(
-  () => userStore.user?.email?.charAt(0)?.toUpperCase() || "?"
+  () => userStore.userProfile?.user?.email?.charAt(0)?.toUpperCase() || "?"
 );
 
 const profileImageUrl = computed(() => {
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-  let image =
-    userStore.user?.profile_image || localStorage.getItem("profile_image") || "";
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  let image = userStore.userProfile?.user?.profile_image || userStore.user?.profile_image || localStorage.getItem("profile_image") || "";
   if (image && !image.startsWith("http") && !image.startsWith("data:image"))
     image = `${baseUrl}${image.startsWith("/") ? "" : "/"}${image}`;
-  const isValidUrl =
-    image && (image.startsWith("http") || image.startsWith("data:image"));
+  const isValidUrl = image && (image.startsWith("http") || image.startsWith("data:image"));
   const finalImage = isValidUrl ? image : "/default-profile.png";
   return finalImage.startsWith("http")
     ? `${finalImage}?t=${profileImageKey.value}`
@@ -443,8 +438,8 @@ const profileImageUrl = computed(() => {
 });
 
 const hasValidProfileImage = computed(() => {
-  const image = userStore.user?.profile_image || localStorage.getItem('profile_image') || ''
-  return image && (image.startsWith('http') || image.startsWith('data:image'))
+  const image = userStore.userProfile?.user?.profile_image || userStore.user?.profile_image || localStorage.getItem('profile_image') || '';
+  return image && (image.startsWith('http') || image.startsWith('data:image'));
 });
 
 const pageTitle = computed(() => {
@@ -466,24 +461,13 @@ const pageTitle = computed(() => {
   );
 });
 
-const updateProfileDisplay = () => {
-  profileImageKey.value = Date.now();
-  userInfoKey.value = Date.now();
-};
-
-// Add this function to handle user data updates
-const handleUserDataUpdate = (event) => {
-  // Refresh the profile display when user data is updated
-  updateProfileDisplay();
-};
-
-watch(() => userStore.user, (newUser, oldUser) => {
-  if (newUser && oldUser) {
-    if (newUser.profile_image !== oldUser.profile_image || 
-        newUser.username !== oldUser.username || 
-        newUser.email !== oldUser.email) {
-      updateProfileDisplay();
-    }
+// Watch for changes in userProfile to update navbar
+watch(() => userStore.userProfile, (newProfile, oldProfile) => {
+  if (newProfile?.user && (!oldProfile || 
+      newProfile.user.profile_image !== oldProfile.user?.profile_image ||
+      newProfile.user.username !== oldProfile.user?.username ||
+      newProfile.user.email !== oldProfile.user?.email)) {
+    updateProfileDisplay();
   }
 }, { deep: true });
 
@@ -535,7 +519,7 @@ const performSearch = debounce(async () => {
 
 async function fetchUserProfile() {
   if (!userStore.token) return false;
-  userStore.loading = true;
+  isLoading.value = true;
   try {
     const { success } = await userStore.fetchUserProfile();
     if (success) {
@@ -546,8 +530,9 @@ async function fetchUserProfile() {
     return success;
   } catch (error) {
     userStore.userProfile = null;
+    console.error('Error fetching profile:', error);
   } finally {
-    userStore.loading = false;
+    isLoading.value = false;
   }
 }
 
@@ -577,7 +562,8 @@ function confirmLogout() {
 }
 
 function handleImageError() {
-  userStore.user.profile_image = null;
+  userStore.userProfile = { ...userStore.userProfile, user: { ...userStore.userProfile?.user, profile_image: null } };
+  userStore.user = { ...userStore.user, profile_image: null };
   localStorage.removeItem('profile_image');
   updateProfileDisplay();
 }
@@ -626,10 +612,11 @@ async function checkOverdueBorrows() {
     notifications.value = userStore.overdueBorrows.length;
   } catch (error) {
     notifications.value = 0;
+    console.error('Error checking overdue borrows:', error);
   }
 }
 
-function goToBorrowDetails() {
+function goToBorrowDetails(borrowId) {
   router.push(`/borrows`);
   showNotifications.value = false;
   isMobileSidebarOpen.value = false;
@@ -647,15 +634,18 @@ function checkTabletDevice() {
   }
 }
 
+function updateProfileDisplay() {
+  profileImageKey.value = Date.now();
+  userInfoKey.value = Date.now();
+  console.log('Profile display updated at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+}
+
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  
-  // Add event listener for user data updates
-  window.addEventListener('user-data-updated', handleUserDataUpdate);
-  
   const cachedImage = localStorage.getItem("profile_image");
-  if (cachedImage && !userStore.user?.profile_image)
+  if (cachedImage && !userStore.userProfile?.user?.profile_image && !userStore.user?.profile_image) {
     userStore.user = { ...userStore.user, profile_image: cachedImage };
+  }
   fetchUserProfile();
   checkOverdueBorrows();
   const interval = setInterval(checkOverdueBorrows, 300000);
@@ -676,11 +666,6 @@ onMounted(() => {
   window.addEventListener("resize", handleResize);
   handleResize();
   onUnmounted(() => window.removeEventListener("resize", handleResize));
-});
-
-onUnmounted(() => {
-  // Remove event listener when component is destroyed
-  window.removeEventListener('user-data-updated', handleUserDataUpdate);
 });
 
 const refreshProfile = async () => {
