@@ -81,7 +81,7 @@
       <header class="sticky top-0 z-40 bg-white shadow-sm p-4">
         <div class="flex items-center justify-between w-full">
           <!-- Left Side: Menu Button and Title -->
-          <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+          <div class="-ml-2 flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
             <button @click="toggleMobileNavDropdown"
               class="md:hidden text-gray-600 hover:text-indigo-600 focus:outline-none p-2 rounded-full hover:bg-gray-100 mobile-menu-button"
               aria-label="Toggle mobile navigation">
@@ -280,7 +280,7 @@
       </header>
       
       <!-- Page Content -->
-      <main class="flex-1 overflow-auto p-4 md:p-6 bg-gray-100" :class="{ 'pb-24': isTablet }">
+      <main class="flex-1 overflow-auto md:p-6 bg-gray-100" :class="{ 'pb-24': isTablet }">
         <RouterView v-if="!isLoading" />
         <div v-else class="flex justify-center items-center h-full">
           <p class="text-gray-600" :class="{ 'font-khmer': language === 'kh' }">

@@ -10,6 +10,6 @@
 </template>
 
 <script setup>
-import Navbar from '@/views/website/layouts/navbar.vue';
-import Footer from '@/views/website/layouts/footer.vue';
+import Navbar from '@/views/website/layouts/Navbar.vue';
+import Footer from '@/views/website/layouts/Footer.vue';
 </script>

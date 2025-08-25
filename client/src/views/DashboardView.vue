@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-100">
-    <div class="p-4">
+    <div class="p-5">
       <!-- Hero Section -->
       <div class="relative overflow-hidden bg-gradient-to-b from-[#065084] to-[#3D74B6] rounded-3xl mb-8">
         <div class="absolute inset-0 bg-black/20"></div>

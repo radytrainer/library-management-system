@@ -91,6 +91,7 @@ export const useUserStore = defineStore('user', {
     resetAuth() {
       this.user = null;
       this.token = null;
+      this.profileImage = null;
       this.userBarcodeImageUrl = null;
       this.userQRCodeImageUrl = null;
       this.borrows = [];

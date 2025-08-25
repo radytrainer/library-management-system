@@ -13,10 +13,15 @@ app.use(pinia);
 app.use(router);
 
 // Initialize store state from localStorage
-const userStore = useUserStore();
-if (localStorage.getItem('token') && localStorage.getItem('user')) {
-  userStore.setToken(localStorage.getItem('token'));
-  userStore.setUser(JSON.parse(localStorage.getItem('user')));
-}
+// const userStore = useUserStore();
+// if (localStorage.getItem('token') && localStorage.getItem('user')) {
+//   userStore.setToken(localStorage.getItem('token'));
+//   userStore.setUser(JSON.parse(localStorage.getItem('user')));
+// }
+
+// Clear localStorage to prevent session restoration
+localStorage.removeItem('token');
+localStorage.removeItem('user');
+localStorage.removeItem('profile_image');
 
 app.mount('#app');

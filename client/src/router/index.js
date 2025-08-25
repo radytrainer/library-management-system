@@ -22,7 +22,7 @@ import LanguageView from '@/views/Lang/LanguageView.vue'
 import UserProfile from '@/components/Users/UserProfile.vue'
 
 const routes = [
-  // Redirect root to login or role-based page
+  // Redirect root to login
   { path: '/', redirect: '/login' },
 
   // Public Auth Routes
@@ -40,18 +40,18 @@ const routes = [
     ]
   },
 
-  // Role-based redirect
+  // Role-based redirect after login
   {
     path: '/',
     redirect: () => {
-      const authStore = useAuthStore()
+      const authStore = useUserStore()
       const role = authStore.user?.role
       if (role === 'admin') return '/dashboard'
-      if (role === 'librarian' || role === 'user') return '/books'
+      if (role === 'librarian') return '/books'
+      if (role === 'user') return '/website'
       return '/login'
     }
   },
-
 
   // Protected Routes (AppLayout)
   {
@@ -62,16 +62,16 @@ const routes = [
       { path: 'dashboard', name: 'dashboard', component: Dashboard, meta: { roles: ['admin'] } },
       { path: 'users', name: 'users', component: UserListView, meta: { roles: ['admin', 'librarian'] } },
       { path: 'language', name: 'language', component: LanguageView, meta: { roles: ['admin', 'librarian'] } },
-      { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian', 'user'] } },
-      { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian', 'user'] } },
+      { path: 'books', name: 'books', component: ListBook, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'borrows', name: 'borrows', component: BorrowList, meta: { roles: ['admin', 'librarian'] } }, 
       { path: 'categories', name: 'categories', component: () => import('@/views/CategoryManagement/categorymanagementView.vue'), meta: { roles: ['admin', 'librarian'] } },
-      { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
-      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian', 'user'] } },
-      { path: 'profile', name: 'profile', component: UserProfile, meta: { roles: ['admin', 'librarian', 'user'] } },
+      { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian'] } },
+      { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian'] } },
+      { path: 'profile', name: 'profile', component: UserProfile, meta: { roles: ['admin', 'librarian'] } },
     ],
   },
 
-  // Fallback to login for unmatched routes (optional)
+  // Fallback to login for unmatched routes
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 
@@ -81,6 +81,55 @@ const router = createRouter({
 })
 
 // Global Navigation Guard
+// router.beforeEach(async (to, from, next) => {
+//   console.log('--- Navigation Attempt ---')
+//   console.log('From:', from.fullPath)
+//   console.log('To:', to.fullPath)
+//   console.log('Token:', localStorage.getItem('token'))
+//   console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
+
+//   const authStore = useUserStore()
+
+//   // Fetch profile if token exists but no user in store
+//   if (!authStore.user && localStorage.getItem('token')) {
+//     console.log('Attempting to fetch profile...')
+//     const result = await authStore.fetchUserProfile()
+//     console.log('Profile fetch result:', result)
+//     if (!result.success) {
+//       authStore.resetAuth()
+//       return next('/login')
+//     }
+//   }
+
+//   const isLoggedIn = !!authStore.user
+//   const userRole = authStore.user?.role
+
+//   // Public pages
+//   if (to.meta.requiresAuth === false) {
+//     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+//       if (userRole === 'admin') return next('/dashboard')
+//       if (userRole === 'librarian') return next('/books')
+//       if (userRole === 'user') return next('/website')
+//     }
+//     return next()
+//   }
+
+//   // Protected pages - not logged in
+//   if (to.meta.requiresAuth && !isLoggedIn) {
+//     return next('/login')
+//   }
+
+//   // Role-based restriction
+//   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
+//     if (userRole === 'admin') return next('/dashboard')
+//     if (userRole === 'librarian') return next('/books')
+//     if (userRole === 'user') return next('/website')
+//     return next('/login')
+//   }
+
+//   next()
+// })
+
 router.beforeEach(async (to, from, next) => {
   console.log('--- Navigation Attempt ---')
   console.log('From:', from.fullPath)
@@ -89,26 +138,16 @@ router.beforeEach(async (to, from, next) => {
   console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
 
   const authStore = useUserStore()
-
-  // Try to fetch profile if token exists but no user in store
-  if (!authStore.user && localStorage.getItem('token')) {
-    console.log('Attempting to fetch profile...')
-    const result = await authStore.fetchUserProfile()
-    console.log('Profile fetch result:', result)
-    if (!result.success) {
-      authStore.resetAuth()
-      return next('/login')
-    }
-  }
-
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
   // Public pages
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+      // Redirect logged-in users based on role
       if (userRole === 'admin') return next('/dashboard')
-      if (['librarian', 'user'].includes(userRole)) return next('/books')
+      if (userRole === 'librarian') return next('/books')
+      if (userRole === 'user') return next('/website')
     }
     return next()
   }
@@ -121,12 +160,12 @@ router.beforeEach(async (to, from, next) => {
   // Role-based restriction
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
     if (userRole === 'admin') return next('/dashboard')
-    if (['librarian', 'user'].includes(userRole)) return next('/books')
+    if (userRole === 'librarian') return next('/books')
+    if (userRole === 'user') return next('/website')
     return next('/login')
   }
 
   next()
 })
-
 
 export default router
