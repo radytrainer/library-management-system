@@ -1,18 +1,25 @@
 <template>
   <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-    <div class="flex items-center justify-between mb-10">
-      <div>
+    <!-- Header Section -->
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10"
+    >
+      <!-- Title Block -->
+      <div class="mb-6 sm:mb-0">
         <h3 class="text-2xl font-bold text-gray-900">Library Activity</h3>
         <p class="text-gray-500 mt-1">Books borrowed over time</p>
       </div>
 
-      <div class="flex items-center space-x-2">
+      <!-- Filters -->
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-3 sm:gap-0"
+      >
         <!-- Year input -->
         <input
           type="number"
           v-model="year"
           @input="handleYearInput"
-          class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-purple-400"
+          class="w-full sm:w-24 px-3 py-2 border border-gray-300 rounded-lg text-center text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-purple-400"
           min="2000"
           max="2100"
         />
