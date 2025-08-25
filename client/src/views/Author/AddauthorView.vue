@@ -55,7 +55,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-4 sm:px-6 py-4">
+    <div class=" rounded-xl shadow-sm sm:shadow-md border border-transparent sm:border-gray-200  sm:px-6 py-4 transition-all duration-300 hover:shadow-none sm:hover:shadow-lg">
       <div class="flex flex-col lg:flex-row gap-6 sm:gap-8 px-4 pt-6 sm:pt-10 pb-10">
         <!-- Authors Grid/List -->
         <div class="flex-1">

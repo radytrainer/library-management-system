@@ -1,57 +1,80 @@
 <template>
-  <nav class="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-lg">
+  <nav class="bg-white/90 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16 lg:h-20">
         <!-- Logo/Brand -->
-<!-- Logo/Brand -->
-<div class="flex items-center space-x-2 flex-shrink-0">
-  <!-- Logo image -->
-  <img src="/logo.png" alt="PNC Logo" class="h-14 w-14 object-contain">
+        <div class="flex items-center space-x-3 flex-shrink-0">
+          <img src="/logo.png" alt="PNC Logo" class="h-12 w-12 object-contain">
+          <div class="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            PNC Library
+          </div>
+        </div>
 
-  <!-- Brand name -->
-  <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-   PNC Library 
-  </div>
-</div>
         <!-- Desktop Navigation Links -->
-        <div class="hidden md:flex space-x-1 lg:space-x-2">
+        <div class="hidden md:flex items-center space-x-4 lg:space-x-6">
           <router-link to="/website" class="nav-link font-semibold">
-            HOME
+            Home
           </router-link>
           <router-link to="/about-us" class="nav-link">
-            ABOUT
+            About
           </router-link>
           <router-link to="/web-book" class="nav-link">
-            BOOK
+            Books
           </router-link>
         </div>
-        
-        <!-- Desktop Action Buttons -->
-        <div class="hidden md:flex space-x-3 items-center">
-          <router-link to="/login" class="btn-outline">
-            Login
-          </router-link>
-          <router-link to="/register" class="btn-outline btn-success">
-            Register
-          </router-link>
-          <router-link to="/dashboard" class="btn-primary">
-            <span class="hidden lg:inline">Admin Dashboard</span>
-            <span class="lg:hidden">Dashboard</span>
-          </router-link>
+
+        <!-- Desktop User Profile and Actions -->
+        <div class="hidden md:flex items-center space-x-4">
+          <!-- User Profile Dropdown -->
+          <div class="relative">
+            <button
+              @click="toggleProfileDropdown"
+              class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            >
+              <img :src="userProfileImage" alt="User Profile" class="h-10 w-10 rounded-full object-cover">
+              <div class="flex flex-col text-left">
+                <span class="text-sm lg:text-base font-medium text-gray-700">
+                  {{ username }}
+                </span>
+                <span v-if="isAdmin" class="text-xs text-gray-500">
+                  Admin
+                </span>
+              </div>
+            </button>
+            <!-- Dropdown Menu -->
+            <div
+              v-if="profileDropdownOpen"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+            >
+              <router-link
+                v-if="isAdmin"
+                to="/dashboard"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                @click="profileDropdownOpen = false"
+              >
+                Dashboard
+              </router-link>
+              <button
+                @click="logout"
+                class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Mobile menu button -->
         <div class="md:hidden">
           <button
             @click="toggleMobileMenu"
-            class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
             aria-expanded="false"
           >
             <span class="sr-only">Open main menu</span>
-            <!-- Hamburger icon -->
             <svg
               :class="{ 'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }"
-              class="h-6 w-6"
+              class="h-6 w-机会"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -59,7 +82,6 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <!-- Close icon -->
             <svg
               :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }"
               class="h-6 w-6"
@@ -78,181 +100,218 @@
     <!-- Mobile menu -->
     <div
       :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }"
-      class="md:hidden border-t border-gray-200 bg-white/98 backdrop-blur-md"
+      class="md:hidden bg-white/98 backdrop-blur-lg border-t border-gray-200 transition-all duration-300"
     >
-      <div class="px-4 pt-2 pb-3 space-y-1">
+      <div class="px-4 pt-3 pb-4 space-y-2">
         <router-link
           to="/website"
           class="mobile-nav-link font-semibold"
           @click="closeMobileMenu"
         >
-          HOME
+          Home
         </router-link>
         <router-link
           to="/about-us"
           class="mobile-nav-link"
           @click="closeMobileMenu"
         >
-          ABOUT
+          About
         </router-link>
         <router-link
           to="/web-book"
           class="mobile-nav-link"
           @click="closeMobileMenu"
         >
-          BOOK
+          Books
         </router-link>
+        <button
+          @click="logout"
+          class="mobile-nav-link text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          Logout
+        </button>
       </div>
       
-      <!-- Mobile action buttons -->
-      <div class="px-4 pt-4 pb-6 border-t border-gray-100 space-y-3">
-        <router-link
-          to="/login"
-          class="mobile-btn btn-outline w-full text-center"
-          @click="closeMobileMenu"
-        >
-          Login
-        </router-link>
-        <router-link
-          to="/register"
-          class="mobile-btn btn-outline btn-success w-full text-center"
-          @click="closeMobileMenu"
-        >
-          Register
-        </router-link>
-        <router-link
-          to="/dashboard"
-          class="mobile-btn btn-primary w-full text-center"
-          @click="closeMobileMenu"
-        >
-          Admin Dashboard
-        </router-link>
+      <!-- Mobile user profile -->
+      <div class="px-4 pt-4 pb-6 border-t border-gray-100">
+        <div class="flex items-center space-x-3">
+          <img :src="userProfileImage" alt="User Profile" class="h-12 w-12 rounded-full object-cover shadow-sm">
+          <div class="flex flex-col">
+            <span class="text-base font-semibold text-gray-800">
+              {{ username }}
+            </span>
+            <span v-if="isAdmin" class="text-sm text-gray-500">
+              Admin
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 
-const mobileMenuOpen = ref(false)
+// Access the user store and router
+const userStore = useUserStore();
+const router = useRouter();
 
+// Reactive state
+const mobileMenuOpen = ref(false);
+const profileDropdownOpen = ref(false);
+
+// Computed properties to reactively access store data
+const username = computed(() => userStore.user?.username || 'Guest');
+const userProfileImage = computed(() => userStore.profileImage || '/default-profile.png');
+const isAdmin = computed(() => userStore.user?.role?.name === 'admin' || false);
+
+// Initialize user state on mount
+onMounted(async () => {
+  console.log('Nav component mounted. isAuthenticated:', userStore.isAuthenticated, 'user:', userStore.user, 'token:', userStore.token);
+  if (!userStore.isAuthenticated && localStorage.getItem('token')) {
+    try {
+      const isValid = await userStore.validateToken();
+      console.log('Token validation result:', isValid);
+      if (!isValid) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Session Expired',
+          text: 'Your session has expired. Please log in again.',
+        });
+        userStore.resetAuth();
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error validating token:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred while validating your session. Please log in again.',
+      });
+      userStore.resetAuth();
+      router.push('/login');
+    }
+  } else if (!userStore.isAuthenticated) {
+    console.log('No session found, redirecting to login');
+    router.push('/login');
+  } else if (userStore.isAuthenticated && !userStore.userProfile) {
+    try {
+      const result = await userStore.fetchUserProfile();
+      console.log('fetchUserProfile result:', result);
+      if (!result.success) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load user profile. Please log in again.',
+        });
+        userStore.resetAuth();
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred while loading your profile. Please log in again.',
+      });
+      userStore.resetAuth();
+      router.push('/login');
+    }
+  }
+});
+
+// Methods
 const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+  profileDropdownOpen.value = false;
+};
 
 const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
+  mobileMenuOpen.value = false;
+};
+
+const toggleProfileDropdown = () => {
+  profileDropdownOpen.value = !profileDropdownOpen.value;
+};
+
+const logout = async () => {
+  await userStore.logout();
+  mobileMenuOpen.value = false;
+  profileDropdownOpen.value = false;
+  Swal.fire({
+    icon: 'success',
+    title: 'Logged Out',
+    text: 'You have been logged out successfully.',
+    timer: 1500,
+    showConfirmButton: false,
+  });
+};
 </script>
 
 <style scoped>
 /* Desktop nav links */
 .nav-link {
-  @apply relative px-4 py-2 lg:px-6 lg:py-3 text-sm lg:text-base font-medium 
-         text-gray-700 transition-all duration-300 rounded-xl;
-}
-
-.nav-link:hover {
-  @apply text-gray-900 bg-gray-50/80;
+  @apply relative px-4 py-2 lg:px-6 lg:py-2.5 text-sm lg:text-base font-medium 
+         text-gray-700 hover:text-blue-600 hover:bg-gray-50/90 
+         rounded-lg transition-all duration-300;
 }
 
 .nav-link.router-link-active {
-  @apply text-blue-600 bg-blue-50/80;
+  @apply text-blue-600 bg-blue-50/90;
 }
 
-/* Underline effect */
 .nav-link::after {
   content: '';
-  @apply absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500
-         transition-all duration-300 transform -translate-x-1/2 rounded-full;
+  @apply absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500
+         transition-all duration-300 rounded-full;
 }
 
-.nav-link.router-link-active::after,
-.nav-link:hover::after {
-  @apply w-3/4;
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  @apply w-4/5;
 }
 
 /* Mobile nav links */
 .mobile-nav-link {
-  @apply block px-3 py-3 text-base font-medium text-gray-700 transition-all duration-200
-         rounded-lg border-l-4 border-transparent;
-}
-
-.mobile-nav-link:hover {
-  @apply text-gray-900 bg-gray-50 border-blue-500;
+  @apply block px-4 py-3 text-base font-medium text-gray-700 
+         hover:text-blue-600 hover:bg-gray-50 rounded-lg 
+         transition-all duration-200;
 }
 
 .mobile-nav-link.router-link-active {
-  @apply text-blue-600 bg-blue-50 border-blue-500;
-}
-
-/* Outline button */
-.btn-outline {
-  @apply px-4 py-2 lg:px-6 lg:py-2.5 text-sm lg:text-base font-medium 
-         border-2 border-gray-300 text-gray-700 rounded-xl transition-all duration-300;
-}
-
-.btn-outline:hover {
-  @apply border-gray-400 text-gray-900 bg-gray-50 shadow-md scale-105;
-}
-
-.btn-outline:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
-}
-
-/* Success button */
-.btn-success {
-  @apply border-emerald-400 text-emerald-700;
-}
-
-.btn-success:hover {
-  @apply border-emerald-500 text-emerald-800 bg-emerald-50 shadow-emerald-200;
-}
-
-.btn-success:focus {
-  @apply ring-emerald-500;
+  @apply text-blue-600 bg-blue-50;
 }
 
 /* Primary button */
 .btn-primary {
   @apply px-4 py-2 lg:px-6 lg:py-2.5 text-sm lg:text-base font-medium 
          bg-gradient-to-r from-blue-600 to-purple-600 text-white 
-         rounded-xl transition-all duration-300 shadow-lg;
-}
-
-.btn-primary:hover {
-  @apply from-blue-700 to-purple-700 shadow-xl scale-105;
+         rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105;
 }
 
 .btn-primary:active {
-  @apply from-blue-800 to-purple-800;
+  @apply from-blue-700 to-purple-700;
 }
 
 .btn-primary:focus {
   @apply outline-none ring-2 ring-blue-500 ring-offset-2;
 }
 
-/* Mobile button */
-.mobile-btn {
-  @apply block px-4 py-3 text-base font-medium rounded-xl transition-all duration-200;
-}
-
-/* Enhanced responsive breakpoints */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .nav-link {
     @apply px-3 py-2 text-sm;
   }
-}
-
-@media (max-width: 640px) {
-  .btn-outline,
   .btn-primary {
     @apply px-3 py-2 text-sm;
   }
 }
 
-/* Smooth mobile menu animation */
+/* Mobile menu animation */
 @media (max-width: 768px) {
   .md\:hidden {
     animation: slideDown 0.3s ease-out;
@@ -262,11 +321,11 @@ const closeMobileMenu = () => {
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    scale: 0.95;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    scale: 1;
   }
 }
 </style>

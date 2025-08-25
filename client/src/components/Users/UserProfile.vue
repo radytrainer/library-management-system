@@ -205,12 +205,23 @@ const handleImageError = () => {
 </script>
 
 <template>
-  <div class="mt-8">
+  <div class="min-h-screen bg-gray-50 p-6 sm:p-8 md:p-10">
+    <!-- Back Button -->
+    <div class="mb-6 sm:mb-8 md:mb-10">
+      <button 
+        @click="goBack" 
+        class="inline-flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors duration-300 group"
+      >
+        <ArrowLeft class="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-1.5 transition-transform duration-300" />
+        <span class="font-semibold text-sm sm:text-base md:text-lg">Back to Dashboard</span>
+      </button>
+    </div>
+
     <!-- Profile Card -->
     <div v-if="isLoading" class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center max-w-3xl mx-auto">
       <p class="text-gray-500 text-sm sm:text-base md:text-lg animate-pulse">Loading your profile...</p>
     </div>
-    <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl mx-auto">
+    <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-3xl mx-auto">
       <!-- Cover Section -->
       <div class="h-24 sm:h-28 md:h-32 lg:h-40 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 flex justify-end items-center pr-4 sm:pr-6 md:pr-8">
         <img class="w-16 sm:w-20 md:w-24 lg:w-28" src="/logo.png" alt="Logo" />

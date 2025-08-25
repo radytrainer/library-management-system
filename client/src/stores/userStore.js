@@ -1,3 +1,4 @@
+// userstore.js (modified)
 import { defineStore } from 'pinia';
 import {
   registerUser,

@@ -77,6 +77,21 @@ export function getUserQRCode(id) {
     responseType: 'blob',
   });
 }
+export const uploadProfileImage = async (id, imageFile) => {
+  const formData = new FormData();
+  formData.append("profile_image", imageFile);
+
+  try {
+    const response = await api.post(`/user/${id}/upload-image`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Image upload error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Image upload failed');
+  }
+};
+
 export const getBorrows = async () => {
   try {
     const token = localStorage.getItem('token');
