@@ -81,6 +81,55 @@ const router = createRouter({
 })
 
 // Global Navigation Guard
+// router.beforeEach(async (to, from, next) => {
+//   console.log('--- Navigation Attempt ---')
+//   console.log('From:', from.fullPath)
+//   console.log('To:', to.fullPath)
+//   console.log('Token:', localStorage.getItem('token'))
+//   console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
+
+//   const authStore = useUserStore()
+
+//   // Fetch profile if token exists but no user in store
+//   if (!authStore.user && localStorage.getItem('token')) {
+//     console.log('Attempting to fetch profile...')
+//     const result = await authStore.fetchUserProfile()
+//     console.log('Profile fetch result:', result)
+//     if (!result.success) {
+//       authStore.resetAuth()
+//       return next('/login')
+//     }
+//   }
+
+//   const isLoggedIn = !!authStore.user
+//   const userRole = authStore.user?.role
+
+//   // Public pages
+//   if (to.meta.requiresAuth === false) {
+//     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+//       if (userRole === 'admin') return next('/dashboard')
+//       if (userRole === 'librarian') return next('/books')
+//       if (userRole === 'user') return next('/website')
+//     }
+//     return next()
+//   }
+
+//   // Protected pages - not logged in
+//   if (to.meta.requiresAuth && !isLoggedIn) {
+//     return next('/login')
+//   }
+
+//   // Role-based restriction
+//   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
+//     if (userRole === 'admin') return next('/dashboard')
+//     if (userRole === 'librarian') return next('/books')
+//     if (userRole === 'user') return next('/website')
+//     return next('/login')
+//   }
+
+//   next()
+// })
+
 router.beforeEach(async (to, from, next) => {
   console.log('--- Navigation Attempt ---')
   console.log('From:', from.fullPath)
@@ -89,24 +138,13 @@ router.beforeEach(async (to, from, next) => {
   console.log('User:', JSON.parse(JSON.stringify(useUserStore().user)))
 
   const authStore = useUserStore()
-
-  // Fetch profile if token exists but no user in store
-  if (!authStore.user && localStorage.getItem('token')) {
-    console.log('Attempting to fetch profile...')
-    const result = await authStore.fetchUserProfile()
-    console.log('Profile fetch result:', result)
-    if (!result.success) {
-      authStore.resetAuth()
-      return next('/login')
-    }
-  }
-
   const isLoggedIn = !!authStore.user
   const userRole = authStore.user?.role
 
   // Public pages
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
+      // Redirect logged-in users based on role
       if (userRole === 'admin') return next('/dashboard')
       if (userRole === 'librarian') return next('/books')
       if (userRole === 'user') return next('/website')
