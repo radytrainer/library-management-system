@@ -1,5 +1,4 @@
 <template>
-  <!-- Template remains unchanged -->
   <div v-if="show" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm overflow-y-auto">
     <div
       class="relative top-[110px] mx-auto bg-white rounded-xl w-full max-w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -163,22 +162,29 @@ const submitImport = async () => {
 
     const { warnings, message, data } = response.data;
 
-    // Extract new relational data from warnings
-    const newCategories = [];
-    const newAuthors = [];
-    const newLanguages = [];
+    // Use Sets to collect unique names for categories, authors, and languages
+    const uniqueCategories = new Set();
+    const uniqueAuthors = new Set();
+    const uniqueLanguages = new Set();
+
+    // Extract new relational data from warnings and deduplicate
     warnings?.forEach(warning => {
       if (warning.includes('New category')) {
-        const match = warning.match(/New category '(.+)' created/);
-        if (match) newCategories.push({ name: match[1] });
+        const match = warning.match(/Row \d+: New category '(.+)' created\./);
+        if (match) uniqueCategories.add(match[1]);
       } else if (warning.includes('New author')) {
-        const match = warning.match(/New author '(.+)' created/);
-        if (match) newAuthors.push({ name: match[1] });
+        const match = warning.match(/Row \d+: New author '(.+)' created\./);
+        if (match) uniqueAuthors.add(match[1]);
       } else if (warning.includes('New language')) {
-        const match = warning.match(/New language '(.+)' created/);
-        if (match) newLanguages.push({ name: match[1] });
+        const match = warning.match(/Row \d+: New language '(.+)' created\./);
+        if (match) uniqueLanguages.add(match[1]);
       }
     });
+
+    // Convert Sets to arrays of objects
+    const newCategories = Array.from(uniqueCategories).map(name => ({ name }));
+    const newAuthors = Array.from(uniqueAuthors).map(name => ({ name }));
+    const newLanguages = Array.from(uniqueLanguages).map(name => ({ name }));
 
     // Handle warnings
     if (warnings && warnings.length > 0) {
@@ -198,7 +204,6 @@ const submitImport = async () => {
     emit('submit', { books: data, newCategories, newAuthors, newLanguages });
     emit('close');
     resetFile();
-
   } catch (error) {
     console.error('Error importing books:', error);
 
@@ -213,9 +218,6 @@ const submitImport = async () => {
       showToast('warning', 'Import Warning', warnings.join('\n'));
       emit('submit', { books: importedBooks, newCategories: [], newAuthors: [], newLanguages: [] });
     }
-
-    // Do NOT show any generic error at all
-    // remove fallback error toast
 
     emit('close');
     resetFile();
@@ -243,7 +245,6 @@ const downloadSampleExcel = async () => {
 </script>
 
 <style scoped>
-/* Styles remain unchanged */
 .form-group {
   @apply space-y-2;
 }
