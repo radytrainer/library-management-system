@@ -2,8 +2,6 @@ const { Book, Category, Author, Language, sequelize } = require('../models');
 const fs = require('fs').promises;
 const path = require('path');
 const XLSX = require('xlsx');
-const { v4: uuidv4 } = require('uuid');
-const AuditLog = require('../models/AuditLog'); // Assume an AuditLog model exists
 const { Op } = require('sequelize');
 
 // GET all books
@@ -139,6 +137,14 @@ exports.update = async (req, res) => {
     const book = await Book.findByPk(bookId);
     if (!book) return res.status(404).json({ message: 'Book not found.' });
 
+    // ✅ Check if new ISBN already exists in another book
+    if (isbn && isbn !== book.isbn) {
+      const existingBook = await Book.findOne({ where: { isbn } });
+      if (existingBook) {
+        return res.status(400).json({ message: `ISBN '${isbn}' already exists in another book.` });
+      }
+    }
+
     // Handle language if provided
     if (!language_id && language) {
       const lang = await Language.findOne({ where: { name: language } });
@@ -194,7 +200,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
 // DELETE a book by ID
 exports.destroy = async (req, res) => {
   try {
@@ -209,6 +214,7 @@ exports.destroy = async (req, res) => {
   }
 };
 
+// Get books added in the last month
 exports.getBooksLastMonth = async (req, res) => {
   try {
     const now = new Date();
@@ -251,7 +257,6 @@ exports.importBooks = async (req, res) => {
   }
 
   try {
-    const XLSX = require('xlsx');
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
@@ -263,16 +268,29 @@ exports.importBooks = async (req, res) => {
       return res.status(400).json({ warnings: [], data: [] });
     }
 
+    // --- Header Mapping (lowercase keys) ---
+    const headerMap = {
+      'title': 'title',
+      'isbn': 'isbn',
+      'quantity': 'quantity',
+      'from': 'donated_by',
+      'publish year': 'public_year',
+      'description': 'description',
+      'available': 'available',
+      'type of book': 'category_name',
+      'author': 'author_name',
+      'language': 'language_name'
+    };
+
+    const requiredColumns = Object.values(headerMap);
+
+    // Read headers from Excel (convert to lowercase)
     const headers = sheet[0].map(h => h?.toString().trim().toLowerCase() || '');
-    const requiredColumns = [
-      'title', 'isbn', 'quantity', 'donated_by', 'public_year',
-      'description', 'available', 'category_name', 'author_name',
-      'language_name'
-    ];
+    const normalizedHeaders = headers.map(h => headerMap[h] || h);
 
-    const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+    // Check missing columns
+    const missingColumns = requiredColumns.filter(col => !normalizedHeaders.includes(col));
     const warnings = [];
-
     if (missingColumns.length > 0) {
       warnings.push(`Some required columns are missing: ${missingColumns.join(', ')}`);
     }
@@ -281,6 +299,8 @@ exports.importBooks = async (req, res) => {
     const t = await sequelize.transaction();
 
     try {
+      const seenISBNs = new Set(); // track duplicates in Excel file
+
       for (let i = 1; i < sheet.length; i++) {
         const row = sheet[i];
         if (!row || !Array.isArray(row)) {
@@ -289,8 +309,9 @@ exports.importBooks = async (req, res) => {
         }
 
         const data = {};
-        headers.forEach((header, index) => {
-          data[header] = row[index] ? row[index].toString().trim() : null;
+        normalizedHeaders.forEach((dbHeader, index) => {
+          if (!dbHeader) return;
+          data[dbHeader] = row[index] ? row[index].toString().trim() : null;
         });
 
         if (!data.title || !data.isbn) {
@@ -298,15 +319,23 @@ exports.importBooks = async (req, res) => {
           continue;
         }
 
-        const existingBook = await Book.findOne({ where: { isbn: data.isbn } });
+        // ✅ Skip duplicate ISBNs in the same Excel file
+        if (seenISBNs.has(data.isbn)) {
+          warnings.push(`Row ${i + 1} skipped: duplicate ISBN '${data.isbn}' in file.`);
+          continue;
+        }
+        seenISBNs.add(data.isbn);
+
+        // ✅ Skip if ISBN already exists in the database
+        const existingBook = await Book.findOne({ where: { isbn: data.isbn }, transaction: t });
         if (existingBook) {
-          warnings.push(`Row ${i + 1}: Book with ISBN '${data.isbn}' already exists. Skipped.`);
+          warnings.push(`Row ${i + 1} skipped: ISBN '${data.isbn}' already exists in system.`);
           continue;
         }
 
-        // Category
+        // --- Category ---
         let CategoryId;
-        const category = await Category.findOne({ where: { name: data.category_name } });
+        const category = await Category.findOne({ where: { name: data.category_name }, transaction: t });
         if (category) {
           CategoryId = category.id;
         } else if (data.category_name) {
@@ -318,9 +347,9 @@ exports.importBooks = async (req, res) => {
           continue;
         }
 
-        // Author
+        // --- Author ---
         let AuthorId;
-        const author = await Author.findOne({ where: { name: data.author_name } });
+        const author = await Author.findOne({ where: { name: data.author_name }, transaction: t });
         if (author) {
           AuthorId = author.id;
         } else if (data.author_name) {
@@ -332,9 +361,9 @@ exports.importBooks = async (req, res) => {
           continue;
         }
 
-        // Language
+        // --- Language ---
         let language_id;
-        const language = await Language.findOne({ where: { name: data.language_name } });
+        const language = await Language.findOne({ where: { name: data.language_name }, transaction: t });
         if (language) {
           language_id = language.id;
         } else if (data.language_name) {
@@ -381,23 +410,14 @@ exports.importBooks = async (req, res) => {
 
     } catch (err) {
       await t.rollback();
-      // Return any successfully created books and warnings
-      return res.status(400).json({
-        warnings,
-        data: booksCreated
-      });
+      return res.status(400).json({ warnings, data: booksCreated });
     }
 
   } catch (error) {
     console.error('Error importing books:', error);
-    // Remove generic error message
-    return res.status(400).json({
-      warnings: [],
-      data: []
-    });
+    return res.status(400).json({ warnings: [], data: [] });
   }
 };
-
 
 // GET sample Excel template
 exports.sampleExcel = (req, res) => {
@@ -406,16 +426,23 @@ exports.sampleExcel = (req, res) => {
 
     const data = [
       [
-        'title', 'isbn', 'quantity', 'donated_by', 'public_year', 'description',
-        'available', 'category_name', 'author_name', 'language_name', 'cover_image'
+        'Title',
+        'ISBN',
+        'Quantity',
+        'From',
+        'Publish Year',
+        'Description',
+        'Type of Book',
+        'Author',
+        'Language'
       ]
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
 
     ws['!cols'] = [
-      { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 },
-      { wch: 40 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 25 }
+      { wch: 15 }, { wch: 15 }, { wch: 8 }, { wch: 20 }, { wch: 12 },
+      { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Books');

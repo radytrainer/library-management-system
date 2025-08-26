@@ -153,27 +153,20 @@ const updateProfile = async () => {
     const result = await userStore.updateUser(userId, formData)
     console.log('Update result:', result, 'Profile image from response:', result.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
     if (result.success) {
-      // Custom success alert matching the image
       Swal.fire({
-        title: 'Success',
-        html: `
-          <div class="flex flex-col items-center justify-center p-4">
-            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-1">Success</h3>
-            <p class="text-sm text-gray-500">The book has been updated successfully.</p>
-          </div>
-        `,
+        toast: true, 
+        text: 'The book has been updated successfully.',
+        position: 'bottom-end',
         showConfirmButton: false,
         timer: 2000,
         customClass: {
-          popup: 'rounded-lg shadow-xl border border-gray-200'
+          popup: 'rounded-lg shadow-md border border-green-200 bg-green-50 text-green-700 p-2 flex items-center',
+          title: 'text-sm font-medium mr-2',
+          content: 'text-xs'
         }
       })
-      
+
+
       editMode.value = false
       // Set previewImage from response or userProfile
       previewImage.value = result.profile_image ? `${result.profile_image}?t=${new Date().getTime()}` : userStore.userProfile?.user?.profile_image ? `${userStore.userProfile.user.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
@@ -205,63 +198,44 @@ const handleImageError = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 p-6 sm:p-8 md:p-10">
-    <!-- Back Button -->
-    <div class="mb-6 sm:mb-8 md:mb-10">
-      <button 
-        @click="goBack" 
-        class="inline-flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors duration-300 group"
-      >
-        <ArrowLeft class="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-1.5 transition-transform duration-300" />
-        <span class="font-semibold text-sm sm:text-base md:text-lg">Back to Dashboard</span>
-      </button>
-    </div>
-
+  <div class="mt-6">
     <!-- Profile Card -->
     <div v-if="isLoading" class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center max-w-3xl mx-auto">
       <p class="text-gray-500 text-sm sm:text-base md:text-lg animate-pulse">Loading your profile...</p>
     </div>
-    <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-3xl mx-auto">
+    <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl mx-auto">
       <!-- Cover Section -->
-      <div class="h-24 sm:h-28 md:h-32 lg:h-40 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 flex justify-end items-center pr-4 sm:pr-6 md:pr-8">
+      <div
+        class="h-24 sm:h-28 md:h-32 lg:h-40 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 flex justify-end items-center pr-4 sm:pr-6 md:pr-8">
         <img class="w-16 sm:w-20 md:w-24 lg:w-28" src="/logo.png" alt="Logo" />
       </div>
-      
+
       <!-- Profile Content -->
       <div class="relative px-6 sm:px-8 md:px-10 pb-6 sm:pb-8 md:pb-10">
         <!-- Profile Image -->
         <div class="relative -mt-14 sm:-mt-16 md:-mt-20 lg:-mt-24 mb-6 sm:mb-8">
           <div class="relative inline-block">
-            <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-white shadow-xl flex items-center justify-center bg-gray-100 transition-transform duration-300 hover:scale-105">
-              <img
-                v-if="hasValidProfileImage"
+            <div
+              class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-white shadow-xl flex items-center justify-center bg-gray-100 transition-transform duration-300 hover:scale-105">
+              <img v-if="hasValidProfileImage"
                 :src="previewImage || userStore.userProfile?.user?.profile_image || userStore.profileImage || 'https://placehold.co/128x128'"
-                alt="Profile"
-                class="w-full h-full rounded-full object-cover"
-                @error="handleImageError"
-              />
-              <span
-                v-else
-                class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white bg-indigo-600 rounded-full h-full w-full flex items-center justify-center"
-              >
+                alt="Profile" class="w-full h-full rounded-full object-cover" @error="handleImageError" />
+              <span v-else
+                class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white bg-indigo-600 rounded-full h-full w-full flex items-center justify-center">
                 {{ profileInitial }}
               </span>
             </div>
             <!-- Online Status -->
-            <div 
+            <div
               class="absolute bottom-1 right-1 w-4 sm:w-5 md:w-6 lg:w-7 h-4 sm:h-5 md:h-6 lg:h-7 rounded-full border-3 border-white shadow-md"
-              :class="userStore.userProfile?.isOnline ? 'bg-green-500' : 'bg-gray-400'"
-            ></div>
-            
+              :class="userStore.userProfile?.isOnline ? 'bg-green-500' : 'bg-gray-400'"></div>
+
             <!-- Camera Icon for Edit Mode -->
-            <div v-if="editMode" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+            <div v-if="editMode"
+              class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
               <Camera class="w-6 sm:w-7 md:w-8 lg:w-9 h-6 sm:h-7 md:h-8 lg:h-9 text-white" />
-              <input 
-                type="file" 
-                @change="handleImageChange" 
-                accept="image/*" 
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
+              <input type="file" @change="handleImageChange" accept="image/*"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
             </div>
           </div>
         </div>
@@ -296,11 +270,9 @@ const handleImageError = () => {
 
           <!-- Action Button -->
           <div v-if="!editMode" class="flex-shrink-0">
-            <button
-              @click="editMode = true"
+            <button @click="editMode = true"
               class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg"
-              :disabled="isSubmitting"
-            >
+              :disabled="isSubmitting">
               <Edit3 class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
               <span>Edit Profile</span>
             </button>
@@ -310,7 +282,8 @@ const handleImageError = () => {
         <!-- Edit Form -->
         <div v-if="editMode" class="mt-6 sm:mt-8 md:mt-10 border-t border-gray-200 pt-6 sm:pt-8 md:pt-10">
           <div class="mb-6 sm:mb-8">
-            <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 mb-3 tracking-tight">Edit Profile</h2>
+            <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 mb-3 tracking-tight">Edit
+              Profile</h2>
             <p class="text-gray-500 text-sm sm:text-base md:text-lg">Update your profile information below.</p>
           </div>
 
@@ -322,13 +295,9 @@ const handleImageError = () => {
                   <User class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
                   Username
                 </label>
-                <input 
-                  v-model="editForm.username" 
-                  type="text" 
-                  placeholder="Enter username"
+                <input v-model="editForm.username" type="text" placeholder="Enter username"
                   class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting"
-                />
+                  :disabled="isSubmitting" />
               </div>
 
               <!-- Email -->
@@ -337,13 +306,9 @@ const handleImageError = () => {
                   <Mail class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
                   Email
                 </label>
-                <input 
-                  v-model="editForm.email" 
-                  type="email" 
-                  placeholder="Enter email"
+                <input v-model="editForm.email" type="email" placeholder="Enter email"
                   class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting"
-                />
+                  :disabled="isSubmitting" />
               </div>
 
               <!-- Phone -->
@@ -352,13 +317,9 @@ const handleImageError = () => {
                   <Phone class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
                   Phone
                 </label>
-                <input 
-                  v-model="editForm.phone" 
-                  type="text" 
-                  placeholder="Enter phone number"
+                <input v-model="editForm.phone" type="text" placeholder="Enter phone number"
                   class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting"
-                />
+                  :disabled="isSubmitting" />
               </div>
 
               <!-- Date of Birth -->
@@ -367,12 +328,9 @@ const handleImageError = () => {
                   <Calendar class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
                   Date of Birth
                 </label>
-                <input 
-                  v-model="editForm.date_of_birth" 
-                  type="date"
+                <input v-model="editForm.date_of_birth" type="date"
                   class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg"
-                  :disabled="isSubmitting"
-                />
+                  :disabled="isSubmitting" />
               </div>
             </div>
 
@@ -382,13 +340,9 @@ const handleImageError = () => {
                 <Shield class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
                 New Password (leave blank to keep current)
               </label>
-              <input 
-                v-model="editForm.password" 
-                type="password" 
-                placeholder="Enter new password"
+              <input v-model="editForm.password" type="password" placeholder="Enter new password"
                 class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                :disabled="isSubmitting"
-              />
+                :disabled="isSubmitting" />
             </div>
 
             <!-- Profile Image Upload -->
@@ -398,14 +352,11 @@ const handleImageError = () => {
                 Profile Image
               </label>
               <div class="flex items-center gap-4 sm:gap-6">
-                <input 
-                  type="file" 
-                  @change="handleImageChange" 
-                  accept="image/*"
+                <input type="file" @change="handleImageChange" accept="image/*"
                   class="flex-1 px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white file:mr-4 sm:mr-5 file:py-2 sm:py-2.5 md:py-3 file:px-4 sm:px-5 file:rounded-lg file:border-0 file:text-sm sm:file:text-base file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                  :disabled="isSubmitting"
-                />
-                <div v-if="previewImage" class="w-12 sm:w-14 md:w-16 lg:w-20 h-12 sm:h-14 md:h-16 lg:h-20 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
+                  :disabled="isSubmitting" />
+                <div v-if="previewImage"
+                  class="w-12 sm:w-14 md:w-16 lg:w-20 h-12 sm:h-14 md:h-16 lg:h-20 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
                   <img :src="previewImage" class="w-full h-full object-cover" @error="handleImageError" />
                 </div>
               </div>
@@ -413,21 +364,16 @@ const handleImageError = () => {
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-6 sm:pt-8">
-              <button 
-                type="submit" 
+              <button type="submit"
                 class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg"
-                :disabled="isSubmitting"
-              >
+                :disabled="isSubmitting">
                 <Save class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
                 <span v-if="isSubmitting">Saving...</span>
                 <span v-else>Save Changes</span>
               </button>
-              <button 
-                type="button" 
-                @click="editMode = false" 
+              <button type="button" @click="editMode = false"
                 class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold text-sm sm:text-base md:text-lg"
-                :disabled="isSubmitting"
-              >
+                :disabled="isSubmitting">
                 <X class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
                 Cancel
               </button>
