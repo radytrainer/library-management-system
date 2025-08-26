@@ -1,66 +1,52 @@
 <template>
-  <div v-if="user" class="flex items-center justify-center bg-white" ref="cardElement">
-    <div class="border border-[#48e3ff] p-[4px] w-[70px] text-center bg-white shadow-[0_2px_4px_rgba(44,244,237,0.1)]">
-      
-      <!-- Header with logo and system name -->
-      <div class="flex items-center justify-start gap-[4px] mb-[4px]">
-        <img :src="logoUrl" alt="Logo" class="h-[12px] w-auto" v-if="logoUrl" />
-        <h3 class="text-[6px] mt-[-8px] font-bold text-[#2c3e50] leading-none">{{ systemName }}</h3>
+  <div v-if="user" ref="cardElement" class="flex items-center justify-center" style="margin: 0; padding: 0;">
+    <div
+      class="border border-[#00aaff] p-[8px] w-[200px] h-[300px] text-center bg-white shadow-[0_4px_8px_rgba(0,170,255,0.2)]">
+
+      <!-- Logo and Title in the same row -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-[6px]">
+          <img :src="logoUrl" alt="Logo" class="h-[32px] w-auto mt-3" v-if="logoUrl" />
+        </div>
+        <h3 class="text-[14px] font-bold text-[#2c3e50] leading-tight flex-grow text-center -ml-[20px]">
+          PNC LIBRARY
+        </h3>
       </div>
 
-      <!-- Main content: profile, username, barcode, ID -->
-      <div class="flex flex-col justify-center items-center mt-[4px]">
-        <img
-          :src="user.profile_image"
-          alt="Profile"
-          class="w-[30px] h-[30px] rounded-full border-[1px] border-[lightblue] object-cover overflow-hidden shadow-[0_0_4px_rgba(173,216,230,0.6)]"
-          v-if="user.profile_image"
-        />
-        <p class="text-[6px] text-[#34495e] font-medium mb-[2px]">{{ user.username }}</p>
-
-        <img
-          :src="user.barcode_image"
-          alt="Barcode"
-          class="max-w-[50px] h-auto"
-          v-if="user.barcode_image"
-        />
+      <div class="flex flex-col items-center mt-[10px]">
+        <img :src="user.profile_image" alt="Profile"
+          class="w-[90px] h-[90px] rounded-full border-2 border-[#00aaff] object-cover overflow-hidden shadow-[0_0_8px_rgba(173,216,230,0.6)]"
+          v-if="user.profile_image" />
+        <p class="text-[16px] text-[#34495e] font-semibold mt-[10px]">{{ user.username }}</p>
+        <img :src="user.barcode_image" alt="Barcode" class="max-w-[100px] h-auto mt-[10px]" v-if="user.barcode_image" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
-import html2pdf from 'html2pdf.js';
+import { ref, onMounted } from 'vue';
+import html2canvas from 'html2canvas';
 
 const logoUrl = ref('../../public/logo.png');
 
 const props = defineProps({
   user: Object,
   systemName: String,
-
 });
 
 const emit = defineEmits(['generated']);
 const cardElement = ref(null);
 const isReadyToPrint = ref(false);
-
-watch(
-  () => props.user,
-  (newUser) => {
-    if (newUser) {
-      generateCard();
-    }
-  },
-  { immediate: true }
-);
+const isGenerating = ref(false); // ✅ prevent multiple downloads
 
 onMounted(() => {
   console.log('UserCard mounted');
 });
 
 function generateCard() {
-  if (props.user) {
+  if (props.user && !isGenerating.value) {
+    isGenerating.value = true; // lock
     emit('generated');
     checkImageLoad();
   }
@@ -81,43 +67,63 @@ function checkImageLoad() {
   Promise.all(images)
     .then(() => {
       isReadyToPrint.value = true;
+      generateImage();
+      isGenerating.value = false; // unlock
     })
-    .catch(() => {
+    .catch((error) => {
+      console.error('Image loading error:', error);
       isReadyToPrint.value = true;
+      isGenerating.value = false; // unlock even on error
     });
 }
 
 function loadImage(src) {
   return new Promise((resolve) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = resolve;
-    img.onerror = resolve;
+    img.onerror = () => {
+      console.error(`Failed to load image: ${src}`);
+      resolve(null);
+    };
     img.src = src;
   });
 }
 
-function generatePDF() {
+function generateImage() {
   if (cardElement.value && isReadyToPrint.value) {
-    const element = cardElement.value;
-
-    html2pdf()
-      .set({
-        margin: [5, 5, 5, 5],
-        filename: `user_card_${props.user.id}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 4, // sharper image rendering
-          useCORS: true,
-        },
-        jsPDF: { unit: 'mm', format: [86, 54], orientation: 'portrait' },
-      })
-      .from(element)
-      .save();
+    const element = cardElement.value.querySelector('div.border');
+    if (element) {
+      html2canvas(element, {
+        scale: 12,
+        useCORS: true,
+        backgroundColor: null,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        dpi: 600,
+        letterRendering: true,
+        allowTaint: true,
+        logging: true,
+      }).then((canvas) => {
+        if (canvas.width === 0 || canvas.height === 0) {
+          console.error('Canvas is empty! Check element visibility or image loading.');
+          return;
+        }
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.download = `user_card_${props.user.id}_highres.png`;
+        link.click();
+      }).catch((error) => {
+        console.error('html2canvas error:', error);
+      });
+    } else {
+      console.error('Element not found!');
+    }
   }
 }
 
 defineExpose({
   generateCard,
-  generatePDF,
+  generateImage,
 });
 </script>

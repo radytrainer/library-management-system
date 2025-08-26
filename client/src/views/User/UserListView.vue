@@ -234,17 +234,14 @@ const handlePrintUser = async (userId) => {
     await nextTick();
     if (printCardRef.value) {
       printCardRef.value.generateCard();
+
       setTimeout(() => {
-        if (printCardRef.value && printCardRef.value.generatePDF) {
-          printCardRef.value.generatePDF();
-          setTimeout(() => {
-            selectedUserForPrint.value = null;
-          }, 500);
-        }
-      }, 2000);
+        selectedUserForPrint.value = null;
+      }, 1000);
     }
   }
 };
+
 
 async function submitForm() {
   let res;
