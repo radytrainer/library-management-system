@@ -1,6 +1,6 @@
 <template>
   <div v-if="user" class="flex items-center justify-center bg-white" ref="cardElement">
-    <div class="border border-[#48e3ff] p-[6px] w-[80px] text-center bg-white shadow-[0_2px_4px_rgba(44,244,237,0.1)]">
+    <div class="border border-[#48e3ff] p-[4px] w-[70px] text-center bg-white shadow-[0_2px_4px_rgba(44,244,237,0.1)]">
       
       <!-- Header with logo and system name -->
       <div class="flex items-center justify-start gap-[4px] mb-[4px]">
@@ -9,22 +9,21 @@
       </div>
 
       <!-- Main content: profile, username, barcode, ID -->
-      <div class="flex flex-col justify-center items-center mt-[6px]">
+      <div class="flex flex-col justify-center items-center mt-[4px]">
         <img
           :src="user.profile_image"
           alt="Profile"
           class="w-[30px] h-[30px] rounded-full border-[1px] border-[lightblue] object-cover overflow-hidden shadow-[0_0_4px_rgba(173,216,230,0.6)]"
           v-if="user.profile_image"
         />
-        <p class="text-[8px] text-[#34495e] font-medium mb-[6px]">{{ user.username }}</p>
+        <p class="text-[6px] text-[#34495e] font-medium mb-[2px]">{{ user.username }}</p>
 
         <img
           :src="user.barcode_image"
           alt="Barcode"
-          class="max-w-[60px] h-auto"
+          class="max-w-[50px] h-auto"
           v-if="user.barcode_image"
         />
-        <p class="text-[6px] text-[#444f5a]">ID: {{ user.id }}</p>
       </div>
     </div>
   </div>

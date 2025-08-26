@@ -178,8 +178,9 @@ function closeModal() {
     class="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 sm:p-6 md:p-8 animate-in fade-in duration-300"
     @click.self="closeModal">
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-[90vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100 animate-in slide-in-from-bottom-4">
-      <div class="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6 rounded-t-2xl">
+      class="rounded-2xl bg-white shadow-2xl w-full max-w-[90vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100 animate-in slide-in-from-bottom-4">
+      <div
+        class="flex-shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6 rounded-t-2xl">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl sm:text-2xl font-bold text-white mb-1">
@@ -198,7 +199,7 @@ function closeModal() {
         </div>
       </div>
 
-      <div class="flex-1 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-gray-50/30 to-white overflow-y-auto">
+      <div class="rounded-2xl flex-1 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-gray-50/30 to-white overflow-y-auto">
         <div v-if="errorMessage"
           class="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-400 rounded-r-lg text-red-800 text-xs sm:text-sm flex items-start gap-2 sm:gap-3 shadow-sm">
           <div class="flex-shrink-0 mt-0.5">
@@ -223,17 +224,12 @@ function closeModal() {
                   <div
                     class="w-32 h-32 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-4 border-white shadow-xl cursor-pointer hover:shadow-2xl transition-all duration-300 group-hover:scale-105 mx-auto bg-indigo-500"
                     @click="triggerFileInput">
-                    <img
-                      v-if="hasValidProfileImage"
-                      :src="localForm.profile_image_preview || localForm.profile_image"
+                    <img v-if="hasValidProfileImage" :src="localForm.profile_image_preview || localForm.profile_image"
                       alt="Profile Preview"
                       class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      @error="localForm.profile_image_preview = null"
-                    />
-                    <span
-                      v-else
-                      class="w-full h-full flex items-center justify-center text-white text-2xl sm:text-4xl font-semibold"
-                    >
+                      @error="localForm.profile_image_preview = null" />
+                    <span v-else
+                      class="w-full h-full flex items-center justify-center text-white text-2xl sm:text-4xl font-semibold">
                       {{ profileInitial }}
                     </span>
                   </div>
@@ -244,7 +240,6 @@ function closeModal() {
                     </svg>
                   </button>
                 </div>
-                <p class="text-center text-xs sm:text-sm text-gray-500">Max 5MB • JPG, PNG</p>
                 <input id="profile-image-input" type="file" @change="onFileChange" accept="image/*" class="hidden" />
               </div>
             </div>
@@ -254,7 +249,7 @@ function closeModal() {
                 <div class="space-y-4 sm:space-y-5">
                   <div class="space-y-2">
                     <label class="block text-xs sm:text-sm font-semibold text-gray-700">
-                      Username <span class="text-red-500 ml-1">*</span>
+                      User Name <span class="text-red-500 ml-1">*</span>
                     </label>
                     <div class="relative">
                       <input v-model="localForm.username" required
@@ -334,7 +329,8 @@ function closeModal() {
                         </option>
                       </select>
                       <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor"
+                          viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
@@ -358,7 +354,8 @@ function closeModal() {
             </div>
           </div>
 
-          <div class="flex-shrink-0 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200 mt-4 sm:mt-6">
+          <div
+            class="flex-shrink-0 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200 mt-4 sm:mt-6">
             <button type="button" @click="closeModal"
               class="px-6 sm:px-8 py-2 sm:py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200 font-semibold hover:shadow-md transform hover:-translate-y-0.5 text-sm sm:text-base">
               Cancel
