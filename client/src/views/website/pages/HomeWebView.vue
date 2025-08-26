@@ -12,11 +12,15 @@
           v-for="(slide, index) in slides"
           :key="slide.id"
           v-show="index === currentSlideIndex"
-          class="absolute inset-0 w-full h-full"
+          class="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-200 via-blue-500 to-blue-500"
         >
-          <img :src="slide.image" :alt="slide.title" class="w-full h-full object-cover" />
+          <img
+            :src="slide.image"
+            :alt="slide.title"
+            class="w-full h-full object-contain"
+          />
           <!-- Dark overlay for better text visibility -->
-          <div class="absolute inset-0 bg-black opacity-40"></div>
+          <div class="absolute inset-0 bg-black bg-opacity-40"></div>
         </div>
       </transition-group>
 
@@ -33,11 +37,13 @@
               <p class="text-xl md:text-2xl mb-8">
                 {{ slides[currentSlideIndex].description }}
               </p>
-              <button
-                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300"
+
+              <router-link
+                to="/web-book"
+                class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300"
               >
                 Explore Collection
-              </button>
+              </router-link>
             </div>
           </transition>
         </div>
@@ -128,22 +134,20 @@ export default {
     const slides = ref([
       {
         id: 1,
-        image: "https://i.pinimg.com/736x/5d/bd/d3/5dbdd38554063fc478d510d85d9f3114.jpg",
+        image: "/public/book1.png",
         title: "Classic Literature",
         description:
           "Explore timeless stories that have captivated readers for generations.",
       },
       {
         id: 2,
-        image:
-          "https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        image: "/public/book2.png",
         title: "Modern Bestsellers",
         description: "Discover contemporary works from today's most celebrated authors.",
       },
       {
         id: 3,
-        image:
-          "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        image: "/public/book3.png",
         title: "Educational Reads",
         description:
           "Expand your knowledge with our extensive collection of educational materials.",
