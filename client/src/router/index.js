@@ -12,6 +12,7 @@ import Register from '@/views/RegisterView.vue'
 import Website from '@/views/website/pages/HomeWebView.vue'
 import AboutWebView from '@/views/website/pages/AboutWebView.vue'
 import BookWebView from '@/views/website/pages/BookWebView.vue'
+import profileWeb from '@/views/website/pages/profile-web.vue'
 
 // Protected Views
 import Dashboard from '@/views/DashboardView.vue'
@@ -37,6 +38,7 @@ const routes = [
       { path: 'website', name: 'website', component: Website },
       { path: 'about-us', name: 'about', component: AboutWebView },
       { path: 'web-book', name: 'web-book', component: BookWebView },
+      { path: 'profile-web', name: 'profile-web', component: profileWeb },
     ]
   },
 
@@ -90,10 +92,10 @@ router.beforeEach(async (to, from, next) => {
   // Public pages
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
-      // Redirect logged-in users to their dashboard, but allow current route if valid
+      // Redirect logged-in users to their appropriate route
       if (userRole === 'admin' && to.path !== '/dashboard') return next('/dashboard');
       if (userRole === 'librarian' && to.path !== '/books') return next('/books');
-      if (userRole === 'user' && to.path !== '/website') return next('/website');
+      if ((userRole === 'user' || userRole === 'borrower') && to.path !== '/website') return next('/website');
     }
     return next();
   }
@@ -105,10 +107,10 @@ router.beforeEach(async (to, from, next) => {
 
   // Role-based restriction
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
-    // Redirect based on role, but allow current route if it matches
+    // Redirect based on role
     if (userRole === 'admin' && to.path !== '/dashboard') return next('/dashboard');
     if (userRole === 'librarian' && to.path !== '/books') return next('/books');
-    if (userRole === 'user' && to.path !== '/website') return next('/website');
+    if ((userRole === 'user' || userRole === 'borrower') && to.path !== '/website') return next('/website');
     return next('/login');
   }
 

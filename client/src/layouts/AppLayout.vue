@@ -257,9 +257,6 @@
                     <p class="text-sm font-medium" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
                       {{ userStore.userProfile?.user?.username || userStore.user?.username || "Unknown" }}
                     </p>
-                    <p class="text-xs text-gray-500" :class="{ 'font-khmer': language === 'kh' }" :key="userInfoKey">
-                      {{ userStore.userProfile?.user?.email || userStore.user?.email || "No email" }}
-                    </p>
                   </div>
                   <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
                     role="menuitem" @click="showProfileDropdown = false">
