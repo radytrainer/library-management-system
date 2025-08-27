@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, onBeforeUnmount } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
@@ -11,6 +11,9 @@ const router = useRouter();
 // Reactive state
 const mobileMenuOpen = ref(false);
 const profileDropdownOpen = ref(false);
+
+// Reference to the dropdown element for outside click detection
+const dropdownRef = ref(null);
 
 // Computed properties to reactively access store data
 const username = computed(() => userStore.user?.username || 'Guest');
@@ -73,6 +76,14 @@ onMounted(async () => {
       router.push('/login');
     }
   }
+
+  // Add event listener for clicks outside the dropdown
+  document.addEventListener('click', handleOutsideClick);
+});
+
+// Remove event listener on component unmount
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleOutsideClick);
 });
 
 // Methods
@@ -85,8 +96,19 @@ const closeMobileMenu = () => {
   mobileMenuOpen.value = false;
 };
 
-const toggleProfileDropdown = () => {
+const toggleProfileDropdown = (event) => {
+  event.stopPropagation(); // Prevent click from bubbling up to document
   profileDropdownOpen.value = !profileDropdownOpen.value;
+};
+
+const closeProfileDropdown = () => {
+  profileDropdownOpen.value = false;
+};
+
+const handleOutsideClick = (event) => {
+  if (profileDropdownOpen.value && dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    closeProfileDropdown();
+  }
 };
 
 const logout = async () => {
@@ -119,7 +141,7 @@ const logout = async () => {
           <img src="/logo.png" alt="PNC Logo" class="h-12 w-12 object-contain">
           <div
             class="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            PNC Library
+            PNC LIBRARY
           </div>
         </div>
 
@@ -142,7 +164,7 @@ const logout = async () => {
         <!-- Desktop User Profile and Actions -->
         <div class="hidden md:flex items-center space-x-4">
           <!-- User Profile Dropdown -->
-          <div class="relative">
+          <div class="relative" ref="dropdownRef">
             <button @click="toggleProfileDropdown"
               class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 focus:ring-blue-500 transition-all duration-200">
               <img :src="userProfileImage" alt="User Profile" class="h-10 w-10 rounded-full object-cover">
@@ -164,7 +186,7 @@ const logout = async () => {
               <hr class="border-gray-200">
               <router-link to="/profile-web"
                 class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded" role="menuitem"
-                @click="showProfileDropdown = false">
+                @click="closeProfileDropdown">
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === "en" ? "View Profile" : "View Profile" }}
               </router-link>
