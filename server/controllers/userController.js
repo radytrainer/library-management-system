@@ -374,7 +374,6 @@ const sendWelcomeEmail = async (userId) => {
   }
 };
 
-
 const updateUser = async (req, res) => {
   try {
     console.log('Incoming PUT /user/:id request');
@@ -716,10 +715,12 @@ async function generateQRCodesForExistingUsers() {
     console.error('Error generating QR codes:', error);
   }
 }
+
 const getProfileImageUrl = (req, filename) => {
   if (!filename) return null;
   return `${req.protocol}://${req.get("host")}/uploads/profile/${filename}`;
 };
+
 const generateUserQRCode = async (req, res) => {
   try {
     const userId = req.params.id;

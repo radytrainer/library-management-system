@@ -9,7 +9,7 @@
           <img :src="logoUrl" alt="Logo" class="h-[32px] w-auto mt-3" v-if="logoUrl" />
         </div>
         <h3 class="text-[14px] font-bold text-[#2c3e50] leading-tight flex-grow text-center -ml-[20px]">
-          PNC LIBRARY
+          {{ systemName }}
         </h3>
       </div>
 
@@ -28,102 +28,93 @@
 import { ref, onMounted } from 'vue';
 import html2canvas from 'html2canvas';
 
-const logoUrl = ref('../../public/logo.png');
-
 const props = defineProps({
   user: Object,
   systemName: String,
+  logoUrl: String,
 });
 
 const emit = defineEmits(['generated']);
 const cardElement = ref(null);
-const isReadyToPrint = ref(false);
-const isGenerating = ref(false); // ✅ prevent multiple downloads
+const isGenerating = ref(false);
 
 onMounted(() => {
   console.log('UserCard mounted');
 });
 
-function generateCard() {
-  if (props.user && !isGenerating.value) {
-    isGenerating.value = true; // lock
-    emit('generated');
-    checkImageLoad();
+async function generateCard() {
+  if (!props.user || isGenerating.value) return;
+  isGenerating.value = true;
+  emit('generated');
+  try {
+    await checkImageLoad();
+    await generateImage();
+  } catch (error) {
+    console.error('Error in generateCard:', error);
+  } finally {
+    isGenerating.value = false;
   }
 }
 
 function checkImageLoad() {
   const images = [];
-
-  if (props.user.profile_image)
-    images.push(loadImage(props.user.profile_image));
-
-  if (props.user.barcode_image)
-    images.push(loadImage(props.user.barcode_image));
-
-  if (logoUrl.value)
-    images.push(loadImage(logoUrl.value));
-
-  Promise.all(images)
-    .then(() => {
-      isReadyToPrint.value = true;
-      generateImage();
-      isGenerating.value = false; // unlock
-    })
-    .catch((error) => {
-      console.error('Image loading error:', error);
-      isReadyToPrint.value = true;
-      isGenerating.value = false; // unlock even on error
-    });
+  if (props.user.profile_image) images.push(loadImage(props.user.profile_image));
+  if (props.user.barcode_image) images.push(loadImage(props.user.barcode_image));
+  if (props.logoUrl) images.push(loadImage(props.logoUrl));
+  return Promise.all(images);
 }
 
 function loadImage(src) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = resolve;
+    img.onload = () => resolve();
     img.onerror = () => {
       console.error(`Failed to load image: ${src}`);
-      resolve(null);
+      resolve(); // Resolve anyway to continue
     };
     img.src = src;
   });
 }
 
 function generateImage() {
-  if (cardElement.value && isReadyToPrint.value) {
-    const element = cardElement.value.querySelector('div.border');
-    if (element) {
-      html2canvas(element, {
-        scale: 12,
-        useCORS: true,
-        backgroundColor: null,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        dpi: 600,
-        letterRendering: true,
-        allowTaint: true,
-        logging: true,
-      }).then((canvas) => {
-        if (canvas.width === 0 || canvas.height === 0) {
-          console.error('Canvas is empty! Check element visibility or image loading.');
-          return;
-        }
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.download = `user_card_${props.user.id}_highres.png`;
-        link.click();
-      }).catch((error) => {
-        console.error('html2canvas error:', error);
-      });
-    } else {
-      console.error('Element not found!');
+  return new Promise((resolve, reject) => {
+    if (!cardElement.value) {
+      reject('Card element not found');
+      return;
     }
-  }
+    const element = cardElement.value.querySelector('div.border');
+    if (!element) {
+      reject('Inner element not found');
+      return;
+    }
+    html2canvas(element, {
+      scale: 12,
+      useCORS: true,
+      backgroundColor: null,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      dpi: 600,
+      letterRendering: true,
+      allowTaint: true,
+      logging: true,
+    }).then((canvas) => {
+      if (canvas.width === 0 || canvas.height === 0) {
+        reject('Canvas is empty');
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.download = `user_card_${props.user.id}_highres.png`;
+      link.click();
+      resolve();
+    }).catch((error) => {
+      reject(error);
+    });
+  });
 }
 
 defineExpose({
   generateCard,
-  generateImage,
 });
 </script>
