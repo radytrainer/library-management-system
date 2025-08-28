@@ -17,6 +17,7 @@ db.Author = require("./author")(sequelize, Sequelize.DataTypes);
 db.Borrow = require("./borrow")(sequelize, Sequelize.DataTypes);
 db.Language = require("./languageBook")(sequelize, Sequelize.DataTypes);
 db.Donation = require("./donation")(sequelize, Sequelize.DataTypes);
+db.Summary = require("./summary")(sequelize, Sequelize.DataTypes);
 
 //
 // ========== ASSOCIATIONS ==========

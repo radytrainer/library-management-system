@@ -13,6 +13,7 @@ import Website from '@/views/website/pages/HomeWebView.vue'
 import AboutWebView from '@/views/website/pages/AboutWebView.vue'
 import BookWebView from '@/views/website/pages/BookWebView.vue'
 import profileWeb from '@/views/website/pages/profile-web.vue'
+import SummaryWeb from '@/views/website/pages/SummaryWebView.vue';
 
 // Protected Views
 import Dashboard from '@/views/DashboardView.vue'
@@ -21,6 +22,7 @@ import UserListView from '@/views/User/UserListView.vue'
 import ListBook from '@/views/books/BookList.vue'
 import LanguageView from '@/views/Lang/LanguageView.vue'
 import UserProfile from '@/components/Users/UserProfile.vue'
+import summary from '@/views/Summary/Summary.vue'
 
 const routes = [
   // Redirect root to login
@@ -39,6 +41,7 @@ const routes = [
       { path: 'about-us', name: 'about', component: AboutWebView },
       { path: 'web-book', name: 'web-book', component: BookWebView },
       { path: 'profile-web', name: 'profile-web', component: profileWeb },
+      { path: 'web-summary', name: 'web-summary', component: SummaryWeb },
     ]
   },
 
@@ -60,6 +63,7 @@ const routes = [
       { path: 'authors', name: 'authors', component: () => import('@/views/Author/AddauthorView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'history', name: 'history', component: () => import('@/views/history/HistoryView.vue'), meta: { roles: ['admin', 'librarian'] } },
       { path: 'profile', name: 'profile', component: UserProfile, meta: { roles: ['admin', 'librarian'] } },
+      { path: 'summary', name: 'summary', component: summary, meta: { roles: ['admin', 'librarian'] } },
     ],
   },
 
