@@ -1,142 +1,101 @@
-// src/utils/exportToExcel.js
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-export function exportToExcel(borrowData) {
-  // Format data with mapping
-  const formattedData = borrowData.map((item, index) => ({
-    "#": index + 1,
-    "Book Title": item.book.title,
-    "Author": item.book.author,
-    "Category": item.book.category,
-    "Borrower": item.user.name,
-    "Email": item.user.email,
-    "Qty": item.borrowed_quantity,
-    "Status": item.status,
-    "Borrow Date": item.borrow_date,
-    "Return Date": item.return_date || "N/A",
-    "Librarian": item.librarian.name,
-  }));
+async function getBase64(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(",")[1]);
+    reader.readAsDataURL(blob);
+  });
+}
 
-  // Create worksheet
-  const worksheet = XLSX.utils.json_to_sheet(formattedData, { origin: "A3" }); // Leave space for header metadata
+export async function exportToExcel(data, filename) {
+  if (!data || !Array.isArray(data) || !data.length) {
+    throw new Error("No data to export");
+  }
 
-  // Set column widths
-  worksheet["!cols"] = [
-    { wch: 5 },    // #
-    { wch: 35 },   // Book Title
-    { wch: 25 },   // Author
-    { wch: 18 },   // Category
-    { wch: 22 },   // Borrower
-    { wch: 30 },   // Email
-    { wch: 8 },    // Qty
-    { wch: 15 },   // Status
-    { wch: 15 },   // Borrow Date
-    { wch: 15 },   // Return Date
-    { wch: 22 },   // Librarian
-  ];
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Borrow Records");
 
-  // Custom header metadata (Row 1 and 2)
-  const titleCell = { r: 0, c: 0 };
-  worksheet[XLSX.utils.encode_cell(titleCell)] = {
-    t: "s",
-    v: "Borrow Records Report",
-    s: {
-      font: { name: "Calibri", sz: 16, bold: true },
-      fill: { fgColor: { rgb: "DDEBF7" } },
-      alignment: { horizontal: "left", vertical: "center" },
-    },
-  };
+  const totalColumns = Object.keys(data[0]).length;
 
-  const dateCell = { r: 1, c: 0 };
-  const currentDateTime = new Date().toLocaleString("en-US", {
-    timeZone: "Asia/Bangkok",
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  }).replace(" at ", ", ") + " +07";
-  worksheet[XLSX.utils.encode_cell(dateCell)] = {
-    t: "s",
-    v: `Generated on: ${currentDateTime}`,
-    s: {
-      font: { name: "Calibri", sz: 10 },
-      alignment: { horizontal: "left", vertical: "center" },
-    },
-  };
+  // Add Logo
+  const logoBase64 = await getBase64("/logo.png"); // your public logo path
+  const logoId = workbook.addImage({ base64: logoBase64, extension: "png" });
+  worksheet.addImage(logoId, {
+    tl: { col: 0.5, row: 0.5 }, 
+    ext: { width: 60, height: 60 }
+  });
 
-  // Header row styling (Row 2)
-  const header = [
-    "#",
-    "Book Title",
-    "Author",
-    "Category",
-    "Borrower",
-    "Email",
-    "Qty",
-    "Status",
-    "Borrow Date",
-    "Return Date",
-    "Librarian",
-  ];
+  // Title Row
+  worksheet.mergeCells(1, 1, 1, totalColumns);
+  const titleCell = worksheet.getCell("A1");
+  titleCell.value = "Borrow Records Report";
+  titleCell.font = { size: 16};
+  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+  titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "DDEBF7" } };
+  worksheet.getRow(1).height = 60;
 
-  header.forEach((title, idx) => {
-    const cellRef = XLSX.utils.encode_cell({ r: 2, c: idx });
-    worksheet[cellRef] = {
-      t: "s",
-      v: title,
-      s: {
-        font: { name: "Calibri", bold: true, sz: 11 },
-        fill: { fgColor: { rgb: "2C3E50" } }, // Dark blue-gray background
-        fontColor: { rgb: "FFFFFF" }, // White text
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "999999" } },
-          bottom: { style: "thin", color: { rgb: "999999" } },
-          left: { style: "thin", color: { rgb: "999999" } },
-          right: { style: "thin", color: { rgb: "999999" } },
-        },
-      },
+  // Generated Date
+  worksheet.mergeCells(2, 1, 2, totalColumns);
+  const dateCell = worksheet.getCell("A2");
+  dateCell.value = `Generated on: ${new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" })}`;
+  dateCell.font = { size: 10, italic: true, color: { argb: "444444" } };
+  dateCell.alignment = { horizontal: "center", vertical: "middle" };
+
+  // Header Row
+  const headers = Object.keys(data[0]);
+  const headerRow = worksheet.addRow(headers);
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "2C3E50" } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = {
+      top: { style: "thin" },
+      bottom: { style: "thin" },
+      left: { style: "thin" },
+      right: { style: "thin" }
     };
   });
 
-  // Apply styling to content rows (starting from Row 3)
-  const range = XLSX.utils.decode_range(worksheet["!ref"]);
-  for (let R = 3; R <= range.e.r; ++R) {
-    for (let C = 0; C <= range.e.c; ++C) {
-      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = worksheet[cellRef];
-      if (cell) {
-        cell.s = {
-          font: { name: "Calibri", sz: 10 },
-          alignment: {
-            vertical: "center",
-            horizontal: C === 0 || C === 6 ? "center" : "left",
-          },
-          border: {
-            top: { style: "thin", color: { rgb: "999999" } },
-            bottom: { style: "thin", color: { rgb: "999999" } },
-            left: { style: "thin", color: { rgb: "999999" } },
-            right: { style: "thin", color: { rgb: "999999" } },
-          },
-          wrapText: true, // Enable text wrapping for better readability
-        };
-        // Highlight "Overdue" status in red
-        if (C === 7 && cell.v.toLowerCase() === "overdue") {
-          cell.s.fontColor = { rgb: "B00000" };
-          cell.s.font.bold = true;
-        }
-      }
-    }
-  }
+  // Data Rows
+  data.forEach((item) => {
+    const rowValues = headers.map((key) => item[key] || "");
+    const row = worksheet.addRow(rowValues);
 
-  // Freeze the header rows
-  worksheet["!freeze"] = { xSplit: 0, ySplit: 3 }; // Freeze rows 1-3
+    row.eachCell((cell, colNumber) => {
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: colNumber === 1 || headers[colNumber - 1]?.toLowerCase() === "status" ? "center" : "left"
+      };
+      cell.border = {
+        top: { style: "thin" },
+        bottom: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" }
+      };
+    });
+  });
 
-  // Create workbook and save
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Borrow Records");
-  XLSX.writeFile(workbook, `borrow_records_${new Date().toISOString().split("T")[0]}.xlsx`);
+  // Set column widths dynamically
+  worksheet.columns.forEach((col, i) => {
+    const maxLength = Math.max(
+      headers[i].length,
+      ...data.map((d) => (d[headers[i]] ? String(d[headers[i]]).length : 0))
+    );
+    col.width = Math.min(Math.max(maxLength + 5, 15), 35);
+  });
+
+  // Freeze header row
+  worksheet.views = [{ state: "frozen", ySplit: 3 }];
+
+  // Export
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}.xlsx`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
