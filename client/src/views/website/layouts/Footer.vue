@@ -56,6 +56,7 @@ onMounted(async () => {
         userStore.resetAuth();
         router.push('/login');
       }
+      
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       Swal.fire({
@@ -148,6 +149,8 @@ const logout = async () => {
         </p>
       </div>
     </div>
+    </div>
+
   </footer>
 </template>
 
