@@ -329,22 +329,22 @@ const fetchAndStoreCounts = async () => {
 
     // Fetch book count from API
     books.value = await getBooks();
-    bookCount.value = Array.isArray(books.value)  ? books.value.length : 100;
+    bookCount.value = Array.isArray(books.value) ? books.value.length : 200;
     localStorage.setItem("bookCount", bookCount.value);
 
     // Fetch user count from store
     const userResponse = await userStore.fetchUsers();
     userCount.value = userResponse.success && Array.isArray(userStore.users)
       ? userStore.users.length
-      : 1500;
+      : 120;
     localStorage.setItem("userCount", userCount.value);
 
     // Store timestamp
     localStorage.setItem("countTimestamp", Date.now().toString());
   } catch (error) {
     console.error("Failed to fetch counts:", error);
-    bookCount.value = parseInt(localStorage.getItem("bookCount"), 10) || 100;
-    userCount.value = parseInt(localStorage.getItem("userCount"), 10) || 1500;
+    bookCount.value = parseInt(localStorage.getItem("bookCount"), 10) || 200;
+    userCount.value = parseInt(localStorage.getItem("userCount"), 10) || 120;
   }
 };
 
