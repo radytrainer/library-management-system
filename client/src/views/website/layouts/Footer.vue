@@ -10,7 +10,7 @@
 
         <!-- Right social icons -->
         <div class="flex space-x-4">
-          <a href="#" aria-label="Facebook" class="footer-icon hover:text-blue-600">
+          <a href="https://www.facebook.com/passerelles.numeriques.cam/?locale=km_KH" aria-label="Facebook" class="footer-icon hover:text-blue-600">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M22 12a10 10 0 10-11.7 9.9v-7h-2v-3h2v-2c0-2 1-3 3-3h2v3h-2a1 1 0 00-1 1v2h3l-.5 3h-2.5v7A10 10 0 0022 12z"/>
             </svg>
