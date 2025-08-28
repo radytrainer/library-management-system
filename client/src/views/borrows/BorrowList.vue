@@ -68,7 +68,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from "vue-router";
 import HeaderSection from "./HeaderSection.vue";
 import StatsCards from "./StatsCards.vue";
 import BorrowTable from "./BorrowTable.vue";
@@ -127,20 +127,20 @@ const {
 
 // Function to update selectedStatus and sync with query parameter
 const updateSelectedStatus = (value) => {
-  console.log('Updating selectedStatus:', value);
+  console.log("Updating selectedStatus:", value);
   selectedStatus.value = value;
   router.replace({
-    name: 'borrows',
+    name: "borrows",
     query: { ...route.query, status: value || undefined, limit: limit.value },
   });
 };
 
 // Function to update selectedCategory and sync with query parameter
 const updateSelectedCategory = (value) => {
-  console.log('Updating selectedCategory:', value);
+  console.log("Updating selectedCategory:", value);
   selectedCategory.value = value;
   router.replace({
-    name: 'borrows',
+    name: "borrows",
     query: { ...route.query, category: value || undefined, limit: limit.value },
   });
 };
@@ -150,21 +150,26 @@ onMounted(async () => {
   await Promise.all([fetchBorrowData(), fetchBooksData()]);
   console.log("Initial booksData:", booksData.value);
   const { status, limit: queryLimit } = route.query;
-  console.log('Query params on mount:', { status, limit: queryLimit });
-  if (status && ['borrowed', 'overdue', 'returned'].includes(status)) {
+  console.log("Query params on mount:", { status, limit: queryLimit });
+  if (status && ["borrowed", "overdue", "returned"].includes(status)) {
     selectedStatus.value = status;
   }
-  if (queryLimit && ['10', '30', '50', 'all'].includes(queryLimit)) {
+  if (queryLimit && ["10", "30", "50", "all"].includes(queryLimit)) {
     limit.value = queryLimit;
   }
 });
 
 // Reset currentPage when filters change
 watch([selectedCategory, selectedStatus, search, limit], () => {
-  console.log('Filters changed:', { selectedCategory: selectedCategory.value, selectedStatus: selectedStatus.value, search: search.value, limit: limit.value });
+  console.log("Filters changed:", {
+    selectedCategory: selectedCategory.value,
+    selectedStatus: selectedStatus.value,
+    search: search.value,
+    limit: limit.value,
+  });
   currentPage.value = 1;
   router.replace({
-    name: 'borrows',
+    name: "borrows",
     query: {
       status: selectedStatus.value || undefined,
       category: selectedCategory.value || undefined,
