@@ -372,7 +372,6 @@ const fetchAndStoreCounts = async () => {
     bookCount.value = Array.isArray(books.value) ? books.value.length : 200;
     localStorage.setItem("bookCount", bookCount.value);
 
-    // Fetch user count from store
     const userResponse = await userStore.fetchUsers();
     userCount.value = userResponse.success && Array.isArray(userStore.users)
       ? userStore.users.length
@@ -388,7 +387,6 @@ const fetchAndStoreCounts = async () => {
   }
 };
 
-// Run on component mount
 onMounted(() => {
   fetchAndStoreCounts();
 });
