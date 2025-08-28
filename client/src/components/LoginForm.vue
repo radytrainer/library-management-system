@@ -57,23 +57,29 @@ const handleLogin = async () => {
 
   try {
     const response = await loginUser(form.value.email, form.value.password);
-
-    // backend sends user inside response.user
     const user = response.user;
 
     const userData = {
-      token: user.accessToken,       // JWT token
-      role: user.role,               // user role
-      name: user.username,           // username
-      email: user.email,             // email
-      profile_image: user.profile_image || user.barcode_image || ''  // fallback to barcode_image
+      token: user.accessToken,
+      role: user.role,
+      name: user.username,
+      email: user.email,
+      profile_image: user.profile_image || user.barcode_image || ''
     };
 
     authStore.setUser(userData);
     authStore.setToken(user.accessToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', user.accessToken);
+    if (userData.profile_image) {
+      sessionStorage.setItem('profile_image', userData.profile_image);
+    }
 
-    router.push(user.role === 'admin' ? '/dashboard' : '/books');
+    router.push(
+      user.role === 'admin' ? '/dashboard' :
+      user.role === 'librarian' ? '/books' :
+      '/website'
+    );
 
   } catch (err) {
     console.error('Login error:', err);
@@ -82,5 +88,4 @@ const handleLogin = async () => {
     isLoading.value = false;
   }
 };
-
 </script>

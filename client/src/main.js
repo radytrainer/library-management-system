@@ -12,11 +12,12 @@ const pinia = createPinia();
 app.use(pinia);
 app.use(router);
 
-// Initialize store state from localStorage
+// Initialize store state from sessionStorage to persist login state across reloads
+// sessionStorage is cleared when the browser tab is closed, forcing re-login on reopen
 const userStore = useUserStore();
-if (localStorage.getItem('token') && localStorage.getItem('user')) {
-  userStore.setToken(localStorage.getItem('token'));
-  userStore.setUser(JSON.parse(localStorage.getItem('user')));
+if (sessionStorage.getItem('token') && sessionStorage.getItem('user')) {
+  userStore.setToken(sessionStorage.getItem('token'));
+  userStore.setUser(JSON.parse(sessionStorage.getItem('user')));
 }
 
 app.mount('#app');

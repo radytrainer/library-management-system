@@ -1,4 +1,3 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 
@@ -13,7 +12,7 @@ import Website from '@/views/website/pages/HomeWebView.vue'
 import AboutWebView from '@/views/website/pages/AboutWebView.vue'
 import BookWebView from '@/views/website/pages/BookWebView.vue'
 import profileWeb from '@/views/website/pages/profile-web.vue'
-import SummaryWeb from '@/views/website/pages/SummaryWebView.vue';
+import SummaryWeb from '@/views/website/pages/SummaryWebView.vue'
 
 // Protected Views
 import Dashboard from '@/views/DashboardView.vue'
@@ -37,16 +36,13 @@ const routes = [
     path: '/',
     component: DefaultLayout,
     children: [
-      { path: 'website', name: 'website', component: Website },
-      { path: 'about-us', name: 'about', component: AboutWebView },
-      { path: 'web-book', name: 'web-book', component: BookWebView },
-      { path: 'profile-web', name: 'profile-web', component: profileWeb },
-      { path: 'web-summary', name: 'web-summary', component: SummaryWeb },
+      { path: 'website', name: 'website', component: Website, meta: { requiresAuth: false } },
+      { path: 'about-us', name: 'about', component: AboutWebView, meta: { requiresAuth: false } },
+      { path: 'web-book', name: 'web-book', component: BookWebView, meta: { requiresAuth: false } },
+      { path: 'profile-web', name: 'profile-web', component: profileWeb, meta: { requiresAuth: false } },
+      { path: 'web-summary', name: 'web-summary', component: SummaryWeb, meta: { requiresAuth: false } },
     ]
   },
-
-  // Role-based redirect after login
-  { path: '/', redirect: '/login' },
 
   // Protected Routes (AppLayout)
   {
@@ -81,41 +77,40 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useUserStore();
 
   // Fetch profile if token exists but no user in store
-  if (!authStore.user && localStorage.getItem('token')) {
+  if (!authStore.user && sessionStorage.getItem('token')) {
     try {
       await authStore.fetchUserProfile();
     } catch {
       authStore.resetAuth();
-      return next('/login');
+      return next({ name: 'login', query: { redirect: to.fullPath } });
     }
   }
 
-  const isLoggedIn = !!authStore.user;
+  const isLoggedIn = authStore.isAuthenticated;
   const userRole = authStore.user?.role;
 
-  // Public pages
+  // Handle public routes
   if (to.meta.requiresAuth === false) {
     if (isLoggedIn && (to.name === 'login' || to.name === 'register')) {
-      // Redirect logged-in users to their appropriate route
-      if (userRole === 'admin' && to.path !== '/dashboard') return next('/dashboard');
-      if (userRole === 'librarian' && to.path !== '/books') return next('/books');
-      if ((userRole === 'user' || userRole === 'borrower') && to.path !== '/website') return next('/website');
+      // Redirect logged-in users to their default route
+      if (userRole === 'admin') return next('/dashboard');
+      if (userRole === 'librarian') return next('/books');
+      if (userRole === 'user' || userRole === 'borrower') return next('/website');
     }
     return next();
   }
 
-  // Protected pages - must login
+  // Handle protected routes
   if (to.meta.requiresAuth && !isLoggedIn) {
-    return next('/login');
+    return next({ name: 'login', query: { redirect: to.fullPath } });
   }
 
-  // Role-based restriction
+  // Check role-based access
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
-    // Redirect based on role
-    if (userRole === 'admin' && to.path !== '/dashboard') return next('/dashboard');
-    if (userRole === 'librarian' && to.path !== '/books') return next('/books');
-    if ((userRole === 'user' || userRole === 'borrower') && to.path !== '/website') return next('/website');
-    return next('/login');
+    // Redirect to default route for the user's role
+    if (userRole === 'admin') return next('/dashboard');
+    if (userRole === 'librarian') return next('/books');
+    if (userRole === 'user' || userRole === 'borrower') return next('/website');
   }
 
   next();
