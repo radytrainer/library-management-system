@@ -8,7 +8,6 @@ import {
 import { getBooks, updateBook } from "@/services/Api/book";
 import { getAllUsers } from "@/services/Api/user";
 import { exportToExcel } from "@/utils/exportToExcel";
-import { exportToPDF } from "@/utils/exportToPDF";
 
 export function useBorrowManagement() {
   const borrowData = ref([]);
@@ -534,46 +533,56 @@ export function useBorrowManagement() {
     formError.value = "";
   }
 
-  function exportBorrowDataToExcel() {
-    if (!borrowData.value.length) {
+function exportBorrowDataToExcel(useFilteredData = true) {
+  try {
+    // Decide which dataset to export
+    const dataToExport = useFilteredData ? nonReturnedBorrowData.value : borrowData.value;
+    if (!dataToExport?.length) {
       showToast("No borrow data to export", "error");
       return;
     }
-    const flatData = borrowData.value.map((item) => ({
-      ID: item.id,
-      "Book Title": item.book?.title || "",
-      "Book Author": item.book?.author || "",
-      "Book Category": item.book?.category || "",
-      "User Name": item.user?.name || item.borrower_name || "",
-      "User Email": item.user?.email || item.borrower_email || "",
-      Quantity: item.borrowed_quantity || 1,
-      Status: getItemStatus(item),
-      "Borrow Date": formatDate(item.borrow_date),
-      "Return Date": formatDate(item.return_date),
-      "Librarian Name": item.librarian?.name || "",
-    }));
-    exportToExcel(flatData, "BorrowRecords");
-  }
 
-  function exportBorrowDataToPDF() {
-    if (!borrowData.value.length) {
-      showToast("No borrow data to export", "error");
+    // Flatten nested book arrays
+    const flatData = [];
+    dataToExport.forEach((item) => {
+      const books = Array.isArray(item.books) ? item.books : [item.book].filter(Boolean);
+      if (!books.length) return;
+
+      books.forEach((book) => {
+        flatData.push({
+          "#": flatData.length + 1,
+          Book: book.title || book.name || "",
+          Category: book.category?.name || book.category || "",
+          Borrower: item.user?.name || item.borrower_name || "",
+          Qty: book.quantity || item.quantity || item.borrowed_quantity || 1,
+          Status: getItemStatus(item),
+          "Borrow Date": formatDate(item.borrow_date) || "",
+          "Return Date": formatDate(book.date_return || item.return_date) || "N/A",
+        });
+      });
+    });
+
+    if (!flatData.length) {
+      showToast("No valid borrow records to export", "error");
       return;
     }
-    const flatData = borrowData.value.map((item) => ({
-      "Book Title": item.book?.title || "",
-      "Book Author": item.book?.author || "",
-      "Book Category": item.book?.category || "",
-      "User Name": item.user?.name || item.borrower_name || "",
-      "User Email": item.user?.email || item.borrower_email || "",
-      Quantity: item.borrowed_quantity || 1,
-      Status: getItemStatus(item),
-      "Borrow Date": formatDate(item.borrow_date),
-      "Return Date": formatDate(item.return_date),
-      "Librarian Name": item.librarian?.name || "",
-    }));
-    exportToPDF(flatData, "BorrowRecords.pdf");
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split("T")[0];
+    const filename = `BorrowRecords_${timestamp}`;
+
+    // Call your export function
+    exportToExcel(flatData, filename);
+
+    showToast("Borrow records exported successfully", "success");
+  } catch (err) {
+    console.error("Export failed:", err);
+    showToast(`Failed to export borrow records: ${err.message}`, "error");
   }
+}
+const nonReturnedBorrowData = computed(() => {
+  return filteredBorrowData.value.filter((item) => getItemStatus(item) !== "returned");
+});
 
   return {
     borrowData,
@@ -623,7 +632,6 @@ export function useBorrowManagement() {
     handleConfirmReturn,
     showToast,
     exportBorrowDataToExcel,
-    exportBorrowDataToPDF,
     fetchUsersData,
   };
 }

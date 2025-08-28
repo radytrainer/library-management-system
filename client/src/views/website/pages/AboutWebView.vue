@@ -5,7 +5,7 @@
       <!-- Background Image -->
       <div
         class="absolute inset-0 bg-cover bg-center"
-        style="background-image: url('')"
+        style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')"
       ></div>
 
       <!-- Sky Blue Half Overlay -->
@@ -18,10 +18,10 @@
 
       <!-- Decorative Floating Icons -->
       <div class="absolute top-10 left-10 animate-bounce">
-        <BookOpenIcon class="w-8 h-8 text-white/80" />
+        <BookOpenIcon class="w-8 h-8 text-white/80" aria-hidden="true" />
       </div>
       <div class="absolute bottom-12 right-12 animate-bounce" style="animation-delay: 1s">
-        <HeartIcon class="w-8 h-8 text-white/80" />
+        <HeartIcon class="w-8 h-8 text-white/80" aria-hidden="true" />
       </div>
 
       <!-- Content -->
@@ -41,29 +41,29 @@
           <div
             class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
           >
-            <BookMarkedIcon class="w-5 h-5" />
+            <BookMarkedIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">{{ bookCount }}+ Books</span>
           </div>
           <div
             class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
           >
-            <UsersIcon class="w-5 h-5" />
+            <UsersIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">{{ userCount }}+ Members</span>
           </div>
           <div
             class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
           >
-            <HeartIcon class="w-5 h-5" />
+            <HeartIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">Community Focused</span>
           </div>
         </div>
         <!-- CTA Button -->
         <router-link
-                to="/web-book"
-                class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl transition-all animate-fade-in-delay-3 inline-block"
-              >
-                   Explore Our Library
-              </router-link>
+          to="/web-book"
+          class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all animate-fade-in-delay-3 inline-block"
+        >
+          Explore Our Library
+        </router-link>
       </div>
     </section>
     <div class="container mx-auto px-4 py-16">
@@ -80,7 +80,7 @@
             <div
               class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400"
             >
-              <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" />
+              <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Knowledge</h3>
               <p class="text-gray-600">
                 Providing access to vast collections of books, digital resources, and
@@ -90,7 +90,7 @@
             <div
               class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400"
             >
-              <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" />
+              <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Community</h3>
               <p class="text-gray-600">
                 Creating spaces for connection, collaboration, and cultural exchange
@@ -99,7 +99,7 @@
             <div
               class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400"
             >
-              <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" />
+              <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Learning</h3>
               <p class="text-gray-600">
                 Supporting education and personal growth through programs and resources
@@ -121,7 +121,7 @@
             :key="service.title"
             class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent"
           >
-            <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" />
+            <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" aria-hidden="true" />
             <h3 class="text-xl font-semibold mb-2">{{ service.title }}</h3>
             <p class="text-gray-600">{{ service.description }}</p>
           </div>
@@ -161,12 +161,12 @@
           <!-- Contact Information -->
           <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
             <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-              <MapPinIcon class="w-5 h-5 text-sky-600" />
+              <MapPinIcon class="w-5 h-5 text-sky-600" aria-hidden="true" />
               Contact Information
             </h3>
             <div class="space-y-4">
               <div class="flex items-start gap-3">
-                <MapPinIcon class="w-5 h-5 text-sky-500 mt-0.5" />
+                <MapPinIcon class="w-5 h-5 text-sky-500 mt-0.5" aria-hidden="true" />
                 <div>
                   <p class="font-medium">Address</p>
                   <p class="text-gray-600">
@@ -176,14 +176,14 @@
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <PhoneIcon class="w-5 h-5 text-sky-500" />
+                <PhoneIcon class="w-5 h-5 text-sky-500" aria-hidden="true" />
                 <div>
                   <p class="font-medium">Phone</p>
                   <p class="text-gray-600">0973893597</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <MailIcon class="w-5 h-5 text-sky-500" />
+                <MailIcon class="w-5 h-5 text-sky-500" aria-hidden="true" />
                 <div>
                   <p class="font-medium">Email</p>
                   <p class="text-gray-600">library@passerellesnumeriques.org</p>
@@ -194,7 +194,7 @@
           <!-- Hours -->
           <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
             <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-              <ClockIcon class="w-5 h-5 text-sky-600" />
+              <ClockIcon class="w-5 h-5 text-sky-600" aria-hidden="true" />
               Hours of Operation
             </h3>
             <div class="space-y-3">
@@ -221,7 +221,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/userStore";
-import { useBookStore } from "@/stores/book"; // Updated to use the Pinia book store
+import { getBooks } from "@/services/Api/book";
+
 import {
   BookOpen as BookOpenIcon,
   Clock as ClockIcon,
@@ -239,11 +240,11 @@ import {
 } from "lucide-vue-next";
 
 const userStore = useUserStore();
-const bookStore = useBookStore(); // Instantiate the book store
 
-// Reactive variables for counts
+// Reactive variables for counts and books
 const bookCount = ref(0);
 const userCount = ref(0);
+const books = ref([]);
 
 // Services, staff, and hours data
 const services = ref([
@@ -309,58 +310,45 @@ const hours = ref([
 
 // Check if stored data is fresh (less than 1 hour old)
 const isDataFresh = (timestamp) => {
-  const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
-  const now = Date.now();
-  return now - timestamp < ONE_HOUR;
+  const ONE_HOUR = 60 * 60 * 1000; // 1 hour in ms
+  return Date.now() - timestamp < ONE_HOUR;
 };
 
-// Function to fetch and store counts
+// Fetch and store counts
 const fetchAndStoreCounts = async () => {
   try {
-    // Check localStorage for cached counts and timestamp
     const storedBookCount = localStorage.getItem("bookCount");
     const storedUserCount = localStorage.getItem("userCount");
     const storedTimestamp = localStorage.getItem("countTimestamp");
 
     if (storedBookCount && storedUserCount && storedTimestamp && isDataFresh(parseInt(storedTimestamp, 10))) {
-      // Use cached values if fresh
       bookCount.value = parseInt(storedBookCount, 10);
       userCount.value = parseInt(storedUserCount, 10);
       return;
     }
 
-    // Fetch book count
-    await bookStore.fetchBooks(); // Fetch books and store in bookStore.books
-    const books = bookStore.books;
-    if (Array.isArray(books)) {
-      bookCount.value = books.length;
-    } else {
-      console.warn("Book data is invalid, using fallback count");
-      bookCount.value = 5000; // Fallback value
-    }
+    // Fetch book count from API
+    books.value = await getBooks();
+    bookCount.value = Array.isArray(books.value) ? books.value.length : 200;
     localStorage.setItem("bookCount", bookCount.value);
 
-    // Fetch user count
+    // Fetch user count from store
     const userResponse = await userStore.fetchUsers();
-    if (userResponse.success && Array.isArray(userStore.users)) {
-      userCount.value = userStore.users.length;
-    } else {
-      console.warn("User response is invalid, using fallback count");
-      userCount.value = 1500; // Fallback value
-    }
+    userCount.value = userResponse.success && Array.isArray(userStore.users)
+      ? userStore.users.length
+      : 120;
     localStorage.setItem("userCount", userCount.value);
 
     // Store timestamp
     localStorage.setItem("countTimestamp", Date.now().toString());
   } catch (error) {
     console.error("Failed to fetch counts:", error);
-    // Fallback to localStorage or default values
-    bookCount.value = parseInt(localStorage.getItem("bookCount"), 10) || 5000;
-    userCount.value = parseInt(localStorage.getItem("userCount"), 10) || 1500;
+    bookCount.value = parseInt(localStorage.getItem("bookCount"), 10) || 200;
+    userCount.value = parseInt(localStorage.getItem("userCount"), 10) || 120;
   }
 };
 
-// Fetch counts on component mount
+// Run on component mount
 onMounted(() => {
   fetchAndStoreCounts();
 });

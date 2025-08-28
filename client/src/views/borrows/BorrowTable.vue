@@ -18,14 +18,26 @@
             class="min-w-[140px] sm:min-w-[160px] px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
           >
             <option value="">All Categories</option>
-            <option v-for="category in categories" :key="category.name" :value="category.name">{{ category.name }}</option>
+            <option
+              v-for="category in categories"
+              :key="category.name"
+              :value="category.name"
+            >
+              {{ category.name }}
+            </option>
           </select>
           <select
             :value="limit"
             @change="$emit('update:limit', $event.target.value)"
             class="min-w-[100px] sm:min-w-[120px] px-4 py-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
           >
-            <option v-for="option in limitOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            <option
+              v-for="option in limitOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
           </select>
         </div>
         <div class="flex items-center gap-3">
@@ -43,7 +55,12 @@
             class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Add Borrow
           </button>
@@ -54,26 +71,66 @@
       <table class="w-full table-auto min-w-[800px]">
         <thead class="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
           <tr>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">#</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Book</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Borrower</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Qty</th>
             <th
-              v-if="nonReturnedBorrowData.some(item => getItemStatus(item) !== 'returned')"
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              #
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Book
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Category
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Borrower
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Qty
+            </th>
+            <th
+              v-if="
+                nonReturnedBorrowData.some((item) => getItemStatus(item) !== 'returned')
+              "
               class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
             >
               Status
             </th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Borrow Date</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Return Date</th>
-            <th class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Borrow Date
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Return Date
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="(item, index) in nonReturnedBorrowData" :key="item.id" class="hover:bg-gray-50 transition-all">
+          <tr
+            v-for="(item, index) in nonReturnedBorrowData"
+            :key="item.id"
+            class="hover:bg-gray-50 transition-all"
+          >
             <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-900">
-              {{ index + 1 + (limit === 'all' ? 0 : (currentPage - 1) * parseInt(limit)) }}
+              {{
+                index + 1 + (limit === "all" ? 0 : (currentPage - 1) * parseInt(limit))
+              }}
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center gap-3">
@@ -92,11 +149,15 @@
               </div>
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800"
+              >
                 {{ item.book.category?.name || item.book.category }}
               </span>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base font-medium text-gray-900">
+            <td
+              class="px-4 py-3 whitespace-nowrap text-sm sm:text-base font-medium text-gray-900"
+            >
               {{ item.user.name }}
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-900">
@@ -112,7 +173,12 @@
                 class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium bg-red-600 text-white hover:bg-red-700 transition-all"
                 aria-label="Mark as returned"
               >
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  class="w-4 h-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -128,8 +194,18 @@
                 class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm sm:text-base font-medium bg-green-600 text-white hover:bg-green-700 transition-all"
                 aria-label="Mark as returned"
               >
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                <svg
+                  class="w-4 h-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4"
+                  />
                 </svg>
                 Return
               </button>
@@ -140,14 +216,18 @@
             <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-900">
               {{ formatDate(item.return_date) }}
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-500 relative">
+            <td
+              class="px-4 py-3 whitespace-nowrap text-sm sm:text-base text-gray-500 relative"
+            >
               <button
                 @click.stop="$emit('toggle-dropdown', item.id)"
                 class="p-2 hover:bg-gray-100 rounded-lg transition-all"
                 aria-label="Toggle actions menu"
               >
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  <path
+                    d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+                  />
                 </svg>
               </button>
               <div
@@ -159,7 +239,12 @@
                     @click="$emit('show-book', item)"
                     class="flex items-center gap-3 px-4 py-2 w-full text-sm sm:text-base text-gray-700 hover:bg-gray-50 transition-all"
                   >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -179,7 +264,12 @@
                     @click="$emit('update-record', item)"
                     class="flex items-center gap-3 px-4 py-2 w-full text-sm sm:text-base text-gray-700 hover:bg-gray-50 transition-all"
                   >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -193,7 +283,12 @@
                     @click="confirmDelete(item.id)"
                     class="flex items-center gap-3 px-4 py-2 w-full text-sm sm:text-base text-red-600 hover:bg-red-50 transition-all"
                   >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -213,9 +308,17 @@
     <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
       <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div class="text-sm sm:text-base text-gray-700">
-          Showing <span class="font-medium">{{ limit === 'all' ? 1 : (currentPage - 1) * parseInt(limit) + 1 }}</span> to
-          <span class="font-medium">{{ limit === 'all' ? totalNonReturnedItems : Math.min(currentPage * parseInt(limit), totalNonReturnedItems) }}</span> of
-          <span class="font-medium">{{ totalNonReturnedItems }}</span> results
+          Showing
+          <span class="font-medium">{{
+            limit === "all" ? 1 : (currentPage - 1) * parseInt(limit) + 1
+          }}</span>
+          to
+          <span class="font-medium">{{
+            limit === "all"
+              ? totalNonReturnedItems
+              : Math.min(currentPage * parseInt(limit), totalNonReturnedItems)
+          }}</span>
+          of <span class="font-medium">{{ totalNonReturnedItems }}</span> results
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -224,7 +327,12 @@
             class="px-3 py-2 border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-all"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <template v-for="page in Math.min(totalPages, 5)" :key="page">
@@ -233,7 +341,9 @@
               @click="$emit('update:currentPage', page)"
               :class="[
                 'px-3 py-2 border rounded-lg transition-all text-sm sm:text-base',
-                currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 hover:bg-gray-100',
+                currentPage === page
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'border-gray-200 hover:bg-gray-100',
               ]"
             >
               {{ page }}
@@ -245,7 +355,12 @@
             class="px-3 py-2 border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-all"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -255,8 +370,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import Swal from 'sweetalert2'
+import { computed } from "vue";
+import Swal from "sweetalert2";
 import { FileSpreadsheet } from "lucide-vue-next";
 
 const emit = defineEmits([
@@ -271,32 +386,35 @@ const emit = defineEmits([
   "delete-record",
   "add-borrow",
   "exportBorrowDataToExcel",
-  "exportBorrowDataToPDF"
-])
+  "exportBorrowDataToPDF",
+]);
 
 async function confirmDelete(itemId) {
   const result = await Swal.fire({
-    title: 'Confirm Deletion',
-    text: 'Are you sure you want to delete this borrow record? This action cannot be undone.',
-    icon: 'warning',
-    iconColor: '#f87171',
+    title: "Confirm Deletion",
+    text:
+      "Are you sure you want to delete this borrow record? This action cannot be undone.",
+    icon: "warning",
+    iconColor: "#f87171",
     showCancelButton: true,
-    confirmButtonText: 'Delete',
-    cancelButtonText: 'Cancel',
+    confirmButtonText: "Delete",
+    cancelButtonText: "Cancel",
     buttonsStyling: false,
     customClass: {
-      popup: 'rounded-xl shadow-lg bg-white p-6',
-      title: 'text-lg font-semibold text-gray-900',
-      htmlContainer: 'text-sm text-gray-600 mt-1 leading-tight',
-      confirmButton: 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium',
-      cancelButton: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium mr-4',
-      icon: 'animate-pulse',
-      actions: 'mt-3 flex justify-end gap-2'
-    }
-  })
+      popup: "rounded-xl shadow-lg bg-white p-6",
+      title: "text-lg font-semibold text-gray-900",
+      htmlContainer: "text-sm text-gray-600 mt-1 leading-tight",
+      confirmButton:
+        "px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium",
+      cancelButton:
+        "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium mr-4",
+      icon: "animate-pulse",
+      actions: "mt-3 flex justify-end gap-2",
+    },
+  });
 
   if (result.isConfirmed) {
-    emit('delete-record', itemId)
+    emit("delete-record", itemId);
   }
 }
 
@@ -317,7 +435,9 @@ const props = defineProps({
 
 // Computed property to filter out 'returned' status items
 const nonReturnedBorrowData = computed(() => {
-  return props.filteredBorrowData.filter(item => props.getItemStatus(item) !== 'returned');
+  return props.filteredBorrowData.filter(
+    (item) => props.getItemStatus(item) !== "returned"
+  );
 });
 
 // Compute the total number of non-returned items

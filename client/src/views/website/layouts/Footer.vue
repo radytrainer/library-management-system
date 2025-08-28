@@ -56,6 +56,7 @@ onMounted(async () => {
         userStore.resetAuth();
         router.push('/login');
       }
+      
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       Swal.fire({
@@ -100,32 +101,6 @@ const logout = async () => {
           <div class="flex-shrink-0">
             <img src="/logo.png" alt="Passerelles Numériques Logo" class="h-14 w-14 object-contain transition-transform duration-300 hover:scale-105">
           </div>
-
-          <!-- Quick Access Links -->
-          <div class="flex space-x-6">
-            <router-link to="/website" class="footer-link group">
-              <span class="block">Home</span>
-              <span class="h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </router-link>
-            <router-link to="/about-us" class="footer-link group">
-              <span class="block">About</span>
-              <span class="h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </router-link>
-            <router-link to="/web-book" class="footer-link group">
-              <span class="block">Books</span>
-              <span class="h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </router-link>
-            <router-link v-if="canAccessWebsite" to="/web-summary" class="footer-link group">
-              <span class="block">Summary</span>
-              <span class="h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </router-link>
-            <router-link v-if="canAccessSystem" to="/dashboard" class="footer-link group">
-              <span class="block">System</span>
-              <span class="h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </router-link>
-          </div>
-        </div>
-
         <!-- Right: Social Media and Logout -->
         <div class="flex items-center space-x-6">
           <!-- Social Media Links -->
@@ -153,6 +128,7 @@ const logout = async () => {
           &copy; 2025 Passerelles Numériques. All rights reserved.
         </p>
       </div>
+    </div>
     </div>
   </footer>
 </template>
