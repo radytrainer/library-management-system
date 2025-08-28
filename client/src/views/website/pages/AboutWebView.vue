@@ -74,7 +74,6 @@
               </p>
             </div>
             <div
-
               class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400">
               <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Community</h3>
@@ -95,7 +94,7 @@
       </section>
 
       <!-- Divider -->
-      <div class="border-t border-gray-200 my-16"></div>
+      <!-- <div class="border-t border-gray-200 my-16"></div> -->
 
       <!-- Services Section -->
       <section id="services" class="mb-16">
@@ -109,63 +108,48 @@
           </div>
         </div>
       </section>
+      <!-- Contact & Hours Section -->
+  <div class="container mx-auto px-4 py-12">
+    <section class="mb-20">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4 section-title">Meet Our Team</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          Our dedicated team of professionals is committed to delivering exceptional results. Get to know the talented individuals behind our success.
+        </p>
+      </div>
 
-      <!-- Divider -->
-      <div class="border-t border-gray-200 my-16"></div>
-
-      <!-- Staff Section -->
-      <section class="mb-12">
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Meet Our Team</h2>
-        <div class="w-20 h-1 bg-gradient-to-r from-sky-500 to-indigo-500 mx-auto mb-8 rounded"></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          <div v-for="member in staff" :key="member.name"
-            class="relative bg-white rounded-lg shadow-lg p-4 text-center hover:shadow-xl transition-shadow duration-300 hover:border-sky-200 border border-transparent cursor-pointer">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div v-for="(member, index) in staff" :key="member.name"
+             class="team-card bg-white rounded-xl p-6 text-center shadow-lg">
+          
+          <div class="profile-container">
             <img :src="member.image" :alt="member.name"
-              class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-sky-100" />
-            <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ member.name }}</h3>
-            <p class="text-sky-600 font-medium text-sm mb-2">{{ member.role }}</p>
-            <p class="text-xs text-gray-600">{{ member.bio }}</p>
-            <!-- Contact information on hover -->
-            <div
-              class="absolute inset-0 bg-sky-600 bg-opacity-95 rounded-lg p-4 flex flex-col justify-center items-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-              <h3 class="text-lg font-semibold text-white mb-2">{{ member.name }}</h3>
-              <div class="flex items-center mb-2 text-sm text-white">
-                <MailIcon class="w-5 h-5 mr-2" />
-                <span class="break-all">{{ member.contact.email }}</span>
-              </div>
-              <div class="flex items-center mb-2 text-sm text-white">
-                <PhoneIcon class="w-5 h-5 mr-2" />
-                <span>{{ member.contact.phone }}</span>
-              </div>
-              <div v-if="member.contact.facebook" class="flex items-center mb-2 text-sm text-white">
-                <MessageSquareIcon class="w-5 h-5 mr-2" />
-                <span class="break-all">{{ member.contact.facebook }}</span>
-              </div>
-              <div class="flex justify-center gap-3 mt-2">
-                <a :href="'mailto:' + member.contact.email"
+                 class="profile-image rounded-full mx-auto object-cover" />
+            <div class="role-badge ">{{ member.role }}</div>
+          </div>
 
-                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
-                  <MailIcon class="w-5 h-5" />
-                </a>
-                <a :href="'tel:' + member.contact.phone"
-                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
-                  <PhoneIcon class="w-5 h-5" />
-                </a>
-                <a v-if="member.contact.facebook" :href="member.contact.facebook"
-                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
-                  <MessageSquareIcon class="w-5 h-5" />
-                </a>
-              </div>
-            </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">{{ member.name }}</h3>
+          <p class="text-sm text-gray-600 mb-6">{{ member.bio }}</p>
+
+          <!-- Social media links -->
+          <div class="social-icons">
+            <a :href="'mailto:' + member.contact.email" class="social-icon">
+              <i class="fas fa-envelope text-sm"></i>
+            </a>
+            <a :href="'tel:' + member.contact.phone" class="social-icon">
+              <i class="fas fa-phone-alt text-sm"></i>
+            </a>
+            <a v-if="member.contact.facebook" :href="member.contact.facebook" target="_blank" class="social-icon">
+              <i class="fab fa-facebook-f text-sm"></i>
+            </a>
           </div>
         </div>
-      </section>
-
-      <!-- Divider -->
-      <div class="border-t border-gray-200 my-16"></div>
-
+      </div>
+    </section>
+  </div>
+    <div class="container mx-auto px-4 py-12">
       <!-- Contact & Hours Section -->
-      <section>
+      <section class="">
         <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Contact Us</h2>
         <div class="grid md:grid-cols-2 gap-12">
           <!-- Contact Information -->
@@ -220,6 +204,7 @@
           </div>
         </div>
       </section>
+      </div>
     </div>
   </div>
 </template>
@@ -229,19 +214,17 @@ import { ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { getBooks } from "@/services/Api/book";
 
-
 import {
   BookOpen as BookOpenIcon,
   Clock as ClockIcon,
   MapPin as MapPinIcon,
   Phone as PhoneIcon,
   Mail as MailIcon,
-  MessageSquare as MessageSquareIcon, // Replaced Telegram with MessageSquare
   Users as UsersIcon,
   Calendar as CalendarIcon,
   Wifi as WifiIcon,
   Coffee as CoffeeIcon,
-  Computer as ComputerIcon,
+  Monitor as ComputerIcon, // ✅ fixed: use Monitor instead of Computer
   BookMarked as BookMarkedIcon,
   GraduationCap as GraduationCapIcon,
   Heart as HeartIcon,
@@ -249,22 +232,23 @@ import {
 
 const userStore = useUserStore();
 
-// Reactive variables for counts and books
+// Reactive variables
 const bookCount = ref(0);
 const userCount = ref(0);
 const books = ref([]);
 
-// Services, staff, and hours data
+// Services
 const services = ref([
   {
     icon: BookOpenIcon,
     title: "Book Collection",
-    description: "Over 5000 books across all genres and subjects",
+    description: "Over 200 books across all genres and subjects",
   },
   {
     icon: ComputerIcon,
     title: "Digital Resources",
-    description: "Access and read all our e-books online anytime through our digital library.",
+    description:
+      "Access and read all our e-books online anytime through our digital library.",
   },
   {
     icon: WifiIcon,
@@ -283,100 +267,108 @@ const services = ref([
   },
 ]);
 
+// Staff members
 const staff = ref([
   {
-    name: 'Sor Chhin',
-    role: 'QA Tester',
-    bio: 'Sor is a person who tests the quality of our library services.',
-    image: '/public/member/sor.jpg',
+    name: "Sor Chhin",
+    role: "QA Tester",
+    bio: "Sor tests the quality of our library services.",
+    image: "/member/sor.jpg", // ✅ fixed path
     contact: {
-      email: 'sor.chhin@student.passerellesnumeriques.org',
-      phone: '086 266 156',
-      facebook: 'https://facebook.com/sorchhin'
+      email: "sor.chhin@student.passerellesnumeriques.org",
+      phone: "086266156",
+      facebook: "https://facebook.com/sorchhin",
     },
   },
   {
-    name: 'Bopha Khat',
-    role: 'Product Owner',
-    bio: 'Bopha is responsible for defining the vision of our library services and ensuring they meet user needs.',
-    image: '/public/member/bopha.jpg',
+    name: "Bopha Khat",
+    role: "Product Owner",
+    bio: "Defines the vision of our library services and ensures they meet user needs.",
+    image: "/member/bopha.jpg",
     contact: {
-      email: 'bopha.khat@student.passerellesnumeriques.org',
-      phone: '071 965 1462',
-      facebook: 'https://facebook.com/bophakhat'
+      email: "bopha.khat@student.passerellesnumeriques.org",
+      phone: "0719651462",
+      facebook: "https://facebook.com/bophakhat",
     },
   },
   {
-    name: 'Horth Heng',
-    role: 'Scrum Master',
-    bio: 'Horth facilitates agile ceremonies and helps teams deliver high-quality library services.',
-    image: '/public/member/horth.jpg',
+    name: "Horth Heng",
+    role: "Scrum Master",
+    bio: "Facilitates agile ceremonies and helps teams deliver high-quality services.",
+    image: "/member/horth.jpg",
     contact: {
-      email: 'horth.heng@student.passerellesnumeriques.org',
-      phone: '011 968 240',
-      facebook: 'https://facebook.com/horthheng'
+      email: "horth.heng@student.passerellesnumeriques.org",
+      phone: "011968240",
+      facebook: "https://facebook.com/horthheng",
     },
   },
   {
-    name: 'Sophean Phouk',
-    role: 'DevOps Developer',
-    bio: 'Sophean manages our library\'s infrastructure and deployment processes to ensure smooth operations.',
-    image: '/public/member/phean.jpg',
+    name: "Sophean Phouk",
+    role: "DevOps",
+    bio: "Manages infrastructure and deployment processes.",
+    image: "/member/phean.jpg",
     contact: {
-      email: 'sophean.phouk@student.passerellesnumeriques.org',
-      phone: '096 483 9280',
-      facebook: 'https://www.facebook.com/e3cossxuo6'
+      email: "sophean.phouk@student.passerellesnumeriques.org",
+      phone: "0964839280",
+      facebook: "https://www.facebook.com/e3cossxuo6",
     },
   },
   {
-    name: 'Linna Rin',
-    role: 'Code Quality',
-    bio: 'Linna ensures that our codebase remains clean and maintainable, and she advocates for best practices in software development.',
-    image: '/public/member/linna.jpg',
+    name: "Linna Rin",
+    role: "Code Quality",
+    bio: "Ensures code remains clean, maintainable, and follows best practices.",
+    image: "/member/linna.jpg",
     contact: {
-      email: 'linna.rin@student.passerellesnumeriques.org',
-      phone: '097 389 3597',
-      facebook: 'https://facebook.com/linnarin'
+      email: "linna.rin@student.passerellesnumeriques.org",
+      phone: "0973893597",
+      facebook: "https://facebook.com/linnarin",
     },
   },
 ]);
 
+
+// Library hours
 const hours = ref([
   { day: "Monday - Thursday", hours: "7:00 AM - 5:00 PM" },
   { day: "Friday - Saturday", hours: "8:00 AM - 6:00 PM" },
   { day: "Sunday", hours: "9:00 AM - 5:00 PM" },
 ]);
 
-// Check if stored data is fresh (less than 1 hour old)
+// Check if cached data is fresh
 const isDataFresh = (timestamp) => {
-  const ONE_HOUR = 60 * 60 * 1000; // 1 hour in ms
+  const ONE_HOUR = 60 * 60 * 1000;
   return Date.now() - timestamp < ONE_HOUR;
 };
 
-// Fetch and store counts
+// Fetch counts
 const fetchAndStoreCounts = async () => {
   try {
     const storedBookCount = localStorage.getItem("bookCount");
     const storedUserCount = localStorage.getItem("userCount");
     const storedTimestamp = localStorage.getItem("countTimestamp");
 
-    if (storedBookCount && storedUserCount && storedTimestamp && isDataFresh(parseInt(storedTimestamp, 10))) {
+    if (
+      storedBookCount &&
+      storedUserCount &&
+      storedTimestamp &&
+      isDataFresh(parseInt(storedTimestamp, 10))
+    ) {
       bookCount.value = parseInt(storedBookCount, 10);
       userCount.value = parseInt(storedUserCount, 10);
       return;
     }
 
-
-    // Fetch book count from API
+    // Fetch book count
     books.value = await getBooks();
     bookCount.value = Array.isArray(books.value) ? books.value.length : 200;
     localStorage.setItem("bookCount", bookCount.value);
 
-    // Fetch user count from store
+    // Fetch user count
     const userResponse = await userStore.fetchUsers();
-    userCount.value = userResponse.success && Array.isArray(userStore.users)
-      ? userStore.users.length
-      : 120;
+    userCount.value =
+      userResponse.success && Array.isArray(userStore.users)
+        ? userStore.users.length
+        : 120;
     localStorage.setItem("userCount", userCount.value);
 
     // Store timestamp
@@ -388,76 +380,94 @@ const fetchAndStoreCounts = async () => {
   }
 };
 
-// Run on component mount
-onMounted(() => {
-  fetchAndStoreCounts();
-});
+onMounted(fetchAndStoreCounts);
 </script>
 
+
 <style scoped>
-/* Additional custom styles */
-.container {
-  max-width: 1200px;
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f8fafc;
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.team-card {
+  transition: all 0.3s ease;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  animation: fadeIn 0.6s ease forwards;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.8s ease-out;
+.team-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.animate-fade-in-delay {
-  animation: fade-in 0.8s ease-out 0.2s both;
+.team-card:nth-child(1) { animation-delay: 0.1s; }
+.team-card:nth-child(2) { animation-delay: 0.2s; }
+.team-card:nth-child(3) { animation-delay: 0.3s; }
+.team-card:nth-child(4) { animation-delay: 0.4s; }
+
+.profile-container { position: relative; margin-bottom: 1.5rem; }
+.profile-image {
+  width: 120px; height: 120px; object-fit: cover;
+  border: 4px solid #e0f2fe;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+.team-card:hover .profile-image {
+  border-color: #38bdf8;
+  transform: scale(1.05);
 }
 
-.animate-fade-in-delay-2 {
-  animation: fade-in 0.8s ease-out 0.4s both;
+.role-badge {
+  position: absolute; bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  padding: 0.35rem 1.2rem;
+  width: max-content;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(56,189,248,0.3);
 }
 
-.animate-fade-in-delay-3 {
-  animation: fade-in 0.8s ease-out 0.6s both;
+.social-icons { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1.5rem; }
+.social-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #38bdf8;
+  transition: all 0.3s ease;
+}
+.social-icon:hover {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  transform: translateY(-3px);
 }
 
-.animate-bounce {
-  animation: bounce 2s infinite;
+.contact-button { transition: all 0.3s ease; border-radius: 10px; }
+.contact-button:hover { background: linear-gradient(135deg, #38bdf8, #818cf8); color: white; }
+.contact-button:hover span { color: white; }
+.contact-button:hover i { color: white; transform: scale(1.1); }
+
+.section-title { position: relative; display: inline-block; margin-bottom: 3rem; }
+.section-title:after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px; height: 4px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  border-radius: 2px;
 }
 
-@keyframes bounce {
-
-  0%,
-  20%,
-  53%,
-  80%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  40%,
-  43% {
-    transform: translate3d(0, -15px, 0);
-  }
-
-  70% {
-    transform: translate3d(0, -7px, 0);
-  }
-
-  90% {
-    transform: translate3d(0, -2px, 0);
-  }
-}
-
-/* Ensure long emails and Facebook URLs wrap properly */
-.break-all {
-  word-break: break-all;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
