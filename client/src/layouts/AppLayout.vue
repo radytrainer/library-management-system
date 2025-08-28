@@ -102,16 +102,6 @@
 
           <!-- Right Side: Desktop Search, Mobile Controls, Notifications, Profile -->
           <div class="flex items-center space-x-3">
-            <!-- Search (Desktop and Tablet Only) -->
-            <div class="hidden sm:block relative">
-              <input type="text" v-model="searchQuery" @input="performSearch"
-                :placeholder="language === 'en' ? 'Search books...' : 'ស្វែងរកសៀវភៅ...'"
-                class="w-48 lg:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 text-sm"
-                :class="{ 'font-khmer': language === 'kh' }" aria-label="Search books" />
-              <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-                search
-              </span>
-            </div>
 
             <!-- Language Switch -->
             <div class="relative">
@@ -442,10 +432,11 @@ const pageTitle = computed(() => {
     dashboard: { en: "Library Dashboard", kh: "ផ្ទាំងគ្រប់គ្រងបណ្ចាល័យ" },
     borrows: { en: "Borrow Management", kh: "គ្រប់គ្រងការខ្ចីសៀវភៅ" },
     books: { en: "Book Management", kh: "គ្រប់គ្រងសៀវភៅ" },
-    users: { en: "User Management", kh: "គ្រប់គ្រងអ្នកប្រើ" },
+    users: { en: "User Management", kh: "គ្រប់គ្រងអ្នកប្រើប្រាស់" },
     authors: { en: "Author Management", kh: "គ្រប់គ្រងអ្នកនិពន្ធ" },
-    categories: { en: "Category Management", kh: "គ្រប់គ្រងប្រភេទសៀវភៅ" },
-    Language: { en: "Language", kh: "ភាសា" },
+    categories: { en: "Category Management", kh: "គ្រប់គ្រងប្រភេទនៃសៀវភៅ" },
+    language: { en: "Language Management", kh: "គ្រប់គ្រងភាសា" },
+    summary: { en: "Summary Management", kh: "គ្រប់គ្រងការសង្ខេប" },
     history: { en: "History", kh: "ប្រវត្តិការខ្ចី" },
     profile: { en: "Profile", kh: "ប្រវត្តិរូប" },
   };
