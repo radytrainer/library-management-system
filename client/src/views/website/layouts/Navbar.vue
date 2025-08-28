@@ -22,6 +22,7 @@ const userProfileImage = computed(() => userStore.profileImage || '/default-prof
 const userRole = computed(() => userStore.user?.role || '');
 const isAdmin = computed(() => userRole.value === 'admin');
 const canAccessSystem = computed(() => ['admin', 'librarian'].includes(userRole.value));
+const canAccessWebsite = computed(() => ['user', 'librarian'].includes(userRole.value));
 
 // Initialize user state on mount
 onMounted(async () => {
@@ -156,6 +157,9 @@ const logout = async () => {
           <router-link to="/web-book" class="nav-link">
             Books
           </router-link>
+          <router-link v-if="canAccessWebsite" to="/web-summary" class="nav-link" @click="closeMobileMenu">
+            Summary
+          </router-link>
           <router-link v-if="canAccessSystem" to="/dashboard" class="nav-link">
             System
           </router-link>
@@ -171,9 +175,6 @@ const logout = async () => {
               <div class="flex flex-col text-left">
                 <span class="text-sm lg:text-base font-medium text-gray-700">
                   {{ username }}
-                </span>
-                <span v-if="isAdmin" class="text-xs text-gray-500">
-                  Admin
                 </span>
               </div>
             </button>
@@ -232,6 +233,9 @@ const logout = async () => {
         <router-link to="/web-book" class="mobile-nav-link" @click="closeMobileMenu">
           Books
         </router-link>
+        <router-link v-if="canAccessWebsite" to="/web-summary" class="mobile-nav-link" @click="closeMobileMenu">
+          Summary
+        </router-link>
         <router-link v-if="canAccessSystem" to="/dashboard" class="mobile-nav-link" @click="closeMobileMenu">
           System
         </router-link>
@@ -245,9 +249,6 @@ const logout = async () => {
             <span class="text-base font-semibold text-gray-800">
               {{ username }}
             </span>
-            <span v-if="isAdmin" class="text-sm text-gray-500">
-              Admin
-            </span>
           </div>
         </div>
         <div class="space-y-2">
@@ -255,7 +256,7 @@ const logout = async () => {
             {{ userEmail }}
           </div>
           <hr class="border-gray-200">
-          <router-link to="/profile" class="mobile-nav-link" @click="closeMobileMenu">
+          <router-link to="/profile-web" class="mobile-nav-link" @click="closeMobileMenu">
             Profile Detail
           </router-link>
           <button @click="logout" class="mobile-nav-link text-red-600 hover:text-red-700 hover:bg-red-50">

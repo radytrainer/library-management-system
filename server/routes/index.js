@@ -12,6 +12,7 @@ const authorController = require('../controllers/authorController');
 const borrowController = require('../controllers/borrowController');
 const languageBook = require('../controllers/langaugeBook');
 const donationController = require('../controllers/donationController');
+const SummaryController = require('../controllers/SummaryController');
 
 // Upload base folder
 const uploadDir = path.join(__dirname, '../Uploads');
@@ -54,6 +55,7 @@ const resources = [
   apiResource('/categories', categoryController),
   apiResource('/language', languageBook),
   apiResource('/authors', authorController),
+  apiResource('/summaries', SummaryController),
   apiResource('/donations', donationController, {
     store: [upload.single('cover_image')],
     update: [upload.single('cover_image')],

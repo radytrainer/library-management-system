@@ -112,7 +112,7 @@
                 search
               </span>
             </div>
-            
+
             <!-- Language Switch -->
             <div class="relative">
               <button @click="isOpen = !isOpen"
@@ -129,19 +129,19 @@
               <div v-if="isOpen"
                 class="language-menu absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 transition-opacity duration-200"
                 role="menu" aria-orientation="vertical" tabindex="-1">
-                <a href="#" @click.prevent="selectLanguage('en')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                  role="menuitem" tabindex="0">
+                <a href="#" @click.prevent="selectLanguage('en')"
+                  class="flex items-center p-2 hover:bg-gray-100 text-sm" role="menuitem" tabindex="0">
                   <img src="https://flagcdn.com/w40/us.png" class="w-5 h-4 mr-2" alt="US Flag" />
                   English
                 </a>
-                <a href="#" @click.prevent="selectLanguage('kh')" class="flex items-center p-2 hover:bg-gray-100 text-sm"
-                  role="menuitem" tabindex="0">
+                <a href="#" @click.prevent="selectLanguage('kh')"
+                  class="flex items-center p-2 hover:bg-gray-100 text-sm" role="menuitem" tabindex="0">
                   <img src="https://flagcdn.com/w40/kh.png" class="w-5 h-4 mr-2" alt="Cambodia Flag" />
                   ភាសាខ្មែរ
                 </a>
               </div>
             </div>
-            
+
             <!-- Notifications and Profile -->
             <div class="flex items-center space-x-2">
               <!-- Notifications -->
@@ -208,7 +208,7 @@
                         </div>
                         <div class="flex items-center space-x-2 mt-1">
                           <span class="text-xs/3 text-red-600">Due: {{ new Date(borrow.dueDate).toLocaleDateString()
-                            }}</span>
+                          }}</span>
                           <span v-if="new Date(borrow.dueDate) <= new Date()" class="text-xs/3 text-red-600">
                             (Overdue)
                           </span>
@@ -230,20 +230,20 @@
                     {{ language === "en" ? "Clear All" : "លុបទាំងអស់" }}
                   </button>
                   <p v-else-if="!userStore.loading && !userStore.error"
-                    class="mt-4 text-sm text-gray-600 text-center font-medium" :class="{ 'font-khmer': language === 'kh' }">
+                    class="mt-4 text-sm text-gray-600 text-center font-medium"
+                    :class="{ 'font-khmer': language === 'kh' }">
                     {{ language === "en" ? "No new notifications" : "គ្មានការជូនដំណឹងថ្មី" }}
                   </p>
                 </div>
               </div>
-              
+
               <!-- Profile -->
               <div class="relative">
                 <div
                   class="profile-button h-10 w-10 rounded-full cursor-pointer border border-gray-200 hover:border-indigo-400 flex items-center justify-center"
                   @click="toggleProfileDropdown" role="button" aria-label="Toggle profile dropdown">
                   <img v-if="hasValidProfileImage" :src="profileImageUrl" alt="Profile"
-                    class="h-full w-full rounded-full object-cover" @error="handleImageError" 
-                    :key="profileImageKey" />
+                    class="h-full w-full rounded-full object-cover" @error="handleImageError" :key="profileImageKey" />
                   <span v-else
                     class="text-lg font-semibold text-white bg-indigo-500 rounded-full h-full w-full flex items-center justify-center"
                     :class="{ 'font-khmer': language === 'kh' }">
@@ -258,8 +258,9 @@
                       {{ userStore.userProfile?.user?.username || userStore.user?.username || "Unknown" }}
                     </p>
                   </div>
-                  <router-link to="/profile" class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                    role="menuitem" @click="showProfileDropdown = false">
+                  <router-link to="/profile"
+                    class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded" role="menuitem"
+                    @click="showProfileDropdown = false">
                     <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                     {{ language === "en" ? "View Profile" : "មើលប្រវត្តិរូប" }}
                   </router-link>
@@ -275,7 +276,7 @@
           </div>
         </div>
       </header>
-      
+
       <!-- Page Content -->
       <main class="flex-1 overflow-auto md:p-6 bg-gray-100" :class="{ 'pb-24': isTablet }">
         <RouterView v-if="!isLoading" />
@@ -287,33 +288,24 @@
       </main>
 
       <!-- Bottom Navigation for Tablet -->
-      <div v-if="isTablet" class="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#065084] to-[#3D74B6] text-gray-100 shadow-lg z-40 md:flex lg:hidden flex justify-around">
+      <div v-if="isTablet"
+        class="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#065084] to-[#3D74B6] text-gray-100 shadow-lg z-40 md:flex lg:hidden flex justify-around">
         <nav class="flex justify-around w-full">
-          <RouterLink 
-            v-for="item in filteredNav" 
-            :key="item.path" 
-            :to="item.path" 
-            :class="[
-              'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
-              'hover:bg-custom-hover-page',
-              $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
-            ]"
-            @click="closeMobileNavDropdown"
-          >
+          <RouterLink v-for="item in filteredNav" :key="item.path" :to="item.path" :class="[
+            'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
+            'hover:bg-custom-hover-page',
+            $route.path === item.path ? 'bg-custom-hover-page shadow-sm' : '',
+          ]" @click="closeMobileNavDropdown">
             <span class="material-icons text-xl mb-1">{{ item.icon }}</span>
             <span class="text-xs text-center font-khmer" v-if="language === 'kh'">{{ item.label.kh }}</span>
             <span class="text-xs text-center" v-else>{{ item.label.en }}</span>
           </RouterLink>
-          
-          <RouterLink 
-            to="/website" 
-            :class="[
-              'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
-              'hover:bg-custom-hover-page',
-              $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
-            ]"
-            @click="closeMobileNavDropdown"
-          >
+
+          <RouterLink to="/website" :class="[
+            'flex flex-col items-center p-3 min-w-[80px] transition-colors duration-200 flex-shrink-0',
+            'hover:bg-custom-hover-page',
+            $route.path === '/website' ? 'bg-custom-hover-page shadow-sm' : '',
+          ]" @click="closeMobileNavDropdown">
             <span class="material-icons text-xl mb-1">public</span>
             <span class="text-xs text-center" v-if="language === 'kh'">គេហទំព័រ</span>
             <span class="text-xs text-center" v-else>Website</span>
@@ -390,15 +382,15 @@ const navItems = [
     roles: ["admin", "librarian"],
   },
   {
-    path: "/users",
-    icon: "people",
-    label: { en: "Users", kh: "អ្នកប្រើប្រាស់" },
-    roles: ["admin", "librarian"],
-  },
-  {
     path: "/history",
     icon: "history",
     label: { en: "History", kh: "ប្រវត្តិ" },
+    roles: ["admin", "librarian"],
+  },
+  {
+    path: "/users",
+    icon: "people",
+    label: { en: "Users", kh: "អ្នកប្រើប្រាស់" },
     roles: ["admin", "librarian"],
   },
   {
@@ -407,6 +399,12 @@ const navItems = [
     label: { en: "Account", kh: "ប្រវត្តិរូប" },
     roles: ["admin", "librarian", "user"],
   },
+  {
+    path: "/summary",
+    icon: "summarize",
+    label: { en: "Summary", kh: "សង្ខេប" },
+    roles: ["admin", "librarian"],
+  }
 ];
 
 // Filter nav based on user role
@@ -460,10 +458,10 @@ const pageTitle = computed(() => {
 
 // Watch for changes in userProfile to update navbar
 watch(() => userStore.userProfile, (newProfile, oldProfile) => {
-  if (newProfile?.user && (!oldProfile || 
-      newProfile.user.profile_image !== oldProfile.user?.profile_image ||
-      newProfile.user.username !== oldProfile.user?.username ||
-      newProfile.user.email !== oldProfile.user?.email)) {
+  if (newProfile?.user && (!oldProfile ||
+    newProfile.user.profile_image !== oldProfile.user?.profile_image ||
+    newProfile.user.username !== oldProfile.user?.username ||
+    newProfile.user.email !== oldProfile.user?.email)) {
     updateProfileDisplay();
   }
 }, { deep: true });
@@ -624,7 +622,7 @@ function goToBorrowDetails(borrowId) {
 function checkTabletDevice() {
   const width = window.innerWidth;
   isTablet.value = width >= 768 && width <= 1024;
-  
+
   // Auto-close sidebar on tablet
   if (isTablet.value) {
     isSidebarOpen.value = false;
@@ -650,7 +648,7 @@ onMounted(() => {
 
   const handleResize = () => {
     checkTabletDevice();
-    
+
     if (window.innerWidth < 768) {
       isSidebarOpen.value = false;
     } else if (window.innerWidth < 1024) {
@@ -659,7 +657,7 @@ onMounted(() => {
       isSidebarOpen.value = true;
     }
   };
-  
+
   window.addEventListener("resize", handleResize);
   handleResize();
   onUnmounted(() => window.removeEventListener("resize", handleResize));
