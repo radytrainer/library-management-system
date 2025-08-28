@@ -3,15 +3,12 @@
     <!-- Hero Section -->
     <section class="relative text-white py-10">
       <!-- Background Image -->
-      <div
-        class="absolute inset-0 bg-cover bg-center"
-        style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')"
-      ></div>
+      <div class="absolute inset-0 bg-cover bg-center"
+        style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')">
+      </div>
 
       <!-- Sky Blue Half Overlay -->
-      <div
-        class="absolute inset-0 bg-gradient-to-r from-sky-400/100 via-sky-800/40 to-transparent"
-      ></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-sky-400/100 via-sky-800/40 to-transparent"></div>
 
       <!-- Additional Dark Overlay for Better Text Readability -->
       <div class="absolute inset-0 bg-black/10"></div>
@@ -26,42 +23,33 @@
 
       <!-- Content -->
       <div class="relative container mx-auto py-10 md:py-20 text-center mb-20">
-        <h1
-          class="text-4xl md:text-6xl font-extrabold mb-6 animate-fade-in text-white drop-shadow-lg"
-        >
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-6 animate-fade-in text-white drop-shadow-lg">
           Discover More About Our Library
         </h1>
-        <p
-          class="text-xl md:text-2xl mb-10 text-white/90 animate-fade-in-delay drop-shadow-md"
-        >
+        <p class="text-xl md:text-2xl mb-10 text-white/90 animate-fade-in-delay drop-shadow-md">
           A digital library inspiring readers for over 20 years
         </p>
         <!-- Stats -->
         <div class="flex flex-wrap justify-center gap-4 mb-8 animate-fade-in-delay-2">
           <div
-            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
-          >
+            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20">
             <BookMarkedIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">{{ bookCount }}+ Books</span>
           </div>
           <div
-            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
-          >
+            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20">
             <UsersIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">{{ userCount }}+ Members</span>
           </div>
           <div
-            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20"
-          >
+            class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20">
             <HeartIcon class="w-5 h-5" aria-hidden="true" />
             <span class="text-lg font-medium">Community Focused</span>
           </div>
         </div>
         <!-- CTA Button -->
-        <router-link
-          to="/web-book"
-          class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all animate-fade-in-delay-3 inline-block"
-        >
+        <router-link to="/web-book"
+          class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all animate-fade-in-delay-3 inline-block">
           Explore Our Library
         </router-link>
       </div>
@@ -77,9 +65,7 @@
             support lifelong education in a welcoming community.
           </p>
           <div class="grid md:grid-cols-3 gap-8">
-            <div
-              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400"
-            >
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400">
               <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Knowledge</h3>
               <p class="text-gray-600">
@@ -88,8 +74,8 @@
               </p>
             </div>
             <div
-              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400"
-            >
+
+              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400">
               <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Community</h3>
               <p class="text-gray-600">
@@ -97,8 +83,7 @@
               </p>
             </div>
             <div
-              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400"
-            >
+              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400">
               <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Learning</h3>
               <p class="text-gray-600">
@@ -116,11 +101,8 @@
       <section id="services" class="mb-16">
         <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Our Services</h2>
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            v-for="service in services"
-            :key="service.title"
-            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent"
-          >
+          <div v-for="service in services" :key="service.title"
+            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
             <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" aria-hidden="true" />
             <h3 class="text-xl font-semibold mb-2">{{ service.title }}</h3>
             <p class="text-gray-600">{{ service.description }}</p>
@@ -132,25 +114,53 @@
       <div class="border-t border-gray-200 my-16"></div>
 
       <!-- Staff Section -->
-      <section class="mb-16">
-        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Meet Our Team</h2>
-        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div
-            v-for="member in staff"
-            :key="member.name"
-            class="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent"
-          >
-            <img
-              :src="member.image"
-              :alt="member.name"
-              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-sky-100"
-            />
-            <h3 class="text-xl font-semibold mb-1">{{ member.name }}</h3>
-            <p class="text-sky-600 font-medium mb-3">{{ member.role }}</p>
-            <p class="text-sm text-gray-600">{{ member.bio }}</p>
+      <section class="mb-12">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Meet Our Team</h2>
+        <div class="w-20 h-1 bg-gradient-to-r from-sky-500 to-indigo-500 mx-auto mb-8 rounded"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div v-for="member in staff" :key="member.name"
+            class="relative bg-white rounded-lg shadow-lg p-4 text-center hover:shadow-xl transition-shadow duration-300 hover:border-sky-200 border border-transparent cursor-pointer">
+            <img :src="member.image" :alt="member.name"
+              class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-sky-100" />
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ member.name }}</h3>
+            <p class="text-sky-600 font-medium text-sm mb-2">{{ member.role }}</p>
+            <p class="text-xs text-gray-600">{{ member.bio }}</p>
+            <!-- Contact information on hover -->
+            <div
+              class="absolute inset-0 bg-sky-600 bg-opacity-95 rounded-lg p-4 flex flex-col justify-center items-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+              <h3 class="text-lg font-semibold text-white mb-2">{{ member.name }}</h3>
+              <div class="flex items-center mb-2 text-sm text-white">
+                <MailIcon class="w-5 h-5 mr-2" />
+                <span class="break-all">{{ member.contact.email }}</span>
+              </div>
+              <div class="flex items-center mb-2 text-sm text-white">
+                <PhoneIcon class="w-5 h-5 mr-2" />
+                <span>{{ member.contact.phone }}</span>
+              </div>
+              <div v-if="member.contact.facebook" class="flex items-center mb-2 text-sm text-white">
+                <MessageSquareIcon class="w-5 h-5 mr-2" />
+                <span class="break-all">{{ member.contact.facebook }}</span>
+              </div>
+              <div class="flex justify-center gap-3 mt-2">
+                <a :href="'mailto:' + member.contact.email"
+
+                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
+                  <MailIcon class="w-5 h-5" />
+                </a>
+                <a :href="'tel:' + member.contact.phone"
+                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
+                  <PhoneIcon class="w-5 h-5" />
+                </a>
+                <a v-if="member.contact.facebook" :href="member.contact.facebook"
+                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors">
+                  <MessageSquareIcon class="w-5 h-5" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
       <!-- Divider -->
       <div class="border-t border-gray-200 my-16"></div>
 
@@ -198,11 +208,7 @@
               Hours of Operation
             </h3>
             <div class="space-y-3">
-              <div
-                v-for="schedule in hours"
-                :key="schedule.day"
-                class="flex justify-between items-center"
-              >
+              <div v-for="schedule in hours" :key="schedule.day" class="flex justify-between items-center">
                 <span class="font-medium">{{ schedule.day }}</span>
                 <span class="text-gray-600">{{ schedule.hours }}</span>
               </div>
@@ -223,12 +229,14 @@ import { ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { getBooks } from "@/services/Api/book";
 
+
 import {
   BookOpen as BookOpenIcon,
   Clock as ClockIcon,
   MapPin as MapPinIcon,
   Phone as PhoneIcon,
   Mail as MailIcon,
+  MessageSquare as MessageSquareIcon, // Replaced Telegram with MessageSquare
   Users as UsersIcon,
   Calendar as CalendarIcon,
   Wifi as WifiIcon,
@@ -277,28 +285,59 @@ const services = ref([
 
 const staff = ref([
   {
-    name: "Sor Chhin",
-    role: "Head Librarian",
-    bio: "Sor has been with the library for over 15 years and holds a Master's in Library Science.",
-    image: "https://i.pinimg.com/736x/ce/48/c4/ce48c4929e4dc5fa635673a154ad365f.jpg",
+    name: 'Sor Chhin',
+    role: 'QA Tester',
+    bio: 'Sor is a person who tests the quality of our library services.',
+    image: '/public/member/sor.jpg',
+    contact: {
+      email: 'sor.chhin@student.passerellesnumeriques.org',
+      phone: '086 266 156',
+      facebook: 'https://facebook.com/sorchhin'
+    },
   },
   {
-    name: "Bopha Khat",
-    role: "Digital Resources Manager",
-    bio: "Bopha specializes in digital collections and helps patrons navigate online resources.",
-    image: "https://i.pinimg.com/1200x/4f/b8/41/4fb841055ded6e714bdeeb03557170c5.jpg",
+    name: 'Bopha Khat',
+    role: 'Product Owner',
+    bio: 'Bopha is responsible for defining the vision of our library services and ensuring they meet user needs.',
+    image: '/public/member/bopha.jpg',
+    contact: {
+      email: 'bopha.khat@student.passerellesnumeriques.org',
+      phone: '071 965 1462',
+      facebook: 'https://facebook.com/bophakhat'
+    },
   },
   {
-    name: "Horth Heng",
-    role: "Children's Librarian",
-    bio: "Horth creates engaging programs for young readers and manages our children's collection.",
-    image: "https://i.pinimg.com/736x/15/91/d0/1591d0197e06d97a43a66c172171c2d7.jpg",
+    name: 'Horth Heng',
+    role: 'Scrum Master',
+    bio: 'Horth facilitates agile ceremonies and helps teams deliver high-quality library services.',
+    image: '/public/member/horth.jpg',
+    contact: {
+      email: 'horth.heng@student.passerellesnumeriques.org',
+      phone: '011 968 240',
+      facebook: 'https://facebook.com/horthheng'
+    },
   },
   {
-    name: "Sophean Pouk",
-    role: "Reference Librarian",
-    bio: "Sophean assists with research questions and provides reference services to our community.",
-    image: "https://i.pinimg.com/736x/4e/e3/5e/4ee35e12d182b4f68e0fa5a4f5343af9.jpg",
+    name: 'Sophean Phouk',
+    role: 'DevOps Developer',
+    bio: 'Sophean manages our library\'s infrastructure and deployment processes to ensure smooth operations.',
+    image: '/public/member/phean.jpg',
+    contact: {
+      email: 'sophean.phouk@student.passerellesnumeriques.org',
+      phone: '096 483 9280',
+      facebook: 'https://www.facebook.com/e3cossxuo6'
+    },
+  },
+  {
+    name: 'Linna Rin',
+    role: 'Code Quality',
+    bio: 'Linna ensures that our codebase remains clean and maintainable, and she advocates for best practices in software development.',
+    image: '/public/member/linna.jpg',
+    contact: {
+      email: 'linna.rin@student.passerellesnumeriques.org',
+      phone: '097 389 3597',
+      facebook: 'https://facebook.com/linnarin'
+    },
   },
 ]);
 
@@ -326,6 +365,7 @@ const fetchAndStoreCounts = async () => {
       userCount.value = parseInt(storedUserCount, 10);
       return;
     }
+
 
     // Fetch book count from API
     books.value = await getBooks();
@@ -365,6 +405,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -392,6 +433,7 @@ onMounted(() => {
 }
 
 @keyframes bounce {
+
   0%,
   20%,
   53%,
@@ -399,15 +441,23 @@ onMounted(() => {
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   40%,
   43% {
     transform: translate3d(0, -15px, 0);
   }
+
   70% {
     transform: translate3d(0, -7px, 0);
   }
+
   90% {
     transform: translate3d(0, -2px, 0);
   }
+}
+
+/* Ensure long emails and Facebook URLs wrap properly */
+.break-all {
+  word-break: break-all;
 }
 </style>
