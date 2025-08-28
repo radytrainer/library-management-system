@@ -1,6 +1,4 @@
 <template>
-  <!-- Hero Section: Updated to white theme -->
-  <!-- Converting from dark theme to clean white background with dark text -->
  <section class="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-12 md:py-32 relative overflow-hidden">
     <!-- Updated animated background elements for light theme -->
     <div class="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-indigo-50/30"></div>
@@ -11,7 +9,7 @@
       <div class="md:w-1/3 flex justify-center">
         <div class="relative group">
           <div class="absolute -inset-4 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
-          <img :src="books[0]?.coverUrl || 'https://i.pinimg.com/736x/5a/f4/0e/5af40ef711e4f422c9e1bfc0a7f4cbe5.jpg'"
+          <img src='../../../../public/Js.jpg'
               alt="Featured Book Cover"
               class="relative rounded-3xl shadow-2xl max-w-[280px] md:max-w-[340px] h-auto border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl" />
         </div>
@@ -31,25 +29,11 @@
           Dive into captivating stories, expand your knowledge, and find new adventures. Whether you're seeking fiction, non-fiction, or academic resources—our catalog offers something extraordinary for everyone.
         </p>
         <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4 pt-8">
-          <!-- Updated buttons for white theme -->
-          <button class="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:from-blue-500 hover:to-indigo-500">
-            <span class="flex items-center gap-2">
-              Start Exploring
-              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-              </svg>
-            </span>
-          </button>
-          <button class="border-2 border-slate-300 text-slate-700 px-8 py-4 rounded-2xl font-semibold text-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 transform hover:scale-105">
-            How to Borrow
-          </button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Author Section: Updated to white theme -->
-  <!-- Converting to white background with dark text -->
   <section class="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-12 md:py-24 relative">
     <div class="absolute inset-0 bg-gradient-to-br from-indigo-50/20 via-transparent to-blue-50/20"></div>
     
@@ -194,7 +178,6 @@
     </div>
   </section>
 
-    <!-- All Books by Author Modal -->
   <Teleport to="body">
     <div v-if="showAll" 
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -231,8 +214,6 @@
     </div>
   </Teleport>
 
-  <!-- Featured Books Section: Updated to white theme -->
-  <!-- Converting to white background -->
   <section class="bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 sm:py-20 relative">
     <div class="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-indigo-50/20"></div>
     

@@ -363,7 +363,6 @@ const fetchAndStoreCounts = async () => {
     bookCount.value = Array.isArray(books.value) ? books.value.length : 200;
     localStorage.setItem("bookCount", bookCount.value);
 
-    // Fetch user count
     const userResponse = await userStore.fetchUsers();
     userCount.value =
       userResponse.success && Array.isArray(userStore.users)
@@ -380,7 +379,9 @@ const fetchAndStoreCounts = async () => {
   }
 };
 
-onMounted(fetchAndStoreCounts);
+onMounted(() => {
+  fetchAndStoreCounts();
+});
 </script>
 
 
