@@ -14,7 +14,7 @@
                 </div>
                 <div class="flex-1">
                     <h4 class="font-semibold text-gray-900">{{ member.name }}</h4>
-                    <p class="text-sm text-gray-500">{{ member.books }} books this month</p>
+                    <p class="text-sm text-gray-500">{{ member.books }} books</p>
                 </div>
                 <div class="text-right">
                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
