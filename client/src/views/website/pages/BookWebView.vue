@@ -194,7 +194,7 @@
           </button>
         </div>
         <div class="no-scrollbar overflow-y-auto max-h-[70vh] pr-4">
-          <div v-if="filteredAuthorBooks.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-10">
+          <div v-if="filteredAuthorBooks.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-10">
             <div v-for="book in filteredAuthorBooks" :key="book.id"
                  class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-slate-200 hover:border-blue-300"
                  @click="openBookModal(book)">
@@ -251,8 +251,8 @@
     </div>
     </div>
       
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-8">
-        <div v-for="book in filteredBooks.slice(0, 4)" :key="book.id"
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
+        <div v-for="book in filteredBooks.slice(0, 5)" :key="book.id"
              class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-slate-200 hover:border-blue-300"
              @click="openBookModal(book)">
           <div class="space-y-4">
@@ -282,7 +282,7 @@
           </button>
         </div>
         <div class="overflow-y-auto max-h-[70vh] pr-4 no-scrollbar">
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-10">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-10">
             <div v-for="book in filteredBooks" :key="book.id"
                  class="group cursor-pointer bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-slate-200 hover:border-blue-300"
                  @click="openBookModal(book)">
