@@ -85,7 +85,7 @@ export const useUserStore = defineStore('user', {
 
     setToken(token) {
       this.token = token;
-      sessionStorage.setItem('token', token);
+      localStorage.setItem('token', token);
     },
 
     resetAuth() {

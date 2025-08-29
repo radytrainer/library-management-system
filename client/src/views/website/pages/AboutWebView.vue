@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <section class="relative text-white py-10">
+    <section class="relative text-white py-10" data-aos="fade-up" data-aos-duration="1000">
       <!-- Background Image -->
       <div class="absolute inset-0 bg-cover bg-center"
         style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')">
@@ -14,23 +14,23 @@
       <div class="absolute inset-0 bg-black/10"></div>
 
       <!-- Decorative Floating Icons -->
-      <div class="absolute top-10 left-10 animate-bounce">
+      <div class="absolute top-10 left-10 animate-bounce" data-aos="zoom-in" data-aos-delay="200">
         <BookOpenIcon class="w-8 h-8 text-white/80" aria-hidden="true" />
       </div>
-      <div class="absolute bottom-12 right-12 animate-bounce" style="animation-delay: 1s">
+      <div class="absolute bottom-12 right-12 animate-bounce" style="animation-delay: 1s" data-aos="zoom-in" data-aos-delay="400">
         <HeartIcon class="w-8 h-8 text-white/80" aria-hidden="true" />
       </div>
 
       <!-- Content -->
       <div class="relative container mx-auto py-10 md:py-20 text-center mb-20">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-6 animate-fade-in text-white drop-shadow-lg">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-6 animate-fade-in text-white drop-shadow-lg" data-aos="fade-up" data-aos-delay="100">
           Discover More About Our Library
         </h1>
-        <p class="text-xl md:text-2xl mb-10 text-white/90 animate-fade-in-delay drop-shadow-md">
+        <p class="text-xl md:text-2xl mb-10 text-white/90 animate-fade-in-delay drop-shadow-md" data-aos="fade-up" data-aos-delay="200">
           A digital library inspiring readers for over 20 years
         </p>
         <!-- Stats -->
-        <div class="flex flex-wrap justify-center gap-4 mb-8 animate-fade-in-delay-2">
+        <div class="flex flex-wrap justify-center gap-4 mb-8 animate-fade-in-delay-2" data-aos="fade-up" data-aos-delay="300">
           <div
             class="bg-white/25 backdrop-blur-sm rounded-full px-5 py-2 flex items-center gap-2 shadow-lg hover:scale-105 transition border border-white/20">
             <BookMarkedIcon class="w-5 h-5" aria-hidden="true" />
@@ -49,23 +49,23 @@
         </div>
         <!-- CTA Button -->
         <router-link to="/web-book"
-          class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all animate-fade-in-delay-3 inline-block">
+          class="bg-white text-sky-700 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-sky-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all animate-fade-in-delay-3 inline-block" data-aos="fade-up" data-aos-delay="400">
           Explore Our Library
         </router-link>
       </div>
     </section>
     <div class="container mx-auto px-4 py-16">
       <!-- Mission Section -->
-      <section class="mb-16">
+      <section class="mb-16" data-aos="fade-up" data-aos-duration="1000">
         <div class="max-w-4xl mx-auto text-center">
-          <h2 class="text-3xl font-bold mb-8 text-gray-800">Our Mission</h2>
-          <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+          <h2 class="text-3xl font-bold mb-8 text-gray-800" data-aos="fade-up" data-aos-delay="100">Our Mission</h2>
+          <p class="text-lg text-gray-600 mb-8 leading-relaxed" data-aos="fade-up" data-aos-delay="200">
             Our mission is to make reading and learning easy and enjoyable for everyone.
             We provide access to books, resources, and programs that inspire curiosity and
             support lifelong education in a welcoming community.
           </p>
           <div class="grid md:grid-cols-3 gap-8">
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-sky-400" data-aos="fade-up" data-aos-delay="300">
               <BookOpenIcon class="w-12 h-12 text-sky-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Knowledge</h3>
               <p class="text-gray-600">
@@ -74,7 +74,7 @@
               </p>
             </div>
             <div
-              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400">
+              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-400" data-aos="fade-up" data-aos-delay="400">
               <UsersIcon class="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Community</h3>
               <p class="text-gray-600">
@@ -82,7 +82,7 @@
               </p>
             </div>
             <div
-              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400">
+              class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-t-4 border-green-400" data-aos="fade-up" data-aos-delay="500">
               <GraduationCapIcon class="w-12 h-12 text-green-600 mx-auto mb-4" aria-hidden="true" />
               <h3 class="text-xl font-semibold mb-2">Learning</h3>
               <p class="text-gray-600">
@@ -93,117 +93,44 @@
         </div>
       </section>
 
-      <!-- Divider -->
-      <!-- <div class="border-t border-gray-200 my-16"></div> -->
-
-      <!-- Services Section -->
-      <section id="services" class="mb-16">
-        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Our Services</h2>
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="service in services" :key="service.title"
-            class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow hover:border-sky-200 border border-transparent">
-            <component :is="service.icon" class="w-10 h-10 text-sky-600 mb-4" aria-hidden="true" />
-            <h3 class="text-xl font-semibold mb-2">{{ service.title }}</h3>
-            <p class="text-gray-600">{{ service.description }}</p>
-          </div>
-        </div>
-      </section>
       <!-- Contact & Hours Section -->
-  <div class="container mx-auto px-4 py-12">
-    <section class="mb-20">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold text-gray-800 mb-4 section-title">Meet Our Team</h2>
-        <p class="text-gray-600 max-w-2xl mx-auto">
-          Our dedicated team of professionals is committed to delivering exceptional results. Get to know the talented individuals behind our success.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-        <div v-for="(member, index) in staff" :key="member.name"
-             class="team-card bg-white rounded-xl p-6 text-center shadow-lg">
-          
-          <div class="profile-container">
-            <img :src="member.image" :alt="member.name"
-                 class="profile-image rounded-full mx-auto object-cover" />
-            <div class="role-badge ">{{ member.role }}</div>
-          </div>
-
-          <h3 class="text-xl font-bold text-gray-800 mb-2">{{ member.name }}</h3>
-          <p class="text-sm text-gray-600 mb-6">{{ member.bio }}</p>
-
-          <!-- Social media links -->
-          <div class="social-icons">
-            <a :href="'mailto:' + member.contact.email" class="social-icon">
-              <i class="fas fa-envelope text-sm"></i>
-            </a>
-            <a :href="'tel:' + member.contact.phone" class="social-icon">
-              <i class="fas fa-phone-alt text-sm"></i>
-            </a>
-            <a v-if="member.contact.facebook" :href="member.contact.facebook" target="_blank" class="social-icon">
-              <i class="fab fa-facebook-f text-sm"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
-    <div class="container mx-auto px-4 py-12">
-      <!-- Contact & Hours Section -->
-      <section class="">
-        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Contact Us</h2>
-        <div class="grid md:grid-cols-2 gap-12">
-          <!-- Contact Information -->
-          <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
-            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-              <MapPinIcon class="w-5 h-5 text-sky-600" aria-hidden="true" />
-              Contact Information
-            </h3>
-            <div class="space-y-4">
-              <div class="flex items-start gap-3">
-                <MapPinIcon class="w-5 h-5 text-sky-500 mt-0.5" aria-hidden="true" />
-                <div>
-                  <p class="font-medium">Address</p>
-                  <p class="text-gray-600">
-                    St. 371 Phum Tropeang Chhuk (Borey Sorla),<br />
-                    Sangkat Tek Thla, Khan Sen Sok
-                  </p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <PhoneIcon class="w-5 h-5 text-sky-500" aria-hidden="true" />
-                <div>
-                  <p class="font-medium">Phone</p>
-                  <p class="text-gray-600">0973893597</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <MailIcon class="w-5 h-5 text-sky-500" aria-hidden="true" />
-                <div>
-                  <p class="font-medium">Email</p>
-                  <p class="text-gray-600">library@passerellesnumeriques.org</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Hours -->
-          <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-sky-400">
-            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-              <ClockIcon class="w-5 h-5 text-sky-600" aria-hidden="true" />
-              Hours of Operation
-            </h3>
-            <div class="space-y-3">
-              <div v-for="schedule in hours" :key="schedule.day" class="flex justify-between items-center">
-                <span class="font-medium">{{ schedule.day }}</span>
-                <span class="text-gray-600">{{ schedule.hours }}</span>
-              </div>
-            </div>
-            <div class="border-t border-gray-200 my-4"></div>
-            <p class="text-sm text-gray-600">
-              Closed on major holidays. Special hours may apply during holiday seasons.
+      <div class="container mx-auto px-4 py-12">
+        <section class="mb-20" data-aos="fade-up" data-aos-duration="1000">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4 section-title" data-aos="fade-up" data-aos-delay="100">Meet Our Team</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+              Our dedicated team of professionals is committed to delivering exceptional results. Get to know the talented individuals behind our success.
             </p>
           </div>
-        </div>
-      </section>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            <div v-for="(member, index) in staff" :key="member.name"
+                 class="team-card bg-white rounded-xl p-6 text-center shadow-lg" data-aos="fade-up" :data-aos-delay="100 + index * 100">
+              
+              <div class="profile-container">
+                <img :src="member.image" :alt="member.name"
+                     class="profile-image rounded-full mx-auto object-cover" />
+                <div class="role-badge">{{ member.role }}</div>
+              </div>
+
+              <h3 class="text-xl font-bold text-gray-800 mb-2">{{ member.name }}</h3>
+              <p class="text-sm text-gray-600 mb-6">{{ member.bio }}</p>
+
+              <!-- Social media links -->
+              <div class="social-icons">
+                <a :href="'mailto:' + member.contact.email" class="social-icon">
+                  <i class="fas fa-envelope text-sm"></i>
+                </a>
+                <a :href="member.contact.phone" class="social-icon">
+                  <i class="fas fa-phone-alt text-sm"></i>
+                </a>
+                <a v-if="member.contact.facebook" :href="member.contact.facebook" target="_blank" class="social-icon">
+                  <i class="fab fa-facebook-f text-sm"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -213,6 +140,8 @@
 import { ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { getBooks } from "@/services/Api/book";
+import AOS from 'aos'; // Import AOS library
+import 'aos/dist/aos.css'; // Import AOS styles
 
 import {
   BookOpen as BookOpenIcon,
@@ -224,7 +153,7 @@ import {
   Calendar as CalendarIcon,
   Wifi as WifiIcon,
   Coffee as CoffeeIcon,
-  Monitor as ComputerIcon, // ✅ fixed: use Monitor instead of Computer
+  Monitor as ComputerIcon,
   BookMarked as BookMarkedIcon,
   GraduationCap as GraduationCapIcon,
   Heart as HeartIcon,
@@ -273,11 +202,11 @@ const staff = ref([
     name: "Sor Chhin",
     role: "QA Tester",
     bio: "Sor tests the quality of our library services.",
-    image: "/member/sor.jpg", // ✅ fixed path
+    image: "/member/sor.jpg",
     contact: {
       email: "sor.chhin@student.passerellesnumeriques.org",
-      phone: "086266156",
-      facebook: "https://facebook.com/sorchhin",
+      phone: "https://t.me/SOR_CHHIN",
+      facebook: "https://www.facebook.com/chhin.sreysor.52/",
     },
   },
   {
@@ -287,8 +216,8 @@ const staff = ref([
     image: "/member/bopha.jpg",
     contact: {
       email: "bopha.khat@student.passerellesnumeriques.org",
-      phone: "0719651462",
-      facebook: "https://facebook.com/bophakhat",
+      phone: "https://t.me/woaiichii",
+      facebook: "https://www.facebook.com/share/1F7QojHMzD/",
     },
   },
   {
@@ -298,8 +227,8 @@ const staff = ref([
     image: "/member/horth.jpg",
     contact: {
       email: "horth.heng@student.passerellesnumeriques.org",
-      phone: "011968240",
-      facebook: "https://facebook.com/horthheng",
+      phone: "https://t.me/Horth_Heng",
+      facebook: "https://www.facebook.com/heng.sophak.54",
     },
   },
   {
@@ -309,7 +238,7 @@ const staff = ref([
     image: "/member/phean.jpg",
     contact: {
       email: "sophean.phouk@student.passerellesnumeriques.org",
-      phone: "0964839280",
+      phone: "https://t.me/youphean",
       facebook: "https://www.facebook.com/e3cossxuo6",
     },
   },
@@ -320,18 +249,17 @@ const staff = ref([
     image: "/member/linna.jpg",
     contact: {
       email: "linna.rin@student.passerellesnumeriques.org",
-      phone: "0973893597",
-      facebook: "https://facebook.com/linnarin",
+      phone: "https://t.me/linna1268",
+      facebook: "https://www.facebook.com/lin.qbee?mibextid=LQQJ4d",
     },
   },
 ]);
 
-
 // Library hours
 const hours = ref([
-  { day: "Monday - Thursday", hours: "7:00 AM - 5:00 PM" },
+  { day: "Monday - Thursday", hours: "8:00 AM - 5:00 PM" },
   { day: "Friday - Saturday", hours: "8:00 AM - 6:00 PM" },
-  { day: "Sunday", hours: "9:00 AM - 5:00 PM" },
+  { day: "Sunday", hours: "8:00 AM - 5:00 PM" },
 ]);
 
 // Check if cached data is fresh
@@ -381,9 +309,14 @@ const fetchAndStoreCounts = async () => {
 
 onMounted(() => {
   fetchAndStoreCounts();
+  AOS.init({
+    duration: 1000, // Duration of animations
+    easing: 'ease-in-out', // Easing function
+    once: true, // Animation happens only once
+    offset: 100, // Trigger animations earlier
+  });
 });
 </script>
-
 
 <style scoped>
 body {
