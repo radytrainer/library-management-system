@@ -322,6 +322,7 @@ async function deleteSelected() {
   }
 }
 
+// In the handlePrintUser function
 const handlePrintUser = async (userId) => {
   console.log('handlePrintUser called with userId:', userId);
   const user = userStore.users.find(u => u.id === userId);
@@ -333,6 +334,8 @@ const handlePrintUser = async (userId) => {
     if (printCardRef.value) {
       try {
         await printCardRef.value.generateCard();
+        // Remove from selected users after successful print
+        selectedUsers.value = selectedUsers.value.filter(id => id !== userId);
         selectedUserForPrint.value = null;
       } catch (error) {
         console.error('Error calling generateCard:', error);
@@ -383,6 +386,7 @@ const handlePrintUser = async (userId) => {
   }
 };
 
+// In the printSelected function
 const printSelected = async () => {
   if (selectedUsers.value.length === 0) {
     Swal.fire({
@@ -399,16 +403,22 @@ const printSelected = async () => {
     });
     return;
   }
-
-  const ids = [...selectedUsers.value];
-  for (const id of ids) {
+  
+  // Create a copy of selected users to iterate over
+  const idsToPrint = [...selectedUsers.value];
+  
+  for (const id of idsToPrint) {
     const user = userStore.users.find(u => u.id === id);
     if (!user) continue;
+    
     selectedUserForPrint.value = user;
     await nextTick();
+    
     if (printCardRef.value) {
       try {
         await printCardRef.value.generateCard();
+        // Remove this user from selected list after successful print
+        selectedUsers.value = selectedUsers.value.filter(selectedId => selectedId !== id);
       } catch (error) {
         console.error('Error generating card for user:', id, error);
         Swal.fire({

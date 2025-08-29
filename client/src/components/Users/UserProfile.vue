@@ -2,12 +2,11 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Edit3, Save, X, Upload, User, Mail, Phone, Calendar, Shield, Camera } from 'lucide-vue-next'
+import { ArrowLeft, Edit3, Save, X, Upload, User, Mail, Phone, Calendar, Shield, Camera, ZoomIn, X as Close, Briefcase } from 'lucide-vue-next'
 import Swal from 'sweetalert2'
 
 const userStore = useUserStore()
 const router = useRouter()
-
 const editForm = ref({
   username: '',
   email: '',
@@ -15,12 +14,12 @@ const editForm = ref({
   date_of_birth: '',
   password: '',
 })
-
 const previewImage = ref(null)
 const imageFile = ref(null)
 const editMode = ref(false)
 const isSubmitting = ref(false)
 const isLoading = ref(true)
+const showImageModal = ref(false)
 
 // Computed property for the first letter of the email
 const profileInitial = computed(() => userStore.userProfile?.user?.email?.charAt(0)?.toUpperCase() || '?')
@@ -31,18 +30,30 @@ const hasValidProfileImage = computed(() => {
   return image && (image.startsWith('http') || image.startsWith('data:image') || image.startsWith('blob:'))
 })
 
+// Computed property to format email with line break if longer than 37 characters
+const formattedEmail = computed(() => {
+  const email = userStore.userProfile?.user?.email || 'Not provided'
+  if (email.length > 37) {
+    return {
+      firstPart: email.substring(0, 37),
+      secondPart: email.substring(37)
+    }
+  }
+  return {
+    firstPart: email,
+    secondPart: null
+  }
+})
+
 watch(() => userStore.userProfile?.user?.profile_image, (newImage) => {
   const imageUrl = newImage ? `${newImage}?t=${new Date().getTime()}` : userStore.profileImage || null
   previewImage.value = imageUrl
-  console.log('Profile image updated in store at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Image:', imageUrl, 'profileImage:', userStore.profileImage)
 })
 
 onMounted(async () => {
-  console.log('Starting profile fetch at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   isLoading.value = true
   try {
     await userStore.fetchUserProfile()
-    console.log('Profile data fetched at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), 'Data:', userStore.userProfile, 'profileImage:', userStore.profileImage)
     if (userStore.userProfile && userStore.userProfile.user && Object.keys(userStore.userProfile.user).length > 0) {
       const userData = userStore.userProfile.user
       Object.assign(editForm.value, {
@@ -52,17 +63,13 @@ onMounted(async () => {
         date_of_birth: userData.date_of_birth || '',
       })
       previewImage.value = userStore.userProfile.user.profile_image ? `${userStore.userProfile.user.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
-      console.log('Edit form updated with:', editForm.value, 'Preview image:', previewImage.value)
     } else {
-      console.warn('No user data available in profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), userStore.userProfile)
       Swal.fire({ icon: 'error', title: 'Error', text: 'No user data found. Please try again.' })
     }
   } catch (err) {
-    console.error('Failed to load user profile at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
     Swal.fire({ icon: 'error', title: 'Error', text: 'Unable to load profile data. Please try again later.' })
   } finally {
     isLoading.value = false
-    console.log('Loading state set to:', isLoading.value)
   }
 })
 
@@ -72,7 +79,6 @@ onUnmounted(() => {
   }
   previewImage.value = null
   imageFile.value = null
-  console.log('Component unmounted, preview image revoked at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 })
 
 const handleImageChange = (e) => {
@@ -91,9 +97,7 @@ const handleImageChange = (e) => {
     }
     imageFile.value = file
     previewImage.value = URL.createObjectURL(file)
-    console.log('Image changed, file:', file.name, 'size:', file.size, 'type:', file.type, 'preview URL:', previewImage.value, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   } else {
-    console.log('No file selected at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
     imageFile.value = null
     previewImage.value = userStore.userProfile?.user?.profile_image ? `${userStore.userProfile.user.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
   }
@@ -119,13 +123,11 @@ const validateForm = () => {
       return false
     }
   }
-  console.log('Form validated successfully with:', editForm.value, 'Image file:', imageFile.value?.name, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   return true
 }
 
 const updateProfile = async () => {
   if (!validateForm()) return
-
   isSubmitting.value = true
   const formData = new FormData()
   formData.append('username', editForm.value.username)
@@ -137,48 +139,34 @@ const updateProfile = async () => {
   }
   if (imageFile.value) {
     formData.append('profile_image', imageFile.value)
-    console.log('Appending image to FormData:', imageFile.value.name, 'size:', imageFile.value.size, 'type:', imageFile.value.type, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
-  } else {
-    console.log('No image file to append at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
   }
-
   const userId = userStore.userProfile?.user?.id
   if (!userId) {
     Swal.fire({ icon: 'error', title: 'Error', text: 'User ID not found' })
     isSubmitting.value = false
     return
   }
-
   try {
     const result = await userStore.updateUser(userId, formData)
-    console.log('Update result:', result, 'Profile image from response:', result.profile_image, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
     if (result.success) {
       Swal.fire({
         toast: true, 
-        text: 'The book has been updated successfully.',
+        text: 'Profile updated successfully!',
         position: 'bottom-end',
         showConfirmButton: false,
         timer: 2000,
         customClass: {
           popup: 'rounded-lg shadow-md border border-green-200 bg-green-50 text-green-700 p-2 flex items-center',
-          title: 'text-sm font-medium mr-2',
-          content: 'text-xs'
         }
       })
-
-
       editMode.value = false
-      // Set previewImage from response or userProfile
       previewImage.value = result.profile_image ? `${result.profile_image}?t=${new Date().getTime()}` : userStore.userProfile?.user?.profile_image ? `${userStore.userProfile.user.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
-      console.log('Set previewImage after update:', previewImage.value, 'profileImage:', userStore.profileImage, 'at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
       imageFile.value = null
-      // Fetch fresh profile to ensure sync
       await userStore.fetchUserProfile()
     } else {
       Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to update profile' })
     }
   } catch (err) {
-    console.error('Update failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }), err)
     Swal.fire({ icon: 'error', title: 'Error', text: 'An unexpected error occurred while updating the profile' })
   } finally {
     isSubmitting.value = false
@@ -187,199 +175,349 @@ const updateProfile = async () => {
 
 const goBack = () => {
   router.back()
-  console.log('Navigated back at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
 }
 
 const handleImageError = () => {
-  console.log('Image load failed at:', new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }))
-  // Fallback to userStore.profileImage or null
   previewImage.value = userStore.userProfile?.user?.profile_image ? `${userStore.userProfile.user.profile_image}?t=${new Date().getTime()}` : userStore.profileImage || null
+}
+
+const openImageModal = () => {
+  if (hasValidProfileImage.value) {
+    showImageModal.value = true
+  }
+}
+
+const closeImageModal = () => {
+  showImageModal.value = false
 }
 </script>
 
 <template>
-  <div class="mt-6">
-    <!-- Profile Card -->
-    <div v-if="isLoading" class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center max-w-3xl mx-auto">
-      <p class="text-gray-500 text-sm sm:text-base md:text-lg animate-pulse">Loading your profile...</p>
+  <div class="min-h-screen py-4 px-4 sm:px-6 lg:px-8">
+    <!-- Back Button -->
+    <div class="max-w-6xl mx-auto mb-6">
+      <button @click="goBack" class="flex items-center text-slate-700 hover:text-slate-900 transition-colors duration-200 group">
+        <ArrowLeft class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+        <span class="font-medium">Back</span>
+      </button>
     </div>
-    <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-5xl mx-auto">
-      <!-- Cover Section -->
-      <div
-        class="h-24 sm:h-28 md:h-32 lg:h-40 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 flex justify-end items-center pr-4 sm:pr-6 md:pr-8">
-        <img class="w-16 sm:w-20 md:w-24 lg:w-28" src="/logo.png" alt="Logo" />
+
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex justify-center items-center h-96">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-gray-600">Loading your profile...</p>
       </div>
+    </div>
 
-      <!-- Profile Content -->
-      <div class="relative px-6 sm:px-8 md:px-10 pb-6 sm:pb-8 md:pb-10">
-        <!-- Profile Image -->
-        <div class="relative -mt-14 sm:-mt-16 md:-mt-20 lg:-mt-24 mb-6 sm:mb-8">
-          <div class="relative inline-block">
-            <div
-              class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full border-4 border-white shadow-xl flex items-center justify-center bg-gray-100 transition-transform duration-300 hover:scale-105">
-              <img v-if="hasValidProfileImage"
-                :src="previewImage || userStore.userProfile?.user?.profile_image || userStore.profileImage || 'https://placehold.co/128x128'"
-                alt="Profile" class="w-full h-full rounded-full object-cover" @error="handleImageError" />
-              <span v-else
-                class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white bg-indigo-600 rounded-full h-full w-full flex items-center justify-center">
-                {{ profileInitial }}
-              </span>
+    <!-- Main Profile Container -->
+    <div v-else class="max-w-6xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
+        <div class="md:flex">
+          <!-- Sidebar -->
+          <div class="md:w-1/3 bg-gradient-to-b from-blue-800 to-blue-900 p-8 text-white relative">
+            <!-- Cover Pattern -->
+            <div class="absolute inset-0 opacity-5">
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-y-12"></div>
             </div>
-            <!-- Online Status -->
-            <div
-              class="absolute bottom-1 right-1 w-4 sm:w-5 md:w-6 lg:w-7 h-4 sm:h-5 md:h-6 lg:h-7 rounded-full border-3 border-white shadow-md"
-              :class="userStore.userProfile?.isOnline ? 'bg-green-500' : 'bg-gray-400'"></div>
-
-            <!-- Camera Icon for Edit Mode -->
-            <div v-if="editMode"
-              class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-              <Camera class="w-6 sm:w-7 md:w-8 lg:w-9 h-6 sm:h-7 md:h-8 lg:h-9 text-white" />
-              <input type="file" @change="handleImageChange" accept="image/*"
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Profile Info -->
-        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 sm:gap-8">
-          <div class="flex-1">
-            <div class="mb-6 sm:mb-8">
-              <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
-                {{ userStore.userProfile?.user?.username || 'Unknown User' }}
-              </h1>
-              <div v-if="!editMode" class="space-y-3 text-gray-600 text-sm sm:text-base md:text-lg">
-                <div class="flex items-center gap-3">
-                  <Mail class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  <span class="truncate">{{ userStore.userProfile?.user?.email || 'Not provided' }}</span>
+            
+            <!-- Profile Image Section -->
+            <div class="relative z-10 text-center">
+              <div class="relative inline-block group mb-6">
+                <div 
+                  class="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gradient-to-br from-blue-300 to-blue-400 mx-auto transition-transform duration-300 hover:scale-105 cursor-pointer"
+                  @click="openImageModal">
+                  <img v-if="hasValidProfileImage"
+                    :src="previewImage || userStore.userProfile?.user?.profile_image || userStore.profileImage || 'https://placehold.co/128x128'"
+                    alt="Profile" class="w-full h-full object-cover" @error="handleImageError" />
+                  <div v-else
+                    class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
+                    <span class="text-4xl font-bold text-white">{{ profileInitial }}</span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-3">
-                  <Phone class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  <span>{{ userStore.userProfile?.user?.phone || 'Not provided' }}</span>
+                
+                <!-- Zoom Icon -->
+                <div v-if="hasValidProfileImage" 
+                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-full transition-all duration-300 cursor-pointer"
+                  @click="openImageModal">
+                  <ZoomIn class="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <div class="flex items-center gap-3">
-                  <Calendar class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  <span>{{ userStore.userProfile?.user?.date_of_birth || 'Not provided' }}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <Shield class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  <span class="capitalize">{{ userStore.userProfile?.user?.role?.name || 'No Role Assigned' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Button -->
-          <div v-if="!editMode" class="flex-shrink-0">
-            <button @click="editMode = true"
-              class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg"
-              :disabled="isSubmitting">
-              <Edit3 class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
-              <span>Edit Profile</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Edit Form -->
-        <div v-if="editMode" class="mt-6 sm:mt-8 md:mt-10 border-t border-gray-200 pt-6 sm:pt-8 md:pt-10">
-          <div class="mb-6 sm:mb-8">
-            <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 mb-3 tracking-tight">Edit
-              Profile</h2>
-            <p class="text-gray-500 text-sm sm:text-base md:text-lg">Update your profile information below.</p>
-          </div>
-
-          <form @submit.prevent="updateProfile" class="space-y-6 sm:space-y-8">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-              <!-- Username -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                  <User class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  Username
+                
+                <!-- Camera Icon for Edit Mode -->
+                <label v-if="editMode" 
+                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-60 rounded-full cursor-pointer transition-all duration-300">
+                  <Camera class="w-10 h-10 text-white opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                  <input type="file" @change="handleImageChange" accept="image/*" class="hidden" />
                 </label>
-                <input v-model="editForm.username" type="text" placeholder="Enter username"
-                  class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting" />
-              </div>
-
-              <!-- Email -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                  <Mail class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  Email
-                </label>
-                <input v-model="editForm.email" type="email" placeholder="Enter email"
-                  class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting" />
-              </div>
-
-              <!-- Phone -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                  <Phone class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  Phone
-                </label>
-                <input v-model="editForm.phone" type="text" placeholder="Enter phone number"
-                  class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                  :disabled="isSubmitting" />
-              </div>
-
-              <!-- Date of Birth -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                  <Calendar class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                  Date of Birth
-                </label>
-                <input v-model="editForm.date_of_birth" type="date"
-                  class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg"
-                  :disabled="isSubmitting" />
-              </div>
-            </div>
-
-            <!-- Password -->
-            <div class="space-y-2">
-              <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                <Shield class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                New Password (leave blank to keep current)
-              </label>
-              <input v-model="editForm.password" type="password" placeholder="Enter new password"
-                class="w-full px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white text-sm sm:text-base md:text-lg placeholder-gray-400"
-                :disabled="isSubmitting" />
-            </div>
-
-            <!-- Profile Image Upload -->
-            <div class="space-y-2">
-              <label class="flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold text-gray-700">
-                <Upload class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-indigo-600" />
-                Profile Image
-              </label>
-              <div class="flex items-center gap-4 sm:gap-6">
-                <input type="file" @change="handleImageChange" accept="image/*"
-                  class="flex-1 px-4 sm:px-5 py-2.5 sm:py-3 md:py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white file:mr-4 sm:mr-5 file:py-2 sm:py-2.5 md:py-3 file:px-4 sm:px-5 file:rounded-lg file:border-0 file:text-sm sm:file:text-base file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                  :disabled="isSubmitting" />
-                <div v-if="previewImage"
-                  class="w-12 sm:w-14 md:w-16 lg:w-20 h-12 sm:h-14 md:h-16 lg:h-20 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
-                  <img :src="previewImage" class="w-full h-full object-cover" @error="handleImageError" />
+                
+                <!-- Online Status -->
+                <div
+                  class="absolute bottom-2 right-2 w-10 h-10 rounded-full border-4 border-white shadow-md flex items-center justify-center"
+                  :class="userStore.userProfile?.isOnline ? 'bg-green-500' : 'bg-slate-500'">
+                  <div v-if="userStore.userProfile?.isOnline" class="w-4 h-4 rounded-full bg-white animate-pulse"></div>
                 </div>
               </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-6 sm:pt-8">
-              <button type="submit"
-                class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg"
-                :disabled="isSubmitting">
-                <Save class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
-                <span v-if="isSubmitting">Saving...</span>
-                <span v-else>Save Changes</span>
-              </button>
-              <button type="button" @click="editMode = false"
-                class="inline-flex items-center gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold text-sm sm:text-base md:text-lg"
-                :disabled="isSubmitting">
-                <X class="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
-                Cancel
+              
+              <h1 class="text-2xl font-bold mb-2">{{ userStore.userProfile?.user?.username || 'Unknown User' }}</h1>
+              <p class="text-blue-200 mb-6">{{ userStore.userProfile?.user?.role?.name || 'No Role Assigned' }}</p>
+              
+              <!-- Edit Button -->
+              <button v-if="!editMode" @click="editMode = true"
+                class="w-full py-3 px-4 bg-white text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm">
+                <Edit3 class="w-5 h-5 mr-2" />
+                Edit Profile
               </button>
             </div>
-          </form>
+            
+            <!-- Sidebar Stats -->
+            <div class="mt-8 space-y-4">
+              <div class="flex items-center justify-between py-2 border-b border-blue-500/30">
+                <span class="text-blue-200">Status</span>
+                <span class="font-medium" :class="userStore.userProfile?.isOnline ? 'text-green-300' : 'text-blue-300'">
+                  {{ userStore.userProfile?.isOnline ? 'Online' : 'Offline' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Main Content -->
+          <div class="md:w-2/3 p-8">
+            <!-- View Mode -->
+            <div v-if="!editMode" class="space-y-8">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-6">Profile Information</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <!-- Email Card -->
+                  <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center mb-3">
+                      <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mr-3">
+                        <Mail class="w-5 h-5 text-slate-700" />
+                      </div>
+                      <h3 class="text-lg font-medium text-slate-900">Email</h3>
+                    </div>
+                    <p class="text-slate-600 ml-13">
+                      {{ formattedEmail.firstPart }}
+                      <span v-if="formattedEmail.secondPart" class="block">{{ formattedEmail.secondPart }}</span>
+                    </p>
+                  </div>
+                  
+                  <!-- Phone Card -->
+                  <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center mb-3">
+                      <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mr-3">
+                        <Phone class="w-5 h-5 text-slate-700" />
+                      </div>
+                      <h3 class="text-lg font-medium text-slate-900">Phone</h3>
+                    </div>
+                    <p class="text-slate-600 ml-13">{{ userStore.userProfile?.user?.phone || 'Not provided' }}</p>
+                  </div>
+                  
+                  <!-- Birthday Card -->
+                  <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center mb-3">
+                      <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mr-3">
+                        <Calendar class="w-5 h-5 text-slate-700" />
+                      </div>
+                      <h3 class="text-lg font-medium text-slate-900">Birthday</h3>
+                    </div>
+                    <p class="text-slate-600 ml-13">{{ userStore.userProfile?.user?.date_of_birth || 'Not provided' }}</p>
+                  </div>
+                  
+                  <!-- Role Card -->
+                  <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-center mb-3">
+                      <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mr-3">
+                        <Briefcase class="w-5 h-5 text-slate-700" />
+                      </div>
+                      <h3 class="text-lg font-medium text-slate-900">Role</h3>
+                    </div>
+                    <p class="text-slate-600 ml-13">{{ userStore.userProfile?.user?.role?.name || 'No Role Assigned' }}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Additional Info Section -->
+              <div>
+                <h3 class="text-xl font-semibold text-slate-900 mb-4">About</h3>
+                <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                  <p class="text-slate-600">
+                    This is your personal profile section. Here you can view and update your account information, 
+                    manage your profile picture, and keep your contact details up to date.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Edit Mode -->
+            <div v-else class="space-y-6">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Edit Profile</h2>
+                <p class="text-slate-600">Update your profile information below.</p>
+              </div>
+              
+              <form @submit.prevent="updateProfile" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Username -->
+                  <div>
+                    <label for="username" class="block text-sm font-medium text-slate-700 mb-1">
+                      Username
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User class="h-5 w-5 text-slate-400" />
+                      </div>
+                      <input
+                        id="username"
+                        v-model="editForm.username"
+                        type="text"
+                        class="focus:ring-slate-500 focus:border-slate-500 block w-full pl-10 pr-3 py-3 sm:text-sm border-slate-300 rounded-lg"
+                        placeholder="Enter username"
+                        :disabled="isSubmitting"
+                      />
+                    </div>
+                  </div>
+                  
+                  <!-- Email -->
+                  <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-1">
+                      Email
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail class="h-5 w-5 text-slate-400" />
+                      </div>
+                      <input
+                        id="email"
+                        v-model="editForm.email"
+                        type="email"
+                        class="focus:ring-slate-500 focus:border-slate-500 block w-full pl-10 pr-3 py-3 sm:text-sm border-slate-300 rounded-lg"
+                        placeholder="Enter email"
+                        :disabled="isSubmitting"
+                      />
+                    </div>
+                  </div>
+                  
+                  <!-- Phone -->
+                  <div>
+                    <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">
+                      Phone
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Phone class="h-5 w-5 text-slate-400" />
+                      </div>
+                      <input
+                        id="phone"
+                        v-model="editForm.phone"
+                        type="text"
+                        class="focus:ring-slate-500 focus:border-slate-500 block w-full pl-10 pr-3 py-3 sm:text-sm border-slate-300 rounded-lg"
+                        placeholder="Enter phone number"
+                        :disabled="isSubmitting"
+                      />
+                    </div>
+                  </div>
+                  
+                  <!-- Date of Birth -->
+                  <div>
+                    <label for="date_of_birth" class="block text-sm font-medium text-slate-700 mb-1">
+                      Date of Birth
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Calendar class="h-5 w-5 text-slate-400" />
+                      </div>
+                      <input
+                        id="date_of_birth"
+                        v-model="editForm.date_of_birth"
+                        type="date"
+                        class="focus:ring-slate-500 focus:border-slate-500 block w-full pl-10 pr-3 py-3 sm:text-sm border-slate-300 rounded-lg"
+                        :disabled="isSubmitting"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Password -->
+                <div>
+                  <label for="password" class="block text-sm font-medium text-slate-700 mb-1">
+                    New Password (leave blank to keep current)
+                  </label>
+                  <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Shield class="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      id="password"
+                      v-model="editForm.password"
+                      type="password"
+                      class="focus:ring-slate-500 focus:border-slate-500 block w-full pl-10 pr-3 py-3 sm:text-sm border-slate-300 rounded-lg"
+                      placeholder="Enter new password"
+                      :disabled="isSubmitting"
+                    />
+                  </div>
+                </div>
+                
+                <!-- Profile Image Upload -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">
+                    Profile Image
+                  </label>
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <div class="flex-1 w-full">
+                      <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload class="w-8 h-8 mb-2 text-slate-400" />
+                          <p class="mb-2 text-sm text-slate-500 text-center">
+                            <span class="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p class="text-xs text-slate-500">PNG, JPG up to 5MB</p>
+                        </div>
+                        <input type="file" @change="handleImageChange" accept="image/*" class="hidden" />
+                      </label>
+                    </div>
+                    <div v-if="previewImage" class="flex-shrink-0">
+                      <img :src="previewImage" class="w-24 h-24 rounded-lg object-cover border-2 border-slate-200" @error="handleImageError" />
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+                  <button type="button" @click="editMode = false"
+                    class="inline-flex items-center justify-center px-5 py-2.5 border border-slate-300 text-base font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors duration-200 w-full sm:w-auto">
+                    <X class="w-5 h-5 mr-2" />
+                    Cancel
+                  </button>
+                  <button type="submit"
+                    class="inline-flex items-center justify-center px-5 py-2.5 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 w-full sm:w-auto"
+                    :disabled="isSubmitting">
+                    <Save class="w-5 h-5 mr-2" />
+                    <span v-if="isSubmitting">Saving...</span>
+                    <span v-else>Save Changes</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div v-if="showImageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75 transition-opacity duration-300" @click="closeImageModal">
+      <div class="relative max-w-4xl max-h-full w-full" @click.stop>
+        <button 
+          @click="closeImageModal"
+          class="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-slate-100 transition-colors duration-200 z-10">
+          <Close class="w-6 h-6 text-slate-800" />
+        </button>
+        <img 
+          :src="previewImage || userStore.userProfile?.user?.profile_image || userStore.profileImage" 
+          alt="Profile Full Size" 
+          class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain mx-auto"
+          @error="handleImageError"
+        />
       </div>
     </div>
   </div>
