@@ -54,7 +54,7 @@
         </router-link>
       </div>
     </section>
-    <div class="container mx-auto px-4 py-16">
+    <div class="container mx-auto px-4 py-16   ">
       <!-- Mission Section -->
       <section class="mb-16" data-aos="fade-up" data-aos-duration="1000">
         <div class="max-w-4xl mx-auto text-center">
@@ -95,22 +95,22 @@
 
       <!-- Contact & Hours Section -->
       <div class="container mx-auto px-4 py-12">
-        <section class="mb-20" data-aos="fade-up" data-aos-duration="1000">
+        <section class="mb-10">
           <div class="text-center mb-16">
-            <h2 class="text-4xl font-bold text-gray-800 mb-4 section-title" data-aos="fade-up" data-aos-delay="100">Meet Our Team</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="200">
-              Our dedicated team of professionals is committed to delivering exceptional results. Get to know the talented individuals behind our success.
+            <h2 class="text-4xl font-bold text-gray-800 mb-4 section-title">Meet Our Team</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+              Our dedicated team of professionals is committed to delivering exceptional results. Get to know the
+              talented individuals behind our success.
             </p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             <div v-for="(member, index) in staff" :key="member.name"
-                 class="team-card bg-white rounded-xl p-6 text-center shadow-lg" data-aos="fade-up" :data-aos-delay="100 + index * 100">
-              
+              class="team-card bg-white rounded-xl p-6 text-center shadow-lg">
+
               <div class="profile-container">
-                <img :src="member.image" :alt="member.name"
-                     class="profile-image rounded-full mx-auto object-cover" />
-                <div class="role-badge">{{ member.role }}</div>
+                <img :src="member.image" :alt="member.name" class="profile-image rounded-full mx-auto object-cover" />
+                <div class="role-badge ">{{ member.role }}</div>
               </div>
 
               <h3 class="text-xl font-bold text-gray-800 mb-2">{{ member.name }}</h3>
@@ -335,28 +335,48 @@ body {
 .team-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.team-card:nth-child(1) { animation-delay: 0.1s; }
-.team-card:nth-child(2) { animation-delay: 0.2s; }
-.team-card:nth-child(3) { animation-delay: 0.3s; }
-.team-card:nth-child(4) { animation-delay: 0.4s; }
+.team-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
 
-.profile-container { position: relative; margin-bottom: 1.5rem; }
+.team-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.team-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.team-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.profile-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
 .profile-image {
-  width: 120px; height: 120px; object-fit: cover;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
   border: 4px solid #e0f2fe;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
+
 .team-card:hover .profile-image {
   border-color: #38bdf8;
   transform: scale(1.05);
 }
 
 .role-badge {
-  position: absolute; bottom: -10px; left: 50%;
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   color: white;
@@ -365,43 +385,80 @@ body {
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 4px 6px -1px rgba(56,189,248,0.3);
+  box-shadow: 0 4px 6px -1px rgba(56, 189, 248, 0.3);
 }
 
-.social-icons { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1.5rem; }
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
 .social-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #f1f5f9;
   color: #38bdf8;
   transition: all 0.3s ease;
 }
+
 .social-icon:hover {
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   color: white;
   transform: translateY(-3px);
 }
 
-.contact-button { transition: all 0.3s ease; border-radius: 10px; }
-.contact-button:hover { background: linear-gradient(135deg, #38bdf8, #818cf8); color: white; }
-.contact-button:hover span { color: white; }
-.contact-button:hover i { color: white; transform: scale(1.1); }
+.contact-button {
+  transition: all 0.3s ease;
+  border-radius: 10px;
+}
 
-.section-title { position: relative; display: inline-block; margin-bottom: 3rem; }
+.contact-button:hover {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+}
+
+.contact-button:hover span {
+  color: white;
+}
+
+.contact-button:hover i {
+  color: white;
+  transform: scale(1.1);
+}
+
+.section-title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 3rem;
+}
+
 .section-title:after {
   content: '';
   position: absolute;
   bottom: -15px;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px; height: 4px;
+  width: 60px;
+  height: 4px;
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   border-radius: 2px;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

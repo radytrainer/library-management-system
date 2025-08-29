@@ -18,7 +18,7 @@
               type="text"
               required
               class="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition duration-300 ease-in-out"
-              placeholder="Enter Student ID"
+              placeholder="Your ID (e.g., 01)"
             />
           </div>
           <div>
@@ -31,7 +31,7 @@
               type="text"
               required
               class="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition duration-300 ease-in-out"
-              placeholder="Enter Student Name"
+              placeholder="Your Name"
             />
           </div>
         </div>
@@ -48,7 +48,7 @@
               type="text"
               required
               class="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition duration-300 ease-in-out"
-              placeholder="Enter Class (e.g., A1)"
+              placeholder="Enter Class (e.g., A)"
             />
           </div>
           <div>
