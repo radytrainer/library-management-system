@@ -1,33 +1,63 @@
 <template>
-  <section class="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-16 md:py-32 relative overflow-hidden">
+  <section class="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
     <!-- Animated background elements -->
     <div class="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-indigo-50/30"></div>
     <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl animate-pulse"></div>
     <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
-    
-    <div class="container mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center gap-16 md:gap-24 relative z-10">
-      <div class="md:w-2/5 flex justify-center">
-        <div class="relative group">
-          <div class="absolute -inset-4 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
-          <img src='../../../../public/Js.jpg'
-              alt="Featured Book Cover"
-              class="relative rounded-3xl shadow-2xl max-w-[280px] md:max-w-[340px] h-auto border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-3xl" />
+
+    <div class="container mx-auto px-6 md:px-12 lg:px-16 relative z-10">
+      <!-- Parent Wrapper -->
+      <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-12 max-w-6xl mx-auto">
+        
+        <!-- Image Grid -->
+        <div class="flex justify-center">
+          <div class="grid grid-cols-2 gap-6 max-w-md">
+            <div class="space-y-6">
+              <div class="relative group">
+                <div class="absolute -inset-3 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <img src="../../../../public/b3.avif"
+                    alt="Featured Book Cover"
+                    class="relative rounded-2xl shadow-xl w-full h-64 object-cover border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-2xl" />
+              </div>
+              <div class="relative group">
+                <div class="absolute -inset-3 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <img src="../../../../public/lib.avif"
+                    alt="Featured Book Cover"
+                    class="relative rounded-2xl shadow-xl w-full h-64 object-cover border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-2xl" />
+              </div>
+            </div>
+            <div class="space-y-6 pt-12">
+              <div class="relative group">
+                <div class="absolute -inset-3 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <img src="../../../../public/b1.avif"
+                    alt="Featured Book Cover"
+                    class="relative rounded-2xl shadow-xl w-full h-64 object-cover border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-2xl" />
+              </div>
+              <div class="relative group">
+                <div class="absolute -inset-3 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <img src="../../../../public/b2.avif"
+                    alt="Featured Book Cover"
+                    class="relative rounded-2xl shadow-xl w-full h-64 object-cover border-2 border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-2xl" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="md:w-3/5 text-center md:text-left space-y-8 max-w-2xl">
-        <div class="space-y-6">
-          <h1 class="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 leading-tight tracking-tight">
-            Discover Your
-            <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Next Read</span>
-          </h1>
-          <p class="text-xl text-slate-700 font-medium leading-relaxed">
-            Explore our curated collection of books, carefully selected for every reader's journey.
+
+        <!-- Text Content -->
+        <div class="text-center md:text-left space-y-8 max-w-2xl mx-auto">
+          <div class="space-y-6">
+            <h1 class="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 leading-tight tracking-tight">
+              A place to discover your
+              <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Next Masterpiece</span>
+            </h1>
+            <p class="text-xl text-slate-700 font-medium leading-relaxed">
+              Authors can display their literary works, and readers can discover and purchase books that resonate with them.
+            </p>
+          </div>
+
+          <p class="text-lg text-slate-600 leading-relaxed">
+            Explore our curated collection of literary masterpieces, carefully selected for every reader's journey. Dive into captivating stories, expand your knowledge, and find new adventures.
           </p>
-        </div>
-        <p class="text-lg text-slate-600 leading-relaxed">
-          Dive into captivating stories, expand your knowledge, and find new adventures. Whether you're seeking fiction, non-fiction, or academic resources—our catalog offers something extraordinary for everyone.
-        </p>
-        <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4 pt-6">
         </div>
       </div>
     </div>
