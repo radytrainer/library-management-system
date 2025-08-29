@@ -90,13 +90,13 @@ const logout = async () => {
 
 <template>
   <footer class="bg-gradient-to-r from-blue-100 to-white border-t border-gray-200 shadow-md">
-    <div class="max-w-7xl mx-auto px-6 lg:px-12 py-8">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 py-3">
       <div class="flex flex-col md:flex-row justify-between items-center gap-6">
         <!-- Left: Logo -->
         <div class="flex items-center gap-3">
           <img src="/logo.png" alt="Passerelles Numériques Logo"
             class="h-14 w-14 object-contain transition-transform duration-300 hover:scale-105" />
-          <span class="text-lg font-semibold text-gray-700">Passerelles Numériques</span>
+          <span class="text-lg font-semibold text-gray-700">PNC Library</span>
         </div>
 
         <!-- Middle: Social Media -->
@@ -119,7 +119,7 @@ const logout = async () => {
 
         <!-- Right: Copyright -->
         <p class="text-gray-500 text-sm text-center md:text-right">
-          &copy; 2025 Passerelles Numériques. All rights reserved.
+          &copy; student 2025 Passerelles Numériques Cambodai. All rights reserved.
         </p>
       </div>
     </div>
