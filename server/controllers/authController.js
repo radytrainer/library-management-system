@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../models/index');
 const authConfig = require('../config/auth.config');
+const nodemailer = require('nodemailer');
+const { transporter } = require('../utils/mailer');
 
 // Store active user IDs and their last activity timestamp
 const activeUsers = new Map();
@@ -69,6 +71,65 @@ const broadcastActiveUsers = () => {
     count: activeUsers.size,
     userIds: Array.from(activeUsers.keys()),
   });
+};
+
+// Send welcome email with QR code
+const sendWelcomeEmail = async (userId) => {
+  try {
+    console.log(`Starting sendWelcomeEmail for user ID: ${userId}`);
+    const user = await db.User.findByPk(userId);
+    if (!user || !user.email) {
+      console.warn(`⚠️ No email found for user ID ${userId}`);
+      throw new Error(`No email found for user ID ${userId}`);
+    }
+    const qrData = `${user.barcode}`;
+
+    const qrPngBuffer = await QRCode.toBuffer(qrData, {
+      width: 150,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+
+    const subject = "🎉 Welcome to the Library System!";
+    const message = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 8px;">
+          <h1 style="color: #1a3c6d; font-size: 24px;">Welcome, ${user.username || "Library User"}!</h1>
+          <p style="font-size: 16px; color: #333333;">We’re excited to have you join the <strong>Library System</strong>.</p>
+          <p style="font-size: 16px; color: #333333;">From now on, you can borrow books, track your due dates, and receive reminders via email.</p>
+
+          <div style="margin: 20px 0; text-align: center;">
+            <p style="font-size: 16px; margin-bottom: 10px;">Here’s your membership QR Code:</p>
+            <img src="cid:qr-${user.id}" alt="QR Code" width="150" height="150" style="display:block;margin:0 auto;"/>
+          </div>
+
+          <p style="margin-top: 20px; font-size: 16px;">📚 Happy Reading!</p>
+          <p style="margin: 5px 0 0;">– The Library Team</p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: `"Library System" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject,
+      html: message,
+      attachments: [
+        {
+          filename: `user-${user.id}-qr.png`,
+          content: qrPngBuffer,
+          cid: `qr-${user.id}`
+        }
+      ]
+    };
+
+    console.log('Sending email to:', user.email);
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 Welcome email with QR sent to ${user.email}`);
+  } catch (err) {
+    console.error(`❌ Failed to send welcome email for user ID ${userId}:`, err.stack);
+    throw err;
+  }
 };
 
 const signin = async (req, res) => {
@@ -151,6 +212,12 @@ const signup = async (req, res) => {
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: "Email already in use!" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -266,8 +333,17 @@ const signup = async (req, res) => {
 
     // Assign default role
     const defaultRole = await Role.findOne({ where: { name: "user" } });
-    if (defaultRole) {
-      await user.setRole(defaultRole);
+    if (!defaultRole) {
+      throw new Error("Default user role not found");
+    }
+    await user.setRole(defaultRole);
+
+    // Send welcome email
+    try {
+      console.log('Triggering welcome email for user ID:', user.id);
+      await sendWelcomeEmail(user.id);
+    } catch (err) {
+      console.error(`Failed to send welcome email to ${user.email}:`, err.stack);
     }
 
     // Track active users
@@ -316,4 +392,4 @@ const getActiveUsers = async (req, res) => {
   }
 };
 
-module.exports = { signin, signup, initSocket, getActiveUsers };
+module.exports = { signin, signup, initSocket, getActiveUsers, sendWelcomeEmail };

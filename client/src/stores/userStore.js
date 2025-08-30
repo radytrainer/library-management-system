@@ -165,6 +165,38 @@ export const useUserStore = defineStore('user', {
         this.loading = false;
       }
     },
+    async updateUserProfileImage(formData) {
+    if (!this.token) {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Not authenticated' });
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    this.loading = true;
+    try {
+      // Call API to update profile image
+      const res = await updateUser(this.userProfile.user.id, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res?.data?.user?.profile_image) {
+        // Update local userProfile
+        this.userProfile.user.profile_image = this.normalizeUser(res.data.user).profile_image;
+
+        // Update sessionStorage
+        sessionStorage.setItem('profile_image', this.userProfile.user.profile_image);
+        this.profileImage = this.userProfile.user.profile_image;
+
+        return { success: true, profile_image: this.userProfile.user.profile_image };
+      } else {
+        return { success: false, message: 'No profile image returned from server' };
+      }
+    } catch (err) {
+      console.error('Failed to update profile image:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
+    } finally {
+      this.loading = false;
+    }
+  },
 
     async fetchUserProfile() {
       if (!this.token) {

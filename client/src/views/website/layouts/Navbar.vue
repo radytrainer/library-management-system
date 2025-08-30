@@ -4,9 +4,13 @@ import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 
+// Path to default avatar (served from public/)
+const DEFAULT_AVATAR = '/defultImageProfile.png';
+
 // Access the user store and router
 const userStore = useUserStore();
 const router = useRouter();
+const language = ref('en'); // prevent undefined in template
 
 // Reactive state
 const mobileMenuOpen = ref(false);
@@ -18,19 +22,25 @@ const dropdownRef = ref(null);
 // Computed properties to reactively access store data
 const username = computed(() => userStore.user?.username || 'Guest');
 const userEmail = computed(() => userStore.user?.email || 'N/A');
-const userProfileImage = computed(() => userStore.profileImage || '/default-profile.png');
 const userRole = computed(() => userStore.user?.role || '');
 const isAdmin = computed(() => userRole.value === 'admin');
 const canAccessSystem = computed(() => ['admin', 'librarian'].includes(userRole.value));
 const canAccessWebsite = computed(() => ['user', 'librarian'].includes(userRole.value));
 
+// Helpers for profile image
+function isValidImage(v) {
+  return typeof v === 'string' && v.trim() && v !== 'null' && v !== 'undefined';
+}
+
+const userProfileImage = computed(() => {
+  return isValidImage(userStore.profileImage) ? userStore.profileImage : DEFAULT_AVATAR;
+});
+
 // Initialize user state on mount
 onMounted(async () => {
-  console.log('Nav component mounted. isAuthenticated:', userStore.isAuthenticated, 'user:', userStore.user, 'token:', userStore.token);
   if (!userStore.isAuthenticated && localStorage.getItem('token')) {
     try {
       const isValid = await userStore.validateToken();
-      console.log('Token validation result:', isValid);
       if (!isValid) {
         Swal.fire({
           icon: 'error',
@@ -41,7 +51,6 @@ onMounted(async () => {
         router.push('/login');
       }
     } catch (error) {
-      console.error('Error validating token:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -51,12 +60,10 @@ onMounted(async () => {
       router.push('/login');
     }
   } else if (!userStore.isAuthenticated) {
-    console.log('No session found, redirecting to login');
     router.push('/login');
   } else if (userStore.isAuthenticated && !userStore.userProfile) {
     try {
       const result = await userStore.fetchUserProfile();
-      console.log('fetchUserProfile result:', result);
       if (!result.success) {
         Swal.fire({
           icon: 'error',
@@ -67,7 +74,6 @@ onMounted(async () => {
         router.push('/login');
       }
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -98,7 +104,7 @@ const closeMobileMenu = () => {
 };
 
 const toggleProfileDropdown = (event) => {
-  event.stopPropagation(); // Prevent click from bubbling up to document
+  event.stopPropagation(); 
   profileDropdownOpen.value = !profileDropdownOpen.value;
 };
 
@@ -140,47 +146,37 @@ const logout = async () => {
         <!-- Logo/Brand -->
         <div class="flex items-center space-x-3 flex-shrink-0">
           <img src="/logo.png" alt="PNC Logo" class="h-12 w-12 object-contain">
-          <div
-            class="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div class="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             PNC LIBRARY
           </div>
         </div>
 
         <!-- Desktop Navigation Links -->
         <div class="hidden md:flex items-center space-x-4 lg:space-x-6">
-          <router-link to="/website" class="nav-link font-semibold">
-            Home
-          </router-link>
-          <router-link to="/about-us" class="nav-link">
-            About
-          </router-link>
-          <router-link to="/web-book" class="nav-link">
-            Books
-          </router-link>
-          <router-link v-if="canAccessWebsite" to="/web-summary" class="nav-link" @click="closeMobileMenu">
-            Summary
-          </router-link>
-          <router-link v-if="canAccessSystem" to="/dashboard" class="nav-link">
-            System
-          </router-link>
+          <router-link to="/website" class="nav-link font-semibold">Home</router-link>
+          <router-link to="/about-us" class="nav-link">About</router-link>
+          <router-link to="/web-book" class="nav-link">Books</router-link>
+          <router-link v-if="canAccessWebsite" to="/web-summary" class="nav-link" @click="closeMobileMenu">Summary</router-link>
+          <router-link v-if="canAccessSystem" to="/dashboard" class="nav-link">System</router-link>
         </div>
 
-        <!-- Desktop User Profile and Actions -->
+        <!-- Desktop User Profile -->
         <div class="hidden md:flex items-center space-x-4">
-          <!-- User Profile Dropdown -->
           <div class="relative" ref="dropdownRef">
             <button @click="toggleProfileDropdown"
               class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 focus:ring-blue-500 transition-all duration-200">
-              <img :src="userProfileImage" alt="User Profile" class="h-10 w-10 rounded-full object-cover">
+              <img
+                :src="userProfileImage"
+                alt="User Profile"
+                class="h-10 w-10 rounded-full object-cover"
+                @error="$event.target.src = DEFAULT_AVATAR"
+              />
               <div class="flex flex-col text-left">
-                <span class="text-sm lg:text-base font-medium text-gray-700">
-                  {{ username }}
-                </span>
+                <span class="text-sm lg:text-base font-medium text-gray-700">{{ username }}</span>
               </div>
             </button>
             <!-- Dropdown Menu -->
-            <div v-if="profileDropdownOpen"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-2">
+            <div v-if="profileDropdownOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-2">
               <div class="px-4 py-2 text-1xl text-gray-700 bg-gray-50">
                 <span class="font-semibold">{{ username }}</span>
               </div>
@@ -191,9 +187,7 @@ const logout = async () => {
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === "en" ? "View Profile" : "View Profile" }}
               </router-link>
-              <button @click="logout"
-                class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                role="menuitem">
+              <button @click="logout" class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded" role="menuitem">
                 <span class="material-symbols-outlined mr-2">logout</span>
                 {{ language === "en" ? "Logout" : "Logout" }}
               </button>
@@ -204,8 +198,7 @@ const logout = async () => {
         <!-- Mobile menu button -->
         <div class="md:hidden">
           <button @click="toggleMobileMenu"
-            class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-            aria-expanded="false">
+            class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
             <span class="sr-only">Open main menu</span>
             <svg :class="{ 'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" class="h-6 w-6"
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,44 +217,31 @@ const logout = async () => {
     <div :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }"
       class="md:hidden bg-white/98 backdrop-blur-lg border-t border-gray-200 transition-all duration-300">
       <div class="px-4 pt-3 pb-4 space-y-2">
-        <router-link to="/website" class="mobile-nav-link font-semibold" @click="closeMobileMenu">
-          Home
-        </router-link>
-        <router-link to="/about-us" class="mobile-nav-link" @click="closeMobileMenu">
-          About
-        </router-link>
-        <router-link to="/web-book" class="mobile-nav-link" @click="closeMobileMenu">
-          Books
-        </router-link>
-        <router-link v-if="canAccessWebsite" to="/web-summary" class="mobile-nav-link" @click="closeMobileMenu">
-          Summary
-        </router-link>
-        <router-link v-if="canAccessSystem" to="/dashboard" class="mobile-nav-link" @click="closeMobileMenu">
-          System
-        </router-link>
+        <router-link to="/website" class="mobile-nav-link font-semibold" @click="closeMobileMenu">Home</router-link>
+        <router-link to="/about-us" class="mobile-nav-link" @click="closeMobileMenu">About</router-link>
+        <router-link to="/web-book" class="mobile-nav-link" @click="closeMobileMenu">Books</router-link>
+        <router-link v-if="canAccessWebsite" to="/web-summary" class="mobile-nav-link" @click="closeMobileMenu">Summary</router-link>
+        <router-link v-if="canAccessSystem" to="/dashboard" class="mobile-nav-link" @click="closeMobileMenu">System</router-link>
       </div>
 
       <!-- Mobile user profile -->
       <div class="px-4 pt-4 pb-6 border-t border-gray-200">
         <div class="flex items-center space-x-3 mb-3">
-          <img :src="userProfileImage" alt="User Profile" class="h-12 w-12 rounded-full object-cover shadow-sm">
+          <img
+            :src="userProfileImage"
+            alt="User Profile"
+            class="h-10 w-10 rounded-full object-cover"
+            @error="$event.target.src = DEFAULT_AVATAR"
+          />
           <div class="flex flex-col">
-            <span class="text-base font-semibold text-gray-800">
-              {{ username }}
-            </span>
+            <span class="text-base font-semibold text-gray-800">{{ username }}</span>
           </div>
         </div>
         <div class="space-y-2">
-          <div class="px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-lg">
-            {{ userEmail }}
-          </div>
+          <div class="px-4 py-2 text-sm text-gray-600 bg-gray-50 rounded-lg">{{ userEmail }}</div>
           <hr class="border-gray-200">
-          <router-link to="/profile-web" class="mobile-nav-link" @click="closeMobileMenu">
-            Profile Detail
-          </router-link>
-          <button @click="logout" class="mobile-nav-link text-red-600 hover:text-red-700 hover:bg-red-50">
-            Logout
-          </button>
+          <router-link to="/profile-web" class="mobile-nav-link" @click="closeMobileMenu">Profile Detail</router-link>
+          <button @click="logout" class="mobile-nav-link text-red-600 hover:text-red-700 hover:bg-red-50">Logout</button>
         </div>
       </div>
     </div>
