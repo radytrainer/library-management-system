@@ -4,22 +4,20 @@ import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 
-// Path to default avatar (served from public/)
+// Default avatar
 const DEFAULT_AVATAR = '/defultImageProfile.png';
 
-// Access the user store and router
+// Stores and router
 const userStore = useUserStore();
 const router = useRouter();
-const language = ref('en'); // prevent undefined in template
+const language = ref('en');
 
-// Reactive state
+// State
 const mobileMenuOpen = ref(false);
 const profileDropdownOpen = ref(false);
-
-// Reference to the dropdown element for outside click detection
 const dropdownRef = ref(null);
 
-// Computed properties to reactively access store data
+// Computed properties
 const username = computed(() => userStore.user?.username || 'Guest');
 const userEmail = computed(() => userStore.user?.email || 'N/A');
 const userRole = computed(() => userStore.user?.role || '');
@@ -27,68 +25,52 @@ const isAdmin = computed(() => userRole.value === 'admin');
 const canAccessSystem = computed(() => ['admin', 'librarian'].includes(userRole.value));
 const canAccessWebsite = computed(() => ['user', 'librarian'].includes(userRole.value));
 
-// Helpers for profile image
 function isValidImage(v) {
   return typeof v === 'string' && v.trim() && v !== 'null' && v !== 'undefined';
 }
 
+// Profile image handling with localStorage fallback
 const userProfileImage = computed(() => {
-  return isValidImage(userStore.profileImage) ? userStore.profileImage : DEFAULT_AVATAR;
+  const localImage = localStorage.getItem('profileImage');
+  const backendImage = userStore.userProfile?.user?.profile_image;
+  return isValidImage(backendImage) ? backendImage : isValidImage(localImage) ? localImage : DEFAULT_AVATAR;
 });
 
-// Initialize user state on mount
-onMounted(async () => {
-  if (!userStore.isAuthenticated && localStorage.getItem('token')) {
-    try {
+// Fetch user profile and persist image in localStorage
+async function loadUserProfile() {
+  try {
+    if (!userStore.isAuthenticated && localStorage.getItem('token')) {
       const isValid = await userStore.validateToken();
-      if (!isValid) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Session Expired',
-          text: 'Your session has expired. Please log in again.',
-        });
-        userStore.resetAuth();
-        router.push('/login');
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'An error occurred while validating your session. Please log in again.',
-      });
-      userStore.resetAuth();
+      if (!isValid) throw new Error('Token expired');
+    } else if (!userStore.isAuthenticated) {
       router.push('/login');
+      return;
     }
-  } else if (!userStore.isAuthenticated) {
-    router.push('/login');
-  } else if (userStore.isAuthenticated && !userStore.userProfile) {
-    try {
-      const result = await userStore.fetchUserProfile();
-      if (!result.success) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to load user profile. Please log in again.',
-        });
-        userStore.resetAuth();
-        router.push('/login');
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'An error occurred while loading your profile. Please log in again.',
-      });
-      userStore.resetAuth();
-      router.push('/login');
-    }
-  }
 
-  // Add event listener for clicks outside the dropdown
+    const result = await userStore.fetchUserProfile();
+    if (!result.success) throw new Error('Failed to fetch profile');
+
+    // Persist profile image
+    if (userStore.userProfile?.user?.profile_image) {
+      localStorage.setItem('profileImage', userStore.userProfile.user.profile_image);
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Please login again.',
+    });
+    userStore.resetAuth();
+    router.push('/login');
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  loadUserProfile();
   document.addEventListener('click', handleOutsideClick);
 });
 
-// Remove event listener on component unmount
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleOutsideClick);
 });
@@ -104,7 +86,7 @@ const closeMobileMenu = () => {
 };
 
 const toggleProfileDropdown = (event) => {
-  event.stopPropagation(); 
+  event.stopPropagation();
   profileDropdownOpen.value = !profileDropdownOpen.value;
 };
 
@@ -133,6 +115,7 @@ const logout = async () => {
   if (!result.isConfirmed) return;
 
   await userStore.logout();
+  localStorage.removeItem('profileImage'); // clear cache
   mobileMenuOpen.value = false;
   profileDropdownOpen.value = false;
   router.push('/login');
@@ -143,7 +126,7 @@ const logout = async () => {
   <nav class="bg-white/90 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16 lg:h-20">
-        <!-- Logo/Brand -->
+        <!-- Logo -->
         <div class="flex items-center space-x-3 flex-shrink-0">
           <img src="/logo.png" alt="PNC Logo" class="h-12 w-12 object-contain">
           <div class="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -151,16 +134,16 @@ const logout = async () => {
           </div>
         </div>
 
-        <!-- Desktop Navigation Links -->
+        <!-- Desktop nav links -->
         <div class="hidden md:flex items-center space-x-4 lg:space-x-6">
           <router-link to="/website" class="nav-link font-semibold">Home</router-link>
           <router-link to="/about-us" class="nav-link">About</router-link>
           <router-link to="/web-book" class="nav-link">Books</router-link>
-          <router-link v-if="canAccessWebsite" to="/web-summary" class="nav-link" @click="closeMobileMenu">Summary</router-link>
+          <router-link v-if="canAccessWebsite" to="/web-summary" class="nav-link">Summary</router-link>
           <router-link v-if="canAccessSystem" to="/dashboard" class="nav-link">System</router-link>
         </div>
 
-        <!-- Desktop User Profile -->
+        <!-- Desktop user profile -->
         <div class="hidden md:flex items-center space-x-4">
           <div class="relative" ref="dropdownRef">
             <button @click="toggleProfileDropdown"
@@ -175,19 +158,18 @@ const logout = async () => {
                 <span class="text-sm lg:text-base font-medium text-gray-700">{{ username }}</span>
               </div>
             </button>
-            <!-- Dropdown Menu -->
             <div v-if="profileDropdownOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-2">
               <div class="px-4 py-2 text-1xl text-gray-700 bg-gray-50">
                 <span class="font-semibold">{{ username }}</span>
               </div>
               <hr class="border-gray-200">
               <router-link to="/profile-web"
-                class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded" role="menuitem"
+                class="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
                 @click="closeProfileDropdown">
                 <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
                 {{ language === "en" ? "View Profile" : "View Profile" }}
               </router-link>
-              <button @click="logout" class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded" role="menuitem">
+              <button @click="logout" class="w-full text-left flex items-center p-2 text-sm text-red-600 hover:bg-red-50 rounded">
                 <span class="material-symbols-outlined mr-2">logout</span>
                 {{ language === "en" ? "Logout" : "Logout" }}
               </button>
@@ -200,12 +182,10 @@ const logout = async () => {
           <button @click="toggleMobileMenu"
             class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200">
             <span class="sr-only">Open main menu</span>
-            <svg :class="{ 'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" class="h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg :class="{ 'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <svg :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }" class="h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -214,8 +194,7 @@ const logout = async () => {
     </div>
 
     <!-- Mobile menu -->
-    <div :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }"
-      class="md:hidden bg-white/98 backdrop-blur-lg border-t border-gray-200 transition-all duration-300">
+    <div :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }" class="md:hidden bg-white/98 backdrop-blur-lg border-t border-gray-200 transition-all duration-300">
       <div class="px-4 pt-3 pb-4 space-y-2">
         <router-link to="/website" class="mobile-nav-link font-semibold" @click="closeMobileMenu">Home</router-link>
         <router-link to="/about-us" class="mobile-nav-link" @click="closeMobileMenu">About</router-link>
@@ -223,16 +202,9 @@ const logout = async () => {
         <router-link v-if="canAccessWebsite" to="/web-summary" class="mobile-nav-link" @click="closeMobileMenu">Summary</router-link>
         <router-link v-if="canAccessSystem" to="/dashboard" class="mobile-nav-link" @click="closeMobileMenu">System</router-link>
       </div>
-
-      <!-- Mobile user profile -->
       <div class="px-4 pt-4 pb-6 border-t border-gray-200">
         <div class="flex items-center space-x-3 mb-3">
-          <img
-            :src="userProfileImage"
-            alt="User Profile"
-            class="h-10 w-10 rounded-full object-cover"
-            @error="$event.target.src = DEFAULT_AVATAR"
-          />
+          <img :src="userProfileImage" alt="User Profile" class="h-10 w-10 rounded-full object-cover" @error="$event.target.src = DEFAULT_AVATAR" />
           <div class="flex flex-col">
             <span class="text-base font-semibold text-gray-800">{{ username }}</span>
           </div>
@@ -275,48 +247,5 @@ const logout = async () => {
 
 .mobile-nav-link.router-link-active {
   @apply text-blue-600 bg-blue-50;
-}
-
-/* Primary button */
-.btn-primary {
-  @apply px-4 py-2 lg:px-6 lg:py-2.5 text-sm lg:text-base font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105;
-}
-
-.btn-primary:active {
-  @apply from-blue-700 to-purple-700;
-}
-
-.btn-primary:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .nav-link {
-    @apply px-3 py-2 text-sm;
-  }
-
-  .btn-primary {
-    @apply px-3 py-2 text-sm;
-  }
-}
-
-/* Mobile menu animation */
-@media (max-width: 768px) {
-  .md\:hidden {
-    animation: slideDown 0.3s ease-out;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    scale: 0.95;
-  }
-
-  to {
-    opacity: 1;
-    scale: 1;
-  }
 }
 </style>
